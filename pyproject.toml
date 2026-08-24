@@ -1,0 +1,36 @@
+[project]
+name = "payops"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "pydantic>=2",
+  "uvicorn",
+  "langchain",
+  "langgraph",
+  "langsmith",
+  "google-cloud-pubsub",
+  "google-cloud-logging",
+  "google-cloud-monitoring",
+  "google-cloud-storage",
+  "redis",
+  "sqlalchemy",
+  "psycopg[binary]",
+  "elasticsearch",
+  "opentelemetry-api",
+  "opentelemetry-sdk",
+  "prometheus-client",
+  "httpx",
+]
+
+[dependency-groups]
+dev = ["pytest","pytest-cov","hypothesis","ruff","pyright","mutmut"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pyright]
+typeCheckingMode = "strict"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

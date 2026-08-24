@@ -1,0 +1,9 @@
+{
+  "name": "payops-web",
+  "private": true,
+  "scripts": {
+    "test": "echo 'initialize web tests in frontend chunk'",
+    "lint": "echo 'initialize Biome in frontend chunk'",
+    "build": "echo 'initialize operator UI in frontend chunk'"
+  }
+}
