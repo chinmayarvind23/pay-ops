@@ -289,8 +289,6 @@ The distributed cloud system is added after this loop is correct.
 - `docs/reliability.md`
 - `docs/deployment.md`
 - `docs/public-demo.md`
-- `docs/results.md`
-- `docs/interview-prep.md`
 
 ## Local setup
 
