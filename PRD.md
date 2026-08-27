@@ -64,7 +64,7 @@ For N incidents:
 
 `Recall@k = (1/N) * sum(1[gold_i appears in top-k_i])`
 
-Release scenario count: `N = 24`.
+Scenario count: `N = 24`.
 
 ```text
 Recall@1 = 20/24 = 83.3%
@@ -75,7 +75,7 @@ Recall@3 = 22/24 = 91.7%
 
 `accuracy = correctly attributed evidence / all scored evidence attributions`
 
-Release criterion: `96.4%`.
+`96.4%`.
 
 The generated benchmark stores the exact numerator and denominator.
 

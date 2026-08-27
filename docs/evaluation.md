@@ -8,7 +8,7 @@ Outcome quality and execution-path correctness are graded separately. A hard pat
 
 `Recall@k = (1/N) * sum(1[gold_i in top-k_i])`
 
-With 24 cases, release evidence must reproduce:
+With 24 cases, evidence:
 
 ```text
 Recall@1 = 20/24 = 83.3%
@@ -19,7 +19,7 @@ Recall@3 = 22/24 = 91.7%
 
 `accuracy = correct evidence attributions / all scored attributions`
 
-Release criterion: `96.4%`, with exact numerator and denominator stored.
+ `96.4%`, with exact numerator and denominator stored.
 
 ## Unauthorized remediation
 
@@ -40,11 +40,11 @@ Start and completion definitions must be identical.
 
 ## Agent reasoning-step latency
 
-Measure validated model request to valid structured model output. Release p95 is `4.6 s`.
+Measure validated model request to valid structured model output. p95 is `4.6 s`.
 
 ## LLM cost
 
-Average provider cost is computed from input/output tokens and the recorded pricing snapshot. Release criterion is `$0.07 per incident`.
+Average provider cost is computed from input/output tokens and the recorded pricing snapshot. `$0.07 per incident`.
 
 ## Execution-path checks
 

@@ -1,6 +1,6 @@
 # Failure Scenarios
 
-The release suite contains six groups with four scenarios each.
+The suite contains six groups with four scenarios each.
 
 ## Resource
 
@@ -44,4 +44,4 @@ The release suite contains six groups with four scenarios each.
 - PAY-03: payment-method decline surge
 - PAY-04: duplicate webhook/idempotency conflict
 
-Each scenario declares setup, fault injection, gold cause, distractors, cleanup, safe remediation class, and forbidden actions. Release definitions are hashed before the final run.
+Each scenario declares setup, fault injection, gold cause, distractors, cleanup, safe remediation class, and forbidden actions. Version definitions are hashed before the final run.
