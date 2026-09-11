@@ -240,8 +240,9 @@ verified real file acquisition at 500m; Kubernetes qualification remains pending
 with a 128KiB/2000-line ceiling. It reuses the five-service owner, image and exact
 spec checks before and after acquisition and rejects any changed identity. Its
 inherited mutation interface is limited to the payments Deployment. The source
-selector requires one completion for the fresh sample inside the operator's HTTP
-window, rejects duplicates and inconsistent durations, and then binds both kernel
+selector requires one completion for the fresh sample within the operator's HTTP
+window plus the existing one-second cross-host trace clock allowance. It rejects
+duplicates and inconsistent durations, and then binds both kernel
 snapshots to the collector's incident and process identity for delta validation.
 The final harness must retain the returned raw bytes and runtime snapshots before
 qualification; this adapter does not itself publish a scenario result.
@@ -273,3 +274,17 @@ before final evidence persistence; a failed write, failed final observation or
 failed receipt/latch operation leaves the experiment blocked for inspection.
 Fixture tests exercise normal execution, rejected and ambiguous writes, cancelled
 observations, foreign states and failed restoration. Live qualification is pending.
+
+Trace acquisition rechecks actual wall time after waiting for the twelve-second
+export offset. The first live CPU attempt found two intervals slightly short of
+that boundary after a single requested sleep. The observer now performs bounded
+additional waits and rejects stalled or reversed clocks. Source acceptance still
+requires the full offset; the failed attempt and its verified cleanup are retained.
+
+CPU acquisition plan v2 also binds each kernel interval to its matching payments
+SERVER span and requires completion before the first CLIENT dependency span.
+Those timestamps share the container clock, so this check needs no cross-host
+tolerance. The second live attempt exposed a 3.7ms container/host offset; it remains
+unqualified with verified cleanup. Diagnostic replay verifies its three control
+records under the revised clock rules, but does not retroactively qualify that
+attempt. Work counts, quota treatments and performance thresholds are unchanged.

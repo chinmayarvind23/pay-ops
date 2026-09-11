@@ -10,7 +10,11 @@ from test_sampling_harness import Clock, SamplingCluster
 from payops.evidence.artifacts import ArtifactStore
 from payops.scenarios.contracts import object_value
 from payops.scenarios.cpu_contract import CpuStage
-from payops.scenarios.cpu_observer import RuntimeCpuObserver, verify_observation
+from payops.scenarios.cpu_observer import (
+    RuntimeCpuObserver,
+    verify_local_interval,
+    verify_observation,
+)
 from payops.scenarios.cpu_sources import CpuGateway
 from payops.scenarios.protocol_gateway import protocol_identities
 from payops.scenarios.protocol_observation import ProtocolObservation
@@ -64,6 +68,20 @@ def test_runtime_adapter_retains_three_sources(
     assert actual == expected
     records = verify_observation(stage, actual, store)
     assert len(records) == (3 if stage == "control" else 0)
+    if records:
+        record = records[0]
+        with pytest.raises(ValueError, match="pre-dependency"):
+            verify_local_interval(
+                record.model_copy(
+                    update={
+                        "after": record.after.model_copy(
+                            update={"completed_at": actual.paths[0].probe.completed_at}
+                        )
+                    }
+                ),
+                actual.paths[0],
+                store,
+            )
     for index, raw in enumerate(expected.logs):
         assert (tmp_path / stage / str(index) / "cpu.log").read_bytes() == raw.encode()
     with pytest.raises(ValueError):

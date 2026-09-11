@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Protocol
 
 from payops.evidence.artifacts import ArtifactStore
-from payops.evidence.trace_span import Immutable, PodIdentity
+from payops.evidence.trace_span import Immutable, PodIdentity, verify_trace_log
 from payops.scenarios.contracts import JsonObject
 from payops.scenarios.cpu_contract import PLAN, CpuStage
 from payops.scenarios.cpu_sources import CpuGateway, CpuRecord, select_record
@@ -37,6 +37,28 @@ class CpuObserver(Protocol):
         ...
 
 
+def verify_local_interval(
+    record: CpuRecord, path: ProtocolObservation, store: ArtifactStore
+) -> None:
+    """Container-local span clocks bind CPU work before peer calls without host clock skew."""
+    spans = [
+        item.span
+        for source in path.capture.sources
+        for item in verify_trace_log(source, store).parsed.spans
+        if item.span.trace_id == "0x" + path.probe.traceparent.split("-")[1]
+    ]
+    server = next(span for span in spans if span.name == "sandbox.payments")
+    calls = [span.start_time for span in spans if span.name.startswith("sandbox.call.")]
+    if (
+        not server.start_time
+        <= record.before.started_at
+        <= record.after.completed_at
+        <= min(calls)
+        <= server.end_time
+    ):
+        raise ValueError("CPU interval lies outside its local pre-dependency span")
+
+
 def verify_observation(
     stage: CpuStage, observed: CpuObservation, store: ArtifactStore
 ) -> tuple[CpuRecord, ...]:
@@ -51,9 +73,9 @@ def verify_observation(
                 raise ValueError("disabled CPU stage unexpectedly supplied kernel work")
         else:
             probe = path.probe
-            records.append(
-                select_record(raw.encode(), probe.sample, probe.started_at, probe.completed_at)
-            )
+            record = select_record(raw.encode(), probe.sample, probe.started_at, probe.completed_at)
+            verify_local_interval(record, path, store)
+            records.append(record)
     return tuple(records)
 
 

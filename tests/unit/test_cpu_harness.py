@@ -52,8 +52,27 @@ def path_fixture(
     sources: list[EvidenceItem] = []
     for item in path.capture.sources:
         log = verify_trace_log(item, store)
+        records = tuple(
+            record.model_copy(
+                update={
+                    "span": record.span.model_copy(
+                        update={
+                            "start_time": path.probe.started_at
+                            + timedelta(
+                                seconds=0 if record.span.name == "sandbox.payments" else 2.1
+                            ),
+                            "end_time": path.probe.started_at + timedelta(seconds=2.5),
+                        }
+                    ),
+                    "log_start": path.probe.started_at + timedelta(seconds=4),
+                    "log_end": path.probe.started_at + timedelta(seconds=4),
+                }
+            )
+            for record in log.parsed.spans
+        )
         log = log.model_copy(
             update={
+                "parsed": log.parsed.model_copy(update={"spans": records}),
                 "scope": log.scope.model_copy(update={"end": log.scope.end + timedelta(seconds=2)}),
                 "captured_start": log.captured_start + timedelta(seconds=2),
                 "captured_end": log.captured_end + timedelta(seconds=2),

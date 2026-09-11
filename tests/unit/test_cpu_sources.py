@@ -47,6 +47,15 @@ def test_known_request_projects_actual_counter_difference() -> None:
     )
     assert actual == record
     assert record_delta(actual, "incident", pair()[0].identity).usage_usec == 200000
+    assert (
+        select_record(
+            raw,
+            Sample(sample_id=record.sample_id),
+            record.before.started_at + timedelta(milliseconds=4),
+            record.after.completed_at,
+        )
+        == record
+    )
 
 
 @pytest.mark.parametrize(
@@ -66,7 +75,7 @@ def test_unusable_source_cannot_qualify(fault: str) -> None:
     elif fault == "lines":
         raw = b"\n" * 2000
     elif fault == "stale":
-        start += timedelta(milliseconds=1)
+        start += timedelta(seconds=1.01)
     elif fault == "duration":
         raw = raw.replace(b'"wall_seconds":1.9', b'"wall_seconds":4.9')
     elif fault == "cpu":

@@ -19,7 +19,7 @@ CpuStage = Literal["original", "control", "restricted", "recovered", "final"]
 class CpuPlan(Immutable):
     """Changing acquisition or qualification thresholds requires a reviewed source revision."""
 
-    version: Literal["cpu-quota-v1"] = "cpu-quota-v1"
+    version: Literal["cpu-quota-v2"] = "cpu-quota-v2"
     rounds: Literal[50000] = 50000
     samples_per_stage: Literal[3] = 3
     request_timeout_seconds: Literal[5] = 5

@@ -1,6 +1,6 @@
 """Correlate retained kernel records with one verified payments process and request."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal
 
 from pydantic import Field
@@ -10,6 +10,7 @@ from payops.sandbox.cpu_observation import KernelSnapshot
 from payops.sandbox.models import Sample
 from payops.scenarios.contracts import JsonObject
 from payops.scenarios.cpu_counters import CpuDelta, CpuSnapshot, delta
+from payops.scenarios.protocol_contract import PLAN as TRACE_PLAN
 from payops.scenarios.protocol_gateway import protocol_identities
 from payops.scenarios.sampling_gateway import SamplingGateway
 from payops.tools.traces import bounded_read
@@ -44,7 +45,14 @@ def select_record(raw: bytes, sample: Sample, start: datetime, end: datetime) ->
         if record.sample_id != sample.sample_id:
             continue
         occurred = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
-        if not start <= record.before.started_at <= record.after.completed_at <= occurred <= end:
+        tolerance = timedelta(seconds=TRACE_PLAN.clock_tolerance_seconds)
+        if (
+            not start - tolerance
+            <= record.before.started_at
+            <= record.after.completed_at
+            <= occurred
+            <= end + tolerance
+        ):
             raise ValueError("CPU completion is outside its request window")
         gap = (record.after.started_at - record.before.completed_at).total_seconds()
         if (
