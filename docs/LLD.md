@@ -715,3 +715,19 @@ A full256-attempt HpaLoadDriver test also verified complete plan/receipt output 
 the existing256KiB log bound and closes its client. These are intercepted-transport
 checks, not a live autoscaling result. No HPA or Job was created in this increment;
 qualification remains17/24.
+
+The HPA gateway passed a real idle-cluster smoke test from frozen ea5c06f.
+It created the one-replica cap, replaced it with the exact two-replica cap, and
+attempted deletion with the earlier resourceVersion. Kubernetes rejected that
+request with Conflict: expected52684 versus current52687. Deletion with current
+UID/version preconditions then succeeded. The HPA was confirmed absent, all five
+original service identities/specs remained unchanged, and the canonical latch was
+released. No load Job ran and no autoscaling fault is qualified by this check.
+
+Separate evidence review checked ten hashes, matching UID across cap changes and
+exact specs for both caps. Evidence:
+audit/evidence/hpa-gateway-smoke/b1c82bed78fc45a8a9d868f3bfef9326.
+This verifies actual kubectl stdin/raw-DELETE behavior in addition to intercepted
+unit tests. The next lifecycle work must support two owned payments pods while
+preserving peer identities and separately accounting for the bounded load Job.
+Qualification remains17/24.
