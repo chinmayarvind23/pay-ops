@@ -1,0 +1,554 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payments-api
+  namespace: payops-sandbox
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: payops-sandbox
+  labels:
+    app.kubernetes.io/name: payments-api
+    app.kubernetes.io/part-of: payops
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payments-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: payments-api
+        app.kubernetes.io/part-of: payops
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: payments-api
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox
+          image: payops-sandbox:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYOPS_SANDBOX_ROLE
+              value: payments
+            - name: PAYOPS_SANDBOX_CONFIG
+              value: '{"risk_url":"http://risk-sim.payops-sandbox.svc.cluster.local:8080","processor_url":"http://processor-adapter.payops-sandbox.svc.cluster.local:8080","ledger_url":"http://ledger-sim.payops-sandbox.svc.cluster.local:8080","webhook_url":"http://webhook-sim.payops-sandbox.svc.cluster.local:8080"}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+              ephemeral-storage: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-api
+  namespace: payops-sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: payments-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: risk-sim
+  namespace: payops-sandbox
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: risk-sim
+  namespace: payops-sandbox
+  labels:
+    app.kubernetes.io/name: risk-sim
+    app.kubernetes.io/part-of: payops
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: risk-sim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: risk-sim
+        app.kubernetes.io/part-of: payops
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: risk-sim
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox
+          image: payops-sandbox:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYOPS_SANDBOX_ROLE
+              value: risk
+            - name: PAYOPS_SANDBOX_CONFIG
+              value: '{"risk_url":"http://risk-sim.payops-sandbox.svc.cluster.local:8080","processor_url":"http://processor-adapter.payops-sandbox.svc.cluster.local:8080","ledger_url":"http://ledger-sim.payops-sandbox.svc.cluster.local:8080","webhook_url":"http://webhook-sim.payops-sandbox.svc.cluster.local:8080"}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+              ephemeral-storage: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: risk-sim
+  namespace: payops-sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: risk-sim
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ledger-sim
+  namespace: payops-sandbox
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger-sim
+  namespace: payops-sandbox
+  labels:
+    app.kubernetes.io/name: ledger-sim
+    app.kubernetes.io/part-of: payops
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ledger-sim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ledger-sim
+        app.kubernetes.io/part-of: payops
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: ledger-sim
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox
+          image: payops-sandbox:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYOPS_SANDBOX_ROLE
+              value: ledger
+            - name: PAYOPS_SANDBOX_CONFIG
+              value: '{"risk_url":"http://risk-sim.payops-sandbox.svc.cluster.local:8080","processor_url":"http://processor-adapter.payops-sandbox.svc.cluster.local:8080","ledger_url":"http://ledger-sim.payops-sandbox.svc.cluster.local:8080","webhook_url":"http://webhook-sim.payops-sandbox.svc.cluster.local:8080"}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+              ephemeral-storage: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-sim
+  namespace: payops-sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ledger-sim
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: processor-adapter
+  namespace: payops-sandbox
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processor-adapter
+  namespace: payops-sandbox
+  labels:
+    app.kubernetes.io/name: processor-adapter
+    app.kubernetes.io/part-of: payops
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: processor-adapter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: processor-adapter
+        app.kubernetes.io/part-of: payops
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: processor-adapter
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox
+          image: payops-sandbox:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYOPS_SANDBOX_ROLE
+              value: processor
+            - name: PAYOPS_SANDBOX_CONFIG
+              value: '{"risk_url":"http://risk-sim.payops-sandbox.svc.cluster.local:8080","processor_url":"http://processor-adapter.payops-sandbox.svc.cluster.local:8080","ledger_url":"http://ledger-sim.payops-sandbox.svc.cluster.local:8080","webhook_url":"http://webhook-sim.payops-sandbox.svc.cluster.local:8080"}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+              ephemeral-storage: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: processor-adapter
+  namespace: payops-sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: processor-adapter
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook-sim
+  namespace: payops-sandbox
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-sim
+  namespace: payops-sandbox
+  labels:
+    app.kubernetes.io/name: webhook-sim
+    app.kubernetes.io/part-of: payops
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webhook-sim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webhook-sim
+        app.kubernetes.io/part-of: payops
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: webhook-sim
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sandbox
+          image: payops-sandbox:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYOPS_SANDBOX_ROLE
+              value: webhook
+            - name: PAYOPS_SANDBOX_CONFIG
+              value: '{"risk_url":"http://risk-sim.payops-sandbox.svc.cluster.local:8080","processor_url":"http://processor-adapter.payops-sandbox.svc.cluster.local:8080","ledger_url":"http://ledger-sim.payops-sandbox.svc.cluster.local:8080","webhook_url":"http://webhook-sim.payops-sandbox.svc.cluster.local:8080"}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+              ephemeral-storage: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-sim
+  namespace: payops-sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webhook-sim
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
