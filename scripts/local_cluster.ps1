@@ -25,9 +25,19 @@ if ($Action -ne 'Build' -and -not (Test-Path -LiteralPath $kindPath)) {
 function Invoke-CheckedTool {
     <# Native tools must fail the task instead of allowing a later command to hide failure. #>
     param([string]$Executable, [string[]]$ToolArguments)
-    & $Executable @ToolArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Executable failed with exit code $LASTEXITCODE"
+    $application = Get-Command -Name $Executable -CommandType Application -ErrorAction Stop
+    # Windows PowerShell turns redirected informational stderr into ErrorRecords.
+    # Preserve that output, but use the native exit code as the success boundary.
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $application.Source @ToolArguments
+        $nativeExitCode = $global:LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+    if ($nativeExitCode -ne 0) {
+        throw "$Executable failed with exit code $nativeExitCode"
     }
 }
 
