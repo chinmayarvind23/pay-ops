@@ -1,4 +1,4 @@
-version: 1
+version: 2
 scenario_count: 24
 scenarios:
 - scenario_id: OOM-01
@@ -7,141 +7,192 @@ scenarios:
   gold_root_cause: payments-api container memory limit below peak working set
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: MEMORY_LIMIT_BELOW_WORKING_SET
+  observation_condition: null
 - scenario_id: OOM-02
   group: resource
   title: risk-sim memory leak
   gold_root_cause: risk-sim steadily leaks memory until repeated OOM termination
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: MEMORY_LEAK
+  observation_condition: null
 - scenario_id: OOM-03
   group: resource
   title: payments-api CPU throttling
   gold_root_cause: CPU limit causes sustained throttling under synthetic load
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: CPU_THROTTLING
+  observation_condition: null
 - scenario_id: OOM-04
   group: resource
   title: pod pressure from excessive concurrency
   gold_root_cause: synthetic concurrency exhausts pod resources
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: CONCURRENCY_MEMORY_PRESSURE
+  observation_condition: null
 - scenario_id: ROLLOUT-01
   group: rollout
   title: bad image CrashLoopBackOff
   gold_root_cause: new payments-api image exits on startup
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: STARTUP_FAILURE
+  observation_condition: null
 - scenario_id: ROLLOUT-02
   group: rollout
   title: missing environment variable
   gold_root_cause: new deployment omits required PROCESSOR_URL
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: INVALID_CONFIGURATION
+  observation_condition: null
 - scenario_id: ROLLOUT-03
   group: rollout
   title: readiness probe regression
   gold_root_cause: probe path changes while Deployment probe remains stale
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: READINESS_PROBE_FAILURE
+  observation_condition: null
 - scenario_id: ROLLOUT-04
   group: rollout
   title: config/schema incompatibility
   gold_root_cause: payments-api and risk-sim revisions are incompatible
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROTOCOL_INCOMPATIBILITY
+  observation_condition: null
 - scenario_id: SCHED-01
   group: scheduler
   title: unschedulable pods from CPU requests
   gold_root_cause: new replicas request more CPU than nodes provide
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: INSUFFICIENT_CPU_REQUEST_CAPACITY
+  observation_condition: null
 - scenario_id: SCHED-02
   group: scheduler
   title: insufficient node memory
   gold_root_cause: pending pods cannot fit node memory requests
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: INSUFFICIENT_MEMORY_REQUEST_CAPACITY
+  observation_condition: null
 - scenario_id: SCHED-03
   group: scheduler
   title: HPA maxed during payment queue surge
   gold_root_cause: traffic exceeds declared max replicas
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: AUTOSCALING_MAX_REPLICAS
+  observation_condition: null
 - scenario_id: SCHED-04
   group: scheduler
   title: node pressure eviction
   gold_root_cause: node pressure evicts payment workload
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: NODE_PRESSURE_EVICTION
+  observation_condition: null
 - scenario_id: DEP-01
   group: dependency
   title: Lightsail processor hard outage
   gold_root_cause: external processor simulator is unreachable
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROCESSOR_UNAVAILABLE
+  observation_condition: null
 - scenario_id: DEP-02
   group: dependency
   title: Lightsail processor latency and rate limit
   gold_root_cause: external simulator adds latency and 429s
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROCESSOR_LATENCY_RATE_LIMIT
+  observation_condition: null
 - scenario_id: DEP-03
   group: dependency
   title: Cloud SQL connection exhaustion
   gold_root_cause: synthetic pool configuration exhausts DB connections
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: DATABASE_CONNECTION_EXHAUSTION
+  observation_condition: null
 - scenario_id: DEP-04
   group: dependency
   title: Redis/Memorystore degradation
   gold_root_cause: ephemeral cache dependency becomes slow/unavailable
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: CACHE_UNAVAILABLE
+  observation_condition: null
 - scenario_id: TELEM-01
   group: misleading_telemetry
   title: unrelated CPU spike distractor
-  gold_root_cause: CPU spike is unrelated while processor outage is causal
+  gold_root_cause: processor is unavailable while an unrelated service consumes CPU
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROCESSOR_UNAVAILABLE
+  observation_condition: UNRELATED_CPU_NOISE
 - scenario_id: TELEM-02
   group: misleading_telemetry
   title: stale sidecar error-log distractor
-  gold_root_cause: old sidecar error text appears but is not causal
+  gold_root_cause: actual synthetic cache dependency is unavailable while an archived
+    sidecar error distracts
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: CACHE_UNAVAILABLE
+  observation_condition: ARCHIVED_ERROR_DISTRACTOR
 - scenario_id: TELEM-03
   group: misleading_telemetry
   title: trace sampling gap
-  gold_root_cause: critical span is missing because of sampling
+  gold_root_cause: processor latency remains elevated while sampling suppresses its
+    spans
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROCESSOR_LATENCY
+  observation_condition: TRACE_SAMPLING_GAP
 - scenario_id: TELEM-04
   group: misleading_telemetry
   title: delayed metrics point at victim
-  gold_root_cause: metrics lag while earlier logs show the cause
+  gold_root_cause: actual database connection capacity is exhausted while metrics
+    arrive late
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: DATABASE_CONNECTION_EXHAUSTION
+  observation_condition: DELAYED_METRICS
 - scenario_id: PAY-01
   group: payment_slice
   title: processor-specific approval-rate drop
   gold_root_cause: only processor B has elevated declines
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: PROCESSOR_SPECIFIC_DECLINES
+  observation_condition: null
 - scenario_id: PAY-02
   group: payment_slice
   title: region-specific latency spike
   gold_root_cause: one synthetic region has processor latency
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: REGION_SPECIFIC_LATENCY
+  observation_condition: null
 - scenario_id: PAY-03
   group: payment_slice
   title: payment-method-specific decline surge
   gold_root_cause: debit synthetic traffic has elevated declines
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: METHOD_SPECIFIC_DECLINES
+  observation_condition: null
 - scenario_id: PAY-04
   group: payment_slice
   title: duplicate webhook idempotency conflict
   gold_root_cause: webhook retries create idempotency conflicts
   requires_cleanup: true
   real_payment_access: false
+  primary_cause_code: WEBHOOK_IDEMPOTENCY_CONFLICT
+  observation_condition: null

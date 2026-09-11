@@ -1,0 +1,91 @@
+{
+  "version": 2,
+  "primary_causes": {
+    "OOM-01": [
+      "MEMORY_LIMIT_BELOW_WORKING_SET"
+    ],
+    "OOM-02": [
+      "MEMORY_LEAK"
+    ],
+    "OOM-03": [
+      "CPU_THROTTLING"
+    ],
+    "OOM-04": [
+      "CONCURRENCY_MEMORY_PRESSURE"
+    ],
+    "ROLLOUT-01": [
+      "STARTUP_FAILURE"
+    ],
+    "ROLLOUT-02": [
+      "INVALID_CONFIGURATION"
+    ],
+    "ROLLOUT-03": [
+      "READINESS_PROBE_FAILURE"
+    ],
+    "ROLLOUT-04": [
+      "PROTOCOL_INCOMPATIBILITY"
+    ],
+    "SCHED-01": [
+      "INSUFFICIENT_CPU_REQUEST_CAPACITY"
+    ],
+    "SCHED-02": [
+      "INSUFFICIENT_MEMORY_REQUEST_CAPACITY"
+    ],
+    "SCHED-03": [
+      "AUTOSCALING_MAX_REPLICAS"
+    ],
+    "SCHED-04": [
+      "NODE_PRESSURE_EVICTION"
+    ],
+    "DEP-01": [
+      "PROCESSOR_UNAVAILABLE"
+    ],
+    "DEP-02": [
+      "PROCESSOR_LATENCY_RATE_LIMIT"
+    ],
+    "DEP-03": [
+      "DATABASE_CONNECTION_EXHAUSTION"
+    ],
+    "DEP-04": [
+      "CACHE_UNAVAILABLE"
+    ],
+    "TELEM-01": [
+      "PROCESSOR_UNAVAILABLE"
+    ],
+    "TELEM-02": [
+      "CACHE_UNAVAILABLE"
+    ],
+    "TELEM-03": [
+      "PROCESSOR_LATENCY"
+    ],
+    "TELEM-04": [
+      "DATABASE_CONNECTION_EXHAUSTION"
+    ],
+    "PAY-01": [
+      "PROCESSOR_SPECIFIC_DECLINES"
+    ],
+    "PAY-02": [
+      "REGION_SPECIFIC_LATENCY"
+    ],
+    "PAY-03": [
+      "METHOD_SPECIFIC_DECLINES"
+    ],
+    "PAY-04": [
+      "WEBHOOK_IDEMPOTENCY_CONFLICT"
+    ]
+  },
+  "observation_conditions": {
+    "TELEM-01": [
+      "UNRELATED_CPU_NOISE"
+    ],
+    "TELEM-02": [
+      "ARCHIVED_ERROR_DISTRACTOR"
+    ],
+    "TELEM-03": [
+      "TRACE_SAMPLING_GAP"
+    ],
+    "TELEM-04": [
+      "DELAYED_METRICS"
+    ]
+  }
+}
