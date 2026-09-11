@@ -683,3 +683,21 @@ branch coverage, strict typing and lint. The worker has not yet been built into 
 Job image or used for HPA qualification. Actual distribution across both scaled
 pods must be checked from their traffic/CPU sources, not assumed from client
 connection settings. Source: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_port-forward/
+
+SCHED-03 load Job configuration is now fixed: one completion, one pod, no retries,
+Never restart policy, 210-second active deadline and5-second termination grace.
+The pod uses the existing unprivileged service account with token automount disabled,
+nonroot UID/GID1000, RuntimeDefault seccomp, no added capabilities or privilege
+escalation, read-only root filesystem and a16Mi temporary volume. Requests are
+100mCPU/96Mi memory; limits500m/256Mi. Only a validated32hex run identity varies;
+image, command and destination remain fixed. Six tests, strict typing and lint
+passed; Kubernetes server-side dry run accepted the complete Job.
+
+Built the worker from frozen c0b1792 with locked dependencies. The Docker index is
+a0fa016b73f294534a9aea91b3ce3a74d079f4b0292e4319c8e9f58df549b2e7;
+config24ed386d554d1f756832a5b2610c30872c0446ca823784d33ad21ec8a2041f49.
+Both kind nodes imported manifest8addf3e215722e4eb8606bcc8a30d97faa5a36ba4b1f219020e890f09f1882d6
+with that same config. An isolated network-none inspection matched installed worker
+and TrafficDriver hashes to frozen source and confirmed256requests/4concurrency.
+Raw image inspections are in audit/evidence/hpa-load-image. No Job or HPA has run
+in the cluster yet; qualification remains17/24.
