@@ -1,0 +1,81 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EVIDENCE_DIR: ${{ github.workspace }}/../payops-quality
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc # v6.4.3
+        with:
+          version: "0.8.4"
+          python-version: "3.12.11"
+          enable-cache: true
+      - name: Install locked dependencies and test-only kubectl
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR" "$RUNNER_TEMP/payops-bin"
+          uv sync --locked --group dev
+          curl --fail --silent --show-error --location https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl -o "$RUNNER_TEMP/payops-bin/kubectl"
+          curl --fail --silent --show-error --location https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl.sha256 -o "$RUNNER_TEMP/payops-bin/kubectl.sha256"
+          cd "$RUNNER_TEMP/payops-bin"
+          printf '%s  kubectl\n' "$(cat kubectl.sha256)" | sha256sum --check
+          chmod +x kubectl
+          echo "$RUNNER_TEMP/payops-bin" >> "$GITHUB_PATH"
+      - name: Record source and environment
+        shell: bash
+        run: |
+          git rev-parse HEAD > "$EVIDENCE_DIR/commit.txt"
+          git status --porcelain > "$EVIDENCE_DIR/worktree.txt"
+          sha256sum uv.lock > "$EVIDENCE_DIR/lock.sha256"
+          uv --version > "$EVIDENCE_DIR/uv.txt"
+          uv run --locked python --version > "$EVIDENCE_DIR/python.txt"
+          kubectl version --client -o json > "$EVIDENCE_DIR/kubectl.json"
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: uv run --locked ruff check . 2>&1 | tee "$EVIDENCE_DIR/ruff.txt"
+      - name: Strict types
+        if: ${{ !cancelled() }}
+        run: uv run --locked pyright 2>&1 | tee "$EVIDENCE_DIR/pyright.txt"
+      - name: Tests and branch coverage
+        if: ${{ !cancelled() }}
+        run: >-
+          uv run --locked pytest --cov=payops --cov-branch
+          --cov-report=term-missing --cov-report=json:"$EVIDENCE_DIR/coverage.json"
+          --junitxml="$EVIDENCE_DIR/tests.xml" 2>&1 | tee "$EVIDENCE_DIR/pytest.txt"
+      - name: Per-module coverage floors
+        if: ${{ !cancelled() }}
+        run: uv run --locked python scripts/coverage_gate.py "$EVIDENCE_DIR/coverage.json" --output "$EVIDENCE_DIR/coverage-gate.json"
+      - name: Enumerated semantic mutants
+        if: ${{ !cancelled() }}
+        run: uv run --locked python scripts/mutation_check.py --output "$EVIDENCE_DIR/mutations" 2>&1 | tee "$EVIDENCE_DIR/mutations.txt"
+      - name: Retain verification evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: quality-${{ github.sha }}
+          path: ${{ env.EVIDENCE_DIR }}
+          retention-days: 14
+          if-no-files-found: error
