@@ -78,3 +78,10 @@ flowchart LR
 **Safety plane:** capabilities, deterministic policy, approval, and executor identity.
 
 **Public presentation plane:** Vercel and Hugging Face surfaces with sanitized or authorized views.
+
+The concurrency-memory experiment isolates each traffic stage in a fresh payments
+process. It restores the captured deployment between stages and reapplies the same
+worker configuration. This adds rollout time to the operator experiment but keeps
+memory attribution independent across serial control, parallel treatment and serial
+recovery. Experiment duration is not agent investigation latency. Live qualification
+still requires raw evidence review and verified final restoration.

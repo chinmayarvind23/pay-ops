@@ -571,3 +571,27 @@ caller must verify the worker against the pinned import manifest before supplyin
 this expectation. Four new transport/isolation tests plus existing leak, sampling,
 protocol and CPU observer regressions passed (57 tests); strict typing and lint
 passed. This implements acquisition dependencies, not live OOM-04 qualification.
+
+OOM-04 now has ConcurrencyHarness: capture the five-service baseline, journal the
+original and enabled specs, then run control/parallel/recovered stages. Each stage
+starts from the exact original, applies the same enabled spec, proves a newly owned
+process, and sends eight fresh payments. Full restoration and an accepted payment
+separate stages. This deliberate reset keeps current/previous memory logs free of
+earlier batches while holding the enabled image and quotas identical. Cross-stage
+sample IDs and process IDs must be distinct. All unchanged peer identities are
+checked against the initial baseline.
+
+Serial stages require complete memory lifecycles and unchanged healthy processes
+before and after log capture. Parallel traffic executes once; only kubelet evidence
+is polled afterward. The investigation callback follows verified OOM and precedes
+restoration. A failed recovery stage leaves a failure receipt even if the earlier
+OOM activated. Original restoration runs in finally, before audit writes, and an
+unknown UID/spec blocks overwrite. Cleanup or receipt persistence failures retain
+the shared cluster latch. Driver plans and receipts are copied into hashed stage
+artifacts alongside raw Kubernetes snapshots and logs. No model-facing mutation
+capability is added.
+
+Fifteen harness tests include actual owned-state, traffic and memory/OOM validators,
+plus substituted transport and stage failures. Harness statement/branch coverage
+is 87%; 75 related tests, strict typing and lint passed. These are offline tests;
+the frozen live run and independent artifact review remain pending (16/24).
