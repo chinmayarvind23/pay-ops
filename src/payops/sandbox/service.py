@@ -49,7 +49,7 @@ async def execute_sample(
     """Apply trusted fault state before executing the role's bounded simulation."""
     declined = await faults.apply(sample)
     if not declined and config.cpu_rounds:
-        consumed = await cpu.run()
+        consumed = await cpu.run(sample.sample_id)
         trace.get_current_span().set_attribute("sandbox.cpu.rounds", config.cpu_rounds)
         trace.get_current_span().set_attribute("sandbox.cpu.thread_seconds", consumed)
     if role == "payments" and not declined:
@@ -94,7 +94,7 @@ def create_service(
     fault_state = faults or FaultState()
     store = SampleStore(settings.idempotency_capacity)
     metrics = SandboxMetrics()
-    cpu = CpuWork(settings.cpu_rounds)
+    cpu = CpuWork(settings.cpu_rounds, settings.cpu_capture)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:

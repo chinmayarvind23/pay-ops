@@ -99,10 +99,13 @@ class SandboxConfig(BaseModel):
     idempotency_capacity: int = Field(default=10000, ge=1, le=100000)
     risk_protocol: RiskProtocol = "v1"
     cpu_rounds: int = Field(default=0, ge=0, le=200000)
+    cpu_capture: bool = False
 
     @model_validator(mode="after")
     def validate_origins(self) -> Self:
         """Validate all peers at startup so later requests use immutable safe origins."""
+        if self.cpu_capture and not self.cpu_rounds:
+            raise ValueError("CPU capture requires enabled work")
         for url in (self.risk_url, self.processor_url, self.ledger_url, self.webhook_url):
             if not allowed_destination(url, self.explicit_synthetic_hosts):
                 raise ValueError("destination must be an approved synthetic service origin")

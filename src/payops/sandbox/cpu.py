@@ -8,6 +8,8 @@ from time import monotonic, thread_time
 
 from fastapi import HTTPException
 
+from payops.sandbox.cpu_observation import observed_work
+
 
 def hash_work(rounds: int) -> float:
     """Fixed rounds bound allocation; a cooperative wall deadline bounds throttled work."""
@@ -23,26 +25,33 @@ def hash_work(rounds: int) -> float:
 class CpuWork:
     """One admitted worker per service; cancellation cannot free a still-running slot."""
 
-    def __init__(self, rounds: int) -> None:
+    def __init__(self, rounds: int, capture: bool = False) -> None:
         """Zero disables this optional deployment control without creating a worker pool."""
         if type(rounds) is not int or not 0 <= rounds <= 200000:
             raise ValueError("CPU rounds outside bounded deployment profile")
+        if type(capture) is not bool or (capture and not rounds):
+            raise ValueError("CPU capture requires enabled work")
         self.rounds = rounds
+        self.capture = capture
         self.lock = Lock()
         self.busy, self.closed = False, False
         self.pool = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="payops-cpu") if rounds else None
         )
 
-    def _execute(self) -> float:
+    def _execute(self, sample_id: str | None) -> float:
         """The actual worker owns admission until it exits, including late completion."""
         try:
+            if self.capture:
+                if sample_id is None:
+                    raise ValueError("CPU capture requires a sample identity")
+                return observed_work(sample_id, self.rounds, hash_work)
             return hash_work(self.rounds)
         finally:
             with self.lock:
                 self.busy = False
 
-    async def run(self) -> float:
+    async def run(self, sample_id: str | None = None) -> float:
         """Reject excess concurrent work immediately; never enqueue synthetic CPU pressure."""
         with self.lock:
             if self.closed or self.busy:
@@ -51,7 +60,7 @@ class CpuWork:
                 return 0.0
             self.busy = True
             try:
-                future = self.pool.submit(self._execute)
+                future = self.pool.submit(self._execute, sample_id)
             except BaseException:
                 self.busy = False
                 raise

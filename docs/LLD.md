@@ -220,3 +220,18 @@ The remaining CPU scenario collector must establish ownership around acquisition
 and retain the original sources. Qualification must compare restricted execution
 with the same workload at the normal quota, since calibration found throttling at
 both quotas. Neither this validator nor the calibration qualifies OOM-03.
+
+`sandbox.cpu_observation` now acquires the two fixed cgroup files inside the
+admitted worker when deployment configuration sets `cpu_capture=true`. Capture
+requires nonzero CPU rounds. Reads are capped at 4096 bytes and must finish within
+two seconds. One JSON stdout record contains the sample ID, raw before/after files,
+UTC acquisition timestamps, work wall time and worker thread CPU time. Failed work
+emits no completion record; replay performs neither work nor capture. The HTTP
+schema cannot enable capture or choose paths. Missing cgroup-v2 files fail capture.
+
+The record deliberately contains no self-reported Pod identity. The scenario
+collector must acquire it through bounded logs from a verified current container
+and check ownership and restart state around collection. Counter deltas cover the
+whole container, including background activity; thread CPU time covers the hash
+worker. The two are retained separately. A local three-request container check
+verified real file acquisition at 500m; Kubernetes qualification remains pending.
