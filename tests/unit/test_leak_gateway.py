@@ -1,6 +1,7 @@
 """Fixed argv, byte caps and exact counterfactual specs for the risk retention experiment."""
 
 import json
+import sys
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
@@ -114,8 +115,25 @@ def test_snapshot_count_and_api_byte_caps(tmp_path: Path) -> None:
     ):
         with pytest.raises(ValueError):
             adapter.snapshot()
-    with patch("payops.scenarios.leak_gateway.bounded_read", return_value=b"x" * 524288):
+    with patch("payops.scenarios.leak_gateway.bounded_read", return_value=b"x" * 262144):
         with pytest.raises(ValueError):
             adapter.deployment("risk-sim")
     with patch("payops.scenarios.leak_gateway.bounded_read", return_value=b'{"metadata":{}}'):
         assert adapter.deployment("risk-sim") == {"metadata": {}}
+
+
+class ProcessGateway(LeakGateway):
+    """Exercise the real subprocess reader with an inert JSON producer instead of Kubernetes."""
+
+    def __init__(self) -> None:
+        """Substitute an inert producer only in this test adapter."""
+        self._prefix = (
+            sys.executable,
+            "-c",
+            'import json; print(json.dumps({"metadata": {}}))',
+        )
+
+
+def test_api_budget_matches_real_subprocess_reader() -> None:
+    """An API read must satisfy the shared reader's actual bounds before it can reach kubectl."""
+    assert ProcessGateway().deployment("risk-sim") == {"metadata": {}}

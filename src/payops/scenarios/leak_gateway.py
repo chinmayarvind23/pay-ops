@@ -22,8 +22,8 @@ class LeakGateway(SamplingGateway):
 
     def _json(self, args: tuple[str, ...]) -> JsonObject:
         """Cap API bytes as well as parsed object counts, including inherited scope reads."""
-        raw = bounded_read((*self._prefix, *args, "-o", "json"), 524288, 12)
-        if len(raw) >= 524288:
+        raw = bounded_read((*self._prefix, *args, "-o", "json"), 262144, 12)
+        if len(raw) >= 262144:
             raise ValueError("leak Kubernetes response is capped")
         return JSON_OBJECT.validate_json(raw)
 

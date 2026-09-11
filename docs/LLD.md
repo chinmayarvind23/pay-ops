@@ -395,7 +395,7 @@ itself qualify a Kubernetes case. Existing payments provenance defaults remain.
 OOM-02 now has a risk-only gateway with bounded JSON responses and current/previous
 container log reads. It retains raw text for storage before semantic validation;
 reaching a byte cap rejects rather than treating truncation as a complete capture.
-The API cap is512KiB, log cap256KiB/2000lines, and log window3minutes with12second
+The API cap is256KiB, log cap256KiB/2000lines, and log window3minutes with12second
 read deadlines. Pod names/namespace/UID are checked before requesting logs; the
 lifecycle caller remains responsible for before/after ownership validation.
 
@@ -426,3 +426,10 @@ final audit failure and final receipt failure. The focused suite passes84tests;
 harness statement/branch coverage is88%. A test-only60ms positive-control deadline
 was too short under coverage instrumentation and was raised to2seconds. Live
 stage bounds remain unchanged. These checks precede the first Kubernetes attempt.
+
+
+The first frozen OOM-02 attempt at bb4f85c stopped in scope preflight: the new
+512KiB API cap exceeded the shared subprocess reader's256KiB maximum. No workload
+mutation or latch occurred; final runtime/source verification passed. The adapter
+now uses256KiB and a real inert subprocess test verifies that interface contract.
+The failed attempt remains under chunk-11-leak/dfa8e9abd17b4a0f8f03e5a08cc49215.
