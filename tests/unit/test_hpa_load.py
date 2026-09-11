@@ -78,3 +78,41 @@ def test_main_emits_original_plan_and_receipt(
         assert called.distribution[0].count == 256 and called.concurrency == 4
     output = json.loads(capsys.readouterr().out)
     assert output["plan"] == plan and output["receipt"] == receipt.model_dump(mode="json")
+
+
+def test_complete_batch_fits_bounded_log_capture(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Exercise all 256 real driver attempts and measure the actual emitted evidence size."""
+    import json
+
+    from payops.scenarios.hpa_load import main
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        """Only the fixture transport fabricates responses; planning and receipts are real."""
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok", "role": "payments", "synthetic": True})
+        sample = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "sample_id": sample["sample_id"],
+                "role": "payments",
+                "status": "accepted",
+                "synthetic": True,
+            },
+        )
+
+    client = httpx.AsyncClient(base_url=ORIGIN, transport=httpx.MockTransport(respond))
+    with (
+        patch("payops.scenarios.hpa_load.guard"),
+        patch("payops.scenarios.hpa_load.OUTPUT", tmp_path / "batch"),
+        patch("payops.scenarios.hpa_load.httpx.AsyncClient", return_value=client),
+    ):
+        main()
+    raw = capsys.readouterr().out.encode()
+    assert len(raw) < 262144, f"Full Job receipt exceeds log reader limit: {len(raw)} bytes"
+    payload = json.loads(raw)
+    assert len(payload["plan"]["attempts"]) == len(payload["receipt"]["attempts"]) == 256
+    assert all(row["outcome"] == "accepted" for row in payload["receipt"]["attempts"])
+    assert client.is_closed

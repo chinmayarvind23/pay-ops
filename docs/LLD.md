@@ -701,3 +701,17 @@ with that same config. An isolated network-none inspection matched installed wor
 and TrafficDriver hashes to frozen source and confirmed256requests/4concurrency.
 Raw image inspections are in audit/evidence/hpa-load-image. No Job or HPA has run
 in the cluster yet; qualification remains17/24.
+
+SCHED-03 HpaGateway now provides create-only HPA/Job operations, bounded resource
+reads, cap replacement using the captured resourceVersion, and raw DELETE with
+UID/resourceVersion preconditions. Names, namespace, API versions and run labels
+are closed and validated. JSON writes use stdin rather than shell-interpreted
+arguments. Each write revalidates local cluster scope; unrecognized HPA specs and
+foreign ownership reject before mutation. Cleanup still requires lifecycle-level
+journaling, ambiguity recovery and terminal-state checks before releasing the latch.
+
+Nine gateway tests passed with97%statement/branch coverage; strict typing/lint pass.
+A full256-attempt HpaLoadDriver test also verified complete plan/receipt output fits
+the existing256KiB log bound and closes its client. These are intercepted-transport
+checks, not a live autoscaling result. No HPA or Job was created in this increment;
+qualification remains17/24.
