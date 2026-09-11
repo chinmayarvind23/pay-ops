@@ -251,9 +251,11 @@ CORE_MUTATIONS = (
         "graph_integrity_outcome",
         NODES,
         '                    terminal="SECURITY_BLOCK",\n'
-        '                    reasoning_stop_reason="SECURITY_BLOCK" if self.reasoner_factory else None,',
+        '                    reasoning_stop_reason="SECURITY_BLOCK" '
+        "if self.reasoner_factory else None,",
         '                    terminal="EVIDENCE_INSUFFICIENT",\n'
-        '                    reasoning_stop_reason="SECURITY_BLOCK" if self.reasoner_factory else None,',
+        '                    reasoning_stop_reason="SECURITY_BLOCK" '
+        "if self.reasoner_factory else None,",
         GRAPH_TESTS,
     ),
     Mutation(
