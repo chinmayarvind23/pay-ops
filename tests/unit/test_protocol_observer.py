@@ -32,6 +32,38 @@ class Body(httpx.AsyncByteStream):
         yield self.content
 
 
+def test_export_wait_rechecks_early_wakeup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A submillisecond-short wall interval must trigger another wait, not weaker acceptance."""
+    clock = Clock()
+    completed = clock.now()
+    observer = object.__new__(RuntimeProtocolObserver)
+    waits: list[float] = []
+
+    def sleep(seconds: float) -> None:
+        """Reproduce the measured short interval on the first requested sleep only."""
+        waits.append(seconds)
+        clock.value += timedelta(seconds=seconds - (0.000328 if len(waits) == 1 else 0))
+
+    monkeypatch.setattr(observer, "clock", clock.now, raising=False)
+    monkeypatch.setattr(observer, "sleep", sleep, raising=False)
+    assert observer.wait_export(completed) >= completed + timedelta(seconds=12)
+    assert waits == [12, 0.001]
+
+
+def test_export_wait_rejects_stalled_or_reversed_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Clock faults cannot create an unbounded wait or a fabricated capture timestamp."""
+    clock = Clock()
+    observer = object.__new__(RuntimeProtocolObserver)
+    waits: list[float] = []
+    monkeypatch.setattr(observer, "clock", clock.now, raising=False)
+    monkeypatch.setattr(observer, "sleep", waits.append, raising=False)
+    with pytest.raises(TimeoutError):
+        observer.wait_export(clock.now())
+    assert len(waits) == 8
+    with pytest.raises(ValueError, match="backwards"):
+        observer.wait_export(clock.now() + timedelta(seconds=1))
+
+
 @pytest.mark.parametrize("stage", ["original", "mismatch"])
 def test_http_capture_order_and_persisted_probe(tmp_path: Path, stage: ProtocolStage) -> None:
     """The acquisition adapter records actual status, sample, headers and source window."""

@@ -119,6 +119,19 @@ class RuntimeProtocolObserver:
         with scoped_forward(self.kubeconfig, "payments") as origin:
             return asyncio.run(self._http(origin, sample, traceparent))
 
+    def wait_export(self, completed_at: datetime) -> datetime:
+        """Recheck the actual wall clock; one requested sleep does not prove the export offset."""
+        target = completed_at + timedelta(seconds=PLAN.capture_offset_seconds)
+        for _ in range(8):
+            now = self.clock()
+            remaining = (target - now).total_seconds()
+            if remaining <= 0:
+                return now
+            if remaining > PLAN.capture_offset_seconds:
+                raise ValueError("protocol export clock moved backwards")
+            self.sleep(max(0.001, remaining))
+        raise TimeoutError("protocol export clock did not reach capture offset")
+
     def collect(
         self,
         stage: ProtocolStage,
@@ -147,10 +160,8 @@ class RuntimeProtocolObserver:
             from payops.evidence.artifacts import JSON_OBJECT
 
             self._save(phase / "risk-access.json", JSON_OBJECT.dump_json(access).decode())
-        remaining = (probe.completed_at + timedelta(seconds=12) - self.clock()).total_seconds()
-        if remaining > 0:
-            self.sleep(remaining)
-        start, end = probe.started_at - timedelta(seconds=1), self.clock()
+        end = self.wait_export(probe.completed_at)
+        start = probe.started_at - timedelta(seconds=1)
         if not 0 < (end - start).total_seconds() <= PLAN.maximum_window_seconds:
             raise ValueError("protocol capture window exceeds bound")
         scopes = tuple(
