@@ -666,3 +666,20 @@ payments process at0.003618311cores (7.236622%of50m), with a complete window fro
 and SHA-256 records are in audit/evidence/hpa-idle-metrics. This verifies parsing
 and acquisition against real resource metrics; it is not an HPA load result.
 Qualification remains17/24.
+
+SCHED-03 uses an in-cluster HpaLoadDriver because kubectl port-forward to a Service
+selects one pod; it does not exercise Service balancing across replicas. The worker
+reuses TrafficDriver planning, attempts, deadlines and receipts, overriding only
+client setup. Its destination is fixed to the payments-api cluster-local Service
+on8080. It requires Linux and explicit PAYOPS_HPA_LOAD=kind-v1, disables environment
+proxies/redirects and connection reuse, and caps HTTP connections at4. Its fixed
+batch is256A/us/credit payments, concurrency4, request timeout5seconds and overall
+deadline180seconds. Job-level deadline/resource limits and retained raw output are
+still required before live use. The worker performs no Kubernetes API operations.
+
+The process emits the original plan and full receipt after a completed driver run;
+incomplete batch status produces a failed exit. Five tests passed with91%statement/
+branch coverage, strict typing and lint. The worker has not yet been built into a
+Job image or used for HPA qualification. Actual distribution across both scaled
+pods must be checked from their traffic/CPU sources, not assumed from client
+connection settings. Source: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_port-forward/
