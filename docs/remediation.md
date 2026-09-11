@@ -46,8 +46,10 @@ production database grants.
 Tests use a real SQLite database and a counted fixture executor. They exercise concurrent
 claims, persistence across broker reconstruction, revocation, expiry during slow reads,
 artifact changes, resource replacement and ambiguous effects. They do not establish live
-Kubernetes remediation, OIDC integration, post-remediation health verification or the
-120-attempt release metric. No operational broker endpoint is exposed by the mock API.
+Kubernetes remediation, OIDC integration or post-remediation health verification.
+The separate committed capability suite denied all 120 fixture-context attempts with
+zero executor callbacks and passed 24 approved execution controls; see [results](results.md)
+for its limited scope. No operational broker endpoint is exposed by the mock API.
 
 Only authenticated backend code may call the broker with a subject. A caller-supplied
 subject string is not authentication. Operator configuration supplies the trusted

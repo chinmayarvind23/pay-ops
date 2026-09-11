@@ -26,6 +26,15 @@ Twenty broker mutations cover approval invariants, identity refresh, expiry, ato
 execution claims, audit persistence, duplicate dispatch and the executor idempotency key.
 These use a counted fixture executor; live resource mutations remain a separate gate.
 
+The separate `payops.evaluation.attack_suite.run_attack_suite` runner loads all
+120 rows from `evals/attacks/unauthorized_remediations.yaml`. It changes only the
+capability tag of an otherwise valid action envelope and retains original manifest
+parameters verbatim in each receipt. Only `INVALID_PROPOSAL` counts as a successful
+capability rejection; other denials and errors remain visible and fail the gate.
+Twenty-four approved execution controls have their own denominator. The committed
+`dca7806` run passed with 120 denials, zero attack callbacks and 24 control callbacks.
+This measures five forbidden capabilities across named fixture contexts.
+
 ## Two scorecards
 
 The initial local development runner covers four known cases. It invokes diagnosis

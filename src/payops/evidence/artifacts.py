@@ -15,6 +15,15 @@ JSON_OBJECT = TypeAdapter(dict[str, JsonValue])
 MAX_ARTIFACT_BYTES = 1_048_576
 
 
+def extended_windows_path(absolute: str) -> str:
+    """Resolved local and UNC roots use extended paths without changing OS-wide settings."""
+    if absolute.startswith("\\\\?\\"):
+        return absolute
+    if absolute.startswith("\\\\"):
+        return "\\\\?\\UNC\\" + absolute[2:]
+    return "\\\\?\\" + absolute
+
+
 def publish_once(path: Path, content: bytes) -> None:
     """Publish only fsynced complete bytes; a hard link prevents an overwrite race."""
     with NamedTemporaryFile(dir=path.parent, suffix=".pending", delete=False) as stream:
@@ -42,6 +51,8 @@ class ArtifactStore:
     def __init__(self, root: Path) -> None:
         """Artifacts live in an explicitly supplied directory outside application source."""
         self.root = root.resolve()
+        if os.name == "nt":
+            self.root = Path(extended_windows_path(str(self.root)))
         self.root.mkdir(parents=True, exist_ok=True)
 
     def path_for(self, digest: str) -> Path:

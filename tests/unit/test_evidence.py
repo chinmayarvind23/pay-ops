@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from payops.contracts import utc_now
-from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
+from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError, extended_windows_path
 from payops.evidence.normalize import Observation, normalize, select_context
 from payops.evidence.redact import redact, redact_text
 
@@ -36,6 +36,34 @@ def test_roundtrip_redacts_and_verifies(tmp_path: Path) -> None:
     assert payload["payload"] == {"status": 503, "token": "[REDACTED]"}
     assert item.untrusted_text is True
     assert "sensitive-test-value" not in store.path_for(item.artifact_sha256).read_text()
+
+
+def test_deep_runtime_directory_preserves_artifacts(tmp_path: Path) -> None:
+    """Nested investigation roots can exceed legacy Windows paths once a digest is appended."""
+    root = tmp_path / ("run-" + "a" * 60) / ("incident-" + "b" * 60) / "artifacts"
+    store = ArtifactStore(root)
+    now = utc_now()
+    item = normalize(
+        observation(), "incident-1", now - timedelta(minutes=1), now + timedelta(minutes=1), store
+    )
+    try:
+        assert store.verify(item)["payload"] == {"status": 503, "token": "[REDACTED]"}
+    finally:
+        # TemporaryDirectory teardown also uses legacy paths; remove the long file explicitly.
+        store.path_for(item.artifact_sha256).unlink()
+
+
+@pytest.mark.parametrize(
+    "original,expected",
+    [
+        ("C:\\runtime\\evidence", "\\\\?\\C:\\runtime\\evidence"),
+        ("\\\\server\\share\\evidence", "\\\\?\\UNC\\server\\share\\evidence"),
+        ("\\\\?\\C:\\runtime\\evidence", "\\\\?\\C:\\runtime\\evidence"),
+    ],
+)
+def test_extended_absolute_windows_roots(original: str, expected: str) -> None:
+    """Drive, UNC and already extended roots preserve their canonical destination."""
+    assert extended_windows_path(original) == expected
 
 
 def test_modified_artifact_fails(tmp_path: Path) -> None:
