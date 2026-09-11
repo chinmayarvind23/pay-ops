@@ -363,3 +363,17 @@ kernel-accounted memory and exited137 with Docker OOMKilled=true. Three installe
 scenario modules matched frozen source hashes. Raw stdout/stderr, container/image
 inspection and11 artifact hashes are retained under evidence/leak-container-9d4efd5.
 This is a container contrast, not repeated Kubernetes OOM/restart qualification.
+
+OOM-02 allocation evidence uses a strict immutable record schema and bounded raw
+kubectl-log parser (256KiB/2000lines, at most42workload records). Runtime timestamps
+must agree with the application's UTC within1second. Container start/end times
+bound the records; monotonic timestamps enforce order and the35second duration
+ceiling. A release control requires all40steps plus terminal release. Retention
+requires5–39successive steps, matching8Mi increments and at least64Mi of observed
+kernel memory growth. Declared retained bytes alone cannot pass. Mixed modes/PIDs,
+duplicate starts, stale records and premature release reject.
+
+These checks validate one process's allocation evidence only. A caller must still
+bind raw current/previous logs to owned container IDs and actual OOMKilled
+termination records, capture two distinct OOM lifetimes and verify restoration.
+No repeated-OOM or Kubernetes qualification is claimed by the record parser.
