@@ -366,6 +366,28 @@ POLICY_MUTATIONS = (
         POLICY_TESTS,
     ),
     Mutation(
+        "policy_retrieval_authority",
+        POLICY,
+        'item.source in {"RUNBOOK", "MEMORY"}',
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_payment_lineage",
+        POLICY,
+        "        window = verify_payment_window(item, store)",
+        "        from payops.evidence.payment_window import PaymentWindow\n"
+        '        window = PaymentWindow.model_validate(store.verify(item).get("payload"))',
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_payment_completeness",
+        POLICY,
+        'window.status != "complete"',
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
         "policy_scale_ceiling",
         POLICY_CONTRACT,
         "Field(ge=1, le=3, strict=True)",

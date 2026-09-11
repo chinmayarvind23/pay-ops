@@ -162,6 +162,26 @@ def test_payment_authority_requires_complete_verified_window(
         assert review.reason == "EVIDENCE_NOT_OPERATIONAL"
 
 
+def test_payment_authority_reverifies_nested_source_after_derivation(tmp_path: Path) -> None:
+    """A valid complete outer window cannot conceal source corruption discovered before action."""
+    trusted, proposal = context(tmp_path)
+    period = interval().model_copy(update={"incident_id": trusted.incident.incident_id})
+    before = source(trusted.store, period, raw_snapshot(period))
+    after = source(trusted.store, period, raw_snapshot(period, True))
+    item = derive_payment_window(before, after, period, trusted.store)
+    assert trusted.incident.report is not None
+    report = trusted.incident.report.model_copy(update={"evidence": (item,)})
+    current = replace(
+        trusted, incident=trusted.incident.model_copy(update={"report": report})
+    )
+    proposal["evidence_ids"] = [item.evidence_id]
+    assert evaluate(proposal, current).decision == "APPROVAL_REQUIRED"
+    trusted.store.path_for(before.artifact_sha256).write_text("corrupted nested evidence")
+    trusted.store.verify(item)
+    review = evaluate(proposal, current)
+    assert review.decision == "DENY" and review.reason == "EVIDENCE_INVALID"
+
+
 @pytest.mark.parametrize(
     "action",
     [
