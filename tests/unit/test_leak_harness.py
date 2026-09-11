@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
+from typing import IO, Any
 from unittest.mock import patch
 
 import pytest
@@ -187,3 +188,145 @@ def test_real_fault_stage_requires_two_distinct_captures(tmp_path: Path) -> None
         receipt = runner.run()
     assert receipt.activated and receipt.cleanup_verified
     assert len([a for a in receipt.artifacts if "oom-lifetime" in a.name]) == 3
+
+
+@pytest.mark.parametrize("failure", ["none", "changed-container", "restart", "incomplete"])
+def test_actual_control_capture_and_rejection(tmp_path: Path, failure: str) -> None:
+    """Drive the actual collector/validator path; a race or incomplete log blocks fault entry."""
+    gateway = FixtureGateway()
+    runner = LeakHarness(
+        tmp_path / "config", tmp_path / "evidence", gateway, 2 if failure == "none" else 0.06, 0.001
+    )
+    observed, original, expected, _ = evidence()
+    run = context(gateway)
+    for document in object_items(run.original["deployments"]):
+        if object_value(document["metadata"])["name"] == "risk-sim":
+            document.update(original)
+    gateway.current = deepcopy(original)
+    run.control, run.requested = expected, START.isoformat()
+    pod = object_items(observed["pods"])[0]
+    pod["status"] = {
+        "containerStatuses": [
+            {
+                "name": "sandbox",
+                "restartCount": 0,
+                "ready": True,
+                "containerID": "containerd://" + "a" * 64,
+                "imageID": "sha256:fixed-image",
+                "state": {"running": {"startedAt": START.isoformat()}},
+            }
+        ]
+    }
+    after = deepcopy(observed)
+    status = object_items(
+        object_value(object_items(after["pods"])[0]["status"])["containerStatuses"]
+    )[0]
+    if failure == "changed-container":
+        status["containerID"] = "containerd://" + "b" * 64
+    elif failure == "restart":
+        status["restartCount"] = 1
+    records = sequence("released-v1")
+    if failure == "incomplete":
+        records = records[:-1]
+    raw = "\n".join(r.timestamp.isoformat() + " " + r.model_dump_json() for r in records)
+    captures = iter([observed, after] * 100)
+    with (
+        patch.object(runner, "_prepare", return_value=run),
+        patch.object(runner, "_transition"),
+        patch.object(runner, "_settle"),
+        patch.object(runner, "_fault", side_effect=fault_passes) as fault,
+        patch.object(gateway, "snapshot", side_effect=lambda: next(captures)),
+        patch.object(gateway, "read_log", return_value={"text": raw}),
+    ):
+        receipt = runner.run()
+    assert receipt.control_verified is (failure == "none")
+    assert receipt.activated is (failure == "none")
+    assert fault.call_count == int(failure == "none")
+    assert receipt.cleanup_verified
+    names = [a.name for a in receipt.artifacts]
+    assert any("raw-log" in name for name in names)
+    assert any("capture-after" in name for name in names)
+
+
+class AuditFailureHarness(LeakHarness):
+    """Fail an exact evidence boundary while leaving the real restoration code intact."""
+
+    fail_name = "journal"
+
+    def _save(self, directory: Path, receipt: ScenarioReceipt, name: str, data: JsonObject) -> None:
+        """A simulated disk failure cannot precede recovery of an already applied variant."""
+        if name == self.fail_name:
+            raise OSError("fixture evidence disk unavailable")
+        super()._save(directory, receipt, name, data)
+
+
+@pytest.mark.parametrize("boundary", ["journal", "transition", "healthy-final"])
+def test_audit_failures_restore_or_retain_latch(tmp_path: Path, boundary: str) -> None:
+    """No pre-journal write occurs, and final audit failure retains the latch after restoration."""
+    gateway = FixtureGateway()
+    runner = AuditFailureHarness(tmp_path / "config", tmp_path / "evidence", gateway, 0.01, 0.001)
+    runner.fail_name = boundary
+    with (
+        patch.object(runner, "_prepare", return_value=context(gateway)),
+        patch.object(runner, "_control", side_effect=control_passes),
+        patch.object(runner, "_fault", side_effect=fault_passes),
+        patch.object(runner, "_settle"),
+    ):
+        receipt = runner.run()
+    assert gateway.current["spec"] == gateway.original["spec"]
+    assert gateway.writes == (3 if boundary == "healthy-final" else 0)
+    assert receipt.cleanup_verified is (boundary != "healthy-final")
+    assert runner.block_file.exists() is (boundary == "healthy-final")
+
+
+def test_baseline_and_final_runtime_verification_execute(tmp_path: Path) -> None:
+    """Exercise orchestration around separately tested five-service runtime validators."""
+    gateway = FixtureGateway()
+    runner = LeakHarness(tmp_path / "config", tmp_path / "evidence", gateway, 0.2, 0.001)
+    state = context(gateway).original
+    with (
+        patch.object(gateway, "verify_scope", return_value={"namespace": "payops-sandbox"}),
+        patch.object(gateway, "state", return_value=state),
+        patch("payops.scenarios.leak_harness.validate_runtime_baseline") as validate,
+        patch(
+            "payops.scenarios.leak_harness.protocol_identities", return_value={"peer": "stable"}
+        ) as identities,
+        patch.object(runner, "_control", side_effect=control_passes),
+        patch.object(runner, "_fault", side_effect=fault_passes),
+    ):
+        receipt = runner.run()
+    validate.assert_called_once_with(state)
+    assert identities.call_count == 2
+    assert receipt.activated and receipt.cleanup_verified and not runner.block_file.exists()
+
+
+def test_final_receipt_failure_retains_latch_after_restore(tmp_path: Path) -> None:
+    """Loss of the final record cannot release a run whose cleanup proof is no longer durable."""
+    gateway = FixtureGateway()
+    runner = LeakHarness(tmp_path / "config", tmp_path / "evidence", gateway, 0.2, 0.001)
+    original_open = Path.open
+
+    def fail_receipt(
+        path: Path,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> IO[Any]:
+        """Fail only final receipt creation; allow retained snapshots and the latch update."""
+        if path.name == "receipt.json":
+            raise OSError("fixture receipt disk failure")
+        return original_open(path, mode, buffering, encoding, errors, newline)
+
+    with (
+        patch.object(runner, "_prepare", return_value=context(gateway)),
+        patch.object(runner, "_control", side_effect=control_passes),
+        patch.object(runner, "_fault", side_effect=fault_passes),
+        patch.object(runner, "_settle"),
+        patch.object(Path, "open", autospec=True, side_effect=fail_receipt),
+    ):
+        receipt = runner.run()
+    assert gateway.current["spec"] == gateway.original["spec"] and gateway.writes == 3
+    assert not receipt.cleanup_verified and runner.block_file.exists()
+    assert "receipt/latch" in str(receipt.cleanup_failure)

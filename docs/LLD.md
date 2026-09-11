@@ -419,3 +419,10 @@ non-risk process identities, and requires accepted payment traffic. Unknown spec
 failed restore or final receipt failure retain the shared latch. Interruptions still
 run recovery. This integration has fixture recovery and real-validator aggregation
 tests; final control-capture/persistence failure checks and live qualification remain.
+
+The OOM-02 lifecycle validation now includes actual raw control collection,
+container-change/restart/incomplete-log negatives, pre-journal write prevention,
+final audit failure and final receipt failure. The focused suite passes84tests;
+harness statement/branch coverage is88%. A test-only60ms positive-control deadline
+was too short under coverage instrumentation and was raised to2seconds. Live
+stage bounds remain unchanged. These checks precede the first Kubernetes attempt.
