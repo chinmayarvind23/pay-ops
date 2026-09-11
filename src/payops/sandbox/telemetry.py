@@ -1,6 +1,9 @@
 """Small fixed label vocabularies keep synthetic traffic from exhausting monitoring."""
 
-from prometheus_client import CollectorRegistry, Counter, Histogram
+from itertools import product
+from time import time
+
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
 from payops.sandbox.models import Sample
 
@@ -35,6 +38,24 @@ class SandboxMetrics:
             "Synthetic sample ID reused with different payload or pending execution",
             registry=self.registry,
         )
+        self.process_epoch = Gauge(
+            "sandbox_process_start_time_seconds",
+            "Service metrics registry creation time for detecting counter epoch changes",
+            registry=self.registry,
+        )
+        self.process_epoch.set(time())
+        self._initialize_slices()
+
+    def _initialize_slices(self) -> None:
+        """Known zero counters are explicit; missing series can then mean missing telemetry."""
+        for status, processor, region, method in product(
+            ("accepted", "declined", "error"), ("A", "B"), ("us", "eu"), ("credit", "debit")
+        ):
+            self.requests.labels(status, processor, region, method)
+        for processor, region in product(("A", "B"), ("us", "eu")):
+            self.latency.labels(processor, region)
+        for processor in ("A", "B"):
+            self.declines.labels("synthetic_fault", processor)
 
     def observe(self, sample: Sample, status: str, duration: float) -> None:
         """Only validated sample slices and closed internal statuses become labels."""
