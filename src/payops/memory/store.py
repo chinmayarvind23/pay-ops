@@ -27,14 +27,16 @@ class IdempotencyConflict(ValueError):
 class IncidentStore:
     """Commit before acknowledging state; never use Redis as incident truth."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str | Engine) -> None:
         """Schema creation is local bootstrap; production migrations come later."""
-        self.engine: Engine = create_engine(database_url)
+        self._owns_engine = isinstance(database_url, str)
+        self.engine = create_engine(database_url) if isinstance(database_url, str) else database_url
         Base.metadata.create_all(self.engine)
 
     def close(self) -> None:
         """Release pooled connections when the application lifespan ends."""
-        self.engine.dispose()
+        if self._owns_engine:
+            self.engine.dispose()
 
     def create(self, request: IncidentCreate, key: str | None) -> Incident:
         """The unique constraint resolves races rather than a check-then-write lock."""

@@ -1,6 +1,6 @@
 """SQL transactions atomically publish execution claims and their corresponding audit events."""
 
-from sqlalchemy import Integer, String, Text, create_engine, select, update
+from sqlalchemy import Engine, Integer, String, Text, create_engine, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
@@ -52,14 +52,16 @@ TRANSITIONS: dict[ActionState, frozenset[ActionState]] = {
 class ActionStore:
     """Database truth, never a cache entry, determines whether an action was dispatched."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str | Engine) -> None:
         """Use local bootstrap for now; production migrations and database roles are separate."""
-        self.engine = create_engine(database_url)
+        self._owns_engine = isinstance(database_url, str)
+        self.engine = create_engine(database_url) if isinstance(database_url, str) else database_url
         Base.metadata.create_all(self.engine)
 
     def close(self) -> None:
         """Release owned database connections."""
-        self.engine.dispose()
+        if self._owns_engine:
+            self.engine.dispose()
 
     def get(self, action_id: str) -> ActionRecord:
         """Missing or corrupt records cannot be interpreted as unclaimed actions."""
