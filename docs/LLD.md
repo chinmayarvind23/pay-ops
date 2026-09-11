@@ -628,3 +628,24 @@ old for all five payment services. The deployment rollout completed successfully
 Raw API, deployment and PodMetrics records plus hashes are retained under
 resources/pay_ops/audit/evidence/metrics-server. This is an autoscaling prerequisite;
 SCHED-03 still needs its capped-HPA load experiment and recovery checks.
+
+SCHED-03 now has a closed autoscaling/v2 HPA contract for payments-api in
+payops-sandbox. The fixed CPU target is 50% of requests, minimum one replica;
+only maxReplicas changes from one to two. Explicit scaling policies permit one
+pod per 15 seconds with zero stabilization in this bounded local experiment.
+Status acceptance requires exact UID/name/namespace/spec, AbleToScale and
+ScalingActive true, current/desired replicas equal to the cap, and CPU utilization
+at least 100% with ScalingLimited=True/TooManyReplicas for saturation. Low-demand
+control requires utilization at most 50% and ScalingLimited=False. Invalid metric
+sources, ambiguous conditions and boolean-as-integer fields reject.
+
+Kubernetes v1.35.8 controller setStatus does not populate the optional
+observedGeneration field. The validator rejects a conflicting value if present,
+but does not invent freshness when absent. The lifecycle must independently bind
+raw Metrics API sample timestamps/windows and owned pods to the active load, then
+show actual scale-out with maxReplicas=2 and exact restoration. Fifteen contract
+tests pass with 100% statement/branch coverage, strict typing and lint. No HPA was
+created in this increment and qualification remains 17/24.
+
+References: https://kubernetes.io/docs/reference/kubernetes-api/autoscaling/horizontal-pod-autoscaler-v2/
+and https://github.com/kubernetes/kubernetes/blob/v1.35.8/pkg/controller/podautoscaler/horizontal.go
