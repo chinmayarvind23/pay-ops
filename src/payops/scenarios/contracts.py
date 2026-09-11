@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 CaseId = Literal[
     "OOM-01",
+    "SCHED-01",
     "ROLLOUT-01",
     "ROLLOUT-02",
     "ROLLOUT-03",

@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "SCHED-01": "local oversized CPU request cannot fit node; not CPU utilization saturation",
     "OOM-01": "same bounded payments working set survives 256Mi control and OOMKills at 128Mi",
     "ROLLOUT-01": "local fixed bad image exits during Python startup",
     "ROLLOUT-02": "invalid PAYOPS_SANDBOX_CONFIG processor origin; not missing PROCESSOR_URL",
@@ -76,6 +77,8 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
+    if case_id == "SCHED-01":
+        raise ValueError("scheduler case requires its three-resource harness")
     if case_id == "OOM-01":
         spec = memory_control_spec(original)
         object_value(object_value(container(spec)["resources"])["limits"])["memory"] = "128Mi"
