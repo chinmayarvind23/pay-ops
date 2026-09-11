@@ -489,3 +489,13 @@ controls, measured overlap/kernel growth under high concurrency, actual pressure
 or OOM evidence, payment effects and verified restoration. This worker/integration
 is not live qualification. Twelve worker tests reached100%statement/branch coverage;
 37focused worker/service/CPU regression tests passed with strict targeted typing.
+
+OOM-04's frozen ab9a869 image passed an isolated worker contrast at identical256Mi
+memory/swap bounds and0.5CPU. Eight sequential calls completed before and after the
+parallel treatment. The parallel run recorded seven active admissions before a
+confirmed OOMKilled/137 exit; no request completed. Raw event reconstruction
+verified each active-count transition and the full1second holds in both controls.
+Peak recorded kernel memory was95830016/238202880/69885952bytes for
+control/parallel/recovered. All110installed Python source files matched the frozen
+checkout. Evidence: concurrency-container-ab9a869. This calibrates the worker;
+HTTP effects and Kubernetes activation/recovery are still unqualified.
