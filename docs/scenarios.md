@@ -110,3 +110,14 @@ Other fault harnesses reject an active CPU workload as a healthy baseline. This
 control enables the planned OOM-03 quota experiment, but does not itself qualify
 CPU throttling. Qualification still requires a frozen workload, actual cgroup
 throttled-period/time deltas, matched controls and exact cleanup.
+
+Calibration at `d262df5` used three sequential 50,000-round tasks per isolated
+container. Mean workload time was 0.159 seconds at one CPU, 0.255 at the sandbox's
+normal half-CPU limit and 1.668 at one-tenth CPU. Mean thread CPU time stayed between
+0.151 and 0.170 seconds. Mean kernel throttled-time deltas were 0.000040, 0.102 and
+1.502 seconds respectively. Even the normal half-CPU control throttled, so a positive
+counter alone cannot establish the incident. The later HTTP scenario must compare
+matched workload and quota controls, not require an unrealistically zero baseline.
+These nine tasks are calibration, not a qualified Kubernetes scenario or agent
+latency measurement. Source, image, raw counters and successful container exits are
+retained outside the repository under `audit/evidence/cpu-calibration-*`.
