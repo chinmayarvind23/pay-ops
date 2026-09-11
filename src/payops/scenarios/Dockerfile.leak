@@ -1,0 +1,6 @@
+FROM payops-sandbox:local
+# Same application and resource envelope; only the startup-selected retention mode differs.
+COPY src/payops/scenarios/__init__.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/__init__.py
+COPY src/payops/scenarios/leak_workload.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/leak_workload.py
+COPY src/payops/scenarios/leak_entrypoint.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/leak_entrypoint.py
+CMD ["python", "-m", "payops.scenarios.leak_entrypoint"]

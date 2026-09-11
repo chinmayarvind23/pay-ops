@@ -347,3 +347,10 @@ a successful released control, bounded recovery and healthy payment traffic.
 The kernel's [cgroup memory controller](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
 provides the memory limit and OOM accounting; an application exception is insufficient.
 The worker has unit coverage but is not yet wired to a container entrypoint or harness.
+
+OOM-02 now has a separate container entrypoint and Dockerfile. It validates the
+startup guard before constructing the normal risk application, starts one worker
+inside the original application lifespan, and signals/joins it before dependency
+teardown. Worker exceptions are surfaced during shutdown; neither an exception nor
+a completed thread qualifies an OOM. The Dockerfile layers only these modules onto
+the normal sandbox image. Frozen image provenance remains required before live use.
