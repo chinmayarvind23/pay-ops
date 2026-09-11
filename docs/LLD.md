@@ -499,3 +499,18 @@ Peak recorded kernel memory was95830016/238202880/69885952bytes for
 control/parallel/recovered. All110installed Python source files matched the frozen
 checkout. Evidence: concurrency-container-ab9a869. This calibrates the worker;
 HTTP effects and Kubernetes activation/recovery are still unqualified.
+
+OOM-04 now has strict timestamped memory-event parsing and deterministic occupancy
+reconstruction. Records are limited to24events from eight planned unique samples
+within a45second window. Admission, allocation and release must occur in order;
+reported active counts must match derived occupancy. Completed allocations must
+have a full1second hold. Serial controls require all eight completed lifecycles
+with peak-active1. The parallel proof requires at least six simultaneously
+allocated blocks and128Mi of actual kernel memory growth; admission alone cannot
+prove that the allocation happened. HTTP outcomes and owned OOM termination still
+require separate validation.
+
+Eighteen adversarial tests achieved100%statement/branch coverage. Replaying actual
+Docker-timestamped calibration logs passed unchanged: controls8completed each;
+parallel7admitted/6allocated concurrently before OOM. This validates the parser
+against retained sources and does not create Kubernetes qualification.
