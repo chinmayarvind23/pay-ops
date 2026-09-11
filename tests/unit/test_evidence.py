@@ -162,7 +162,9 @@ def test_context_rejects_invalid_inputs(tmp_path: Path) -> None:
         select_context((item, item), store)
     with pytest.raises(EvidenceIntegrityError, match="mixed"):
         select_context((item, item.model_copy(update={"incident_id": "other"})), store)
-    store.path_for(item.artifact_sha256).write_text("broken")
+    retained = store.verify(item)
+    retained["payload"] = {"tampered": True}
+    store.path_for(item.artifact_sha256).write_text(json.dumps(retained), encoding="utf-8")
     with pytest.raises(EvidenceIntegrityError):
         select_context((item,), store, max_items=0)
 
