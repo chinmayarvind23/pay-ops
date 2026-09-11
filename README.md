@@ -1,309 +1,90 @@
-# PayOps
+﻿# PayOps
 
-**Agentic incident response for Kubernetes payment systems**
+PayOps investigates Kubernetes payment incidents by correlating health, logs, traces, deployment changes and payment telemetry. Each hypothesis cites stored evidence. A bounded LangChain reasoning loop runs inside a durable LangGraph workflow; authorization, budgets and remediation policy execute in ordinary Python outside the model.
 
-PayOps investigates payment-service incidents by correlating Kubernetes health, logs, traces, deployment changes, payment telemetry, runbooks, and prior incidents. The LLM can reason about evidence and propose bounded actions, but deterministic authorization and policy code decides whether any remediation is allowed.
+Payment failures can look alike at the API boundary. A processor timeout, a bad rollout and a missing trace need different responses. PayOps preserves the observations behind a diagnosis so an operator can inspect its reasoning and decline an unsupported action.
 
-PayOps never moves money, edits payment ledgers, exposes secrets, or gives an LLM unrestricted shell or Kubernetes mutation access.
+The local implementation runs against a five-service synthetic payment system in `kind`. Cloud deployment, the public replay demo and the full model benchmark are still in progress. No real payments or ledger writes occur.
 
-## Performance targets (not yet measured)
+## Measured so far
 
-The repository starts as a design scaffold. The following values are acceptance targets;
-no benchmark run currently establishes them. Implementation and raw evidence are in progress.
+| Measurement | Verified result | Scope |
+| --- | --- | --- |
+| Local fault reproduction | 11 cases with activation and cleanup | Includes a kernel OOM termination and scheduler rejection of an oversized CPU request |
+| Diagnosis | 4/4 rank-1 and rank-3 hits | Frozen four-case development run using deterministic ranking |
+| Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
+| Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |
+| Trace correlation | One nine-span path across five services | Historical bounded capture; four other spans retained unresolved parents |
 
-| Metric                                     |                               Value |
-| ------------------------------------------ | ----------------------------------: |
-| Reproducible production failure scenarios  |                                  24 |
-| Root-cause Recall@1                        |                               83.3% |
-| Root-cause Recall@3                        |                               91.7% |
-| Evidence-attribution accuracy              |                               96.4% |
-| Unauthorized remediation attempts rejected |                           120 / 120 |
-| Median investigation time                  | 11.8 min baseline -> 2.9 min PayOps |
-| p95 agent reasoning-step latency           |                               4.6 s |
-| Average LLM provider cost                  |                    $0.07 / incident |
+[Results and evidence scope](docs/results.md) distinguish those measurements from the release targets: 24 cases, 83.3% Recall@1, 91.7% Recall@3, 96.4% attribution accuracy, 2.9-minute median investigation, 4.6-second p95 model-step latency and $0.07 average provider cost. The 11.8-minute human baseline also requires measurement. No paid-provider quality, latency or cost result is claimed yet.
 
-Claim status is tracked in `docs/results.md`.
+## What works
 
-## Core product loop
+- Fixed Kubernetes, Prometheus, payment and Elasticsearch reads with bounded output, current authorization and incident/service scope checks.
+- Immutable evidence artifacts with SHA-256 verification, payment-window arithmetic and nested trace/retrieval source checks.
+- Durable investigations that reserve model/read budgets before dispatch and recover completed work without dispatching it again. Uncertain completion stops the run.
+- A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and price profile and validates raw provider usage.
+- Deterministic approval policy and an idempotent SQL action broker, with current identity and resource revalidation before execution. The operational mutation executor remains unfinished.
+- Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
+- PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
+- Fault injectors with original-state journals, bounded synthetic traffic and cleanup verification. A four-stage sampling experiment is implemented and awaiting live qualification.
 
-```text
-alert / operator / Slack
-        |
-        v
-incident created
-        |
-        v
-collect evidence
-  Kubernetes health
-  control-plane metrics
-  logs
-  traces
-  deployments
-  payment telemetry
-  runbooks
-  prior incidents
-        |
-        v
-rank root-cause hypotheses
-        |
-        v
-attach evidence IDs
-        |
-        v
-propose remediation
-        |
-        v
-deterministic policy gate
-     /       \
- DENY      APPROVAL
-             |
-             v
-       bounded executor
-             |
-             v
-         post-check
-             |
-             v
-      resolved / escalate
-```
+## Run locally
 
-## Architecture
-
-```text
-Slack / Vercel operator UI / benchmark runner
-                  |
-        REST commands + GraphQL reads
-                  |
-                  v
-             FastAPI
-                  |
-             Pub/Sub
-                  |
-                  v
-         LangGraph orchestrator
-         + LangChain tool layer
-                  |
-      +-----------+-----------+-------------+
-      |           |           |             |
-      v           v           v             v
- GKE read      PromQL      Cloud Logs   deployment history
- GKE MCP       metrics     + OTel       + payment telemetry
- read adapter
-      |
-      +------------------+
-                         |
-                         v
-                evidence normalizer
-                         |
-             +-----------+-----------+
-             |                       |
-             v                       v
-       Elasticsearch            incident memory
-  runbooks + postmortems      Cloud SQL PostgreSQL
-   + prior incident search
-             \                       /
-              +----------+----------+
-                         |
-                         v
-                 root-cause ranker
-                         |
-                         v
-               deterministic policy
-                         |
-                +--------+--------+
-                |                 |
-              deny          approval / bounded
-                                  |
-                                  v
-                         remediation executor
-                                  |
-                                  v
-                               post-check
-```
-
-Supporting systems:
-
-```text
-Memorystore Redis
-  ephemeral cache, locks, rate limits, short-lived tool results
-
-Google Cloud Storage
-  immutable scenario bundles, traces, reports, benchmark artifacts
-
-LangSmith
-  semantic agent traces and eval inspection
-
-OpenTelemetry + Managed Prometheus + Cloud Monitoring + Grafana
-  distributed-system and operational telemetry
-
-AWS Lightsail
-  external payment-processor simulator for cross-cloud dependency failures
-
-Supabase
-  sanitized public-demo metadata, replay index, reviewer feedback with RLS
-
-Hugging Face Spaces
-  public read-only incident replay/eval demo with no operational credentials
-```
-
-## Why GKE is justified
-
-A normal personal project should avoid Kubernetes until it earns the complexity. PayOps is specifically a Kubernetes troubleshooting system, so Kubernetes behavior is the subject being measured. Development still starts with a local `kind` cluster and one end-to-end incident before GKE infrastructure is added.
-
-## GKE MCP safety boundary
-
-The upstream GKE MCP project includes useful read tools and also mutation tools. PayOps does not expose raw mutation tools to the reasoning model.
-
-```text
-LLM
- |
- +--> PayOps read-only GKE MCP adapter
- |
- +--> PayOps remediation proposal schema
-             |
-             v
-       policy engine
-             |
-       approval gate
-             |
-     bounded executor
-```
-
-MCP output, logs, runbooks, and incident memory are untrusted evidence. They never become executable instructions automatically.
-
-## API roles
-
-```text
-REST
-  incident creation, commands, approval decisions, benchmark execution
-
-GraphQL
-  read-oriented incident/evidence/trace/eval explorer
-
-MCP
-  constrained agent-to-tool interoperability
-
-Slack
-  notification, investigation thread, approval UX
-
-No raw shell tool
-```
-
-## 24-scenario benchmark
-
-Six groups, four scenarios each:
-
-1. OOM/resource failures
-2. bad rollouts/configuration
-3. scheduler/capacity failures
-4. dependency failures
-5. misleading or incomplete telemetry
-6. payment-slice degradations
-
-See `docs/scenarios.md`.
-
-## Required technology roles
-
-| Technology                    | Role                                               |
-| ----------------------------- | -------------------------------------------------- |
-| Python                        | agent, tools, evals, scenario runner               |
-| TypeScript + Bun              | operator web application and API client            |
-| FastAPI                       | incident/control API                               |
-| LangGraph                     | explicit incident lifecycle and checkpoints        |
-| LangChain                     | model/tool integration and typed tool wrappers     |
-| GKE                           | Kubernetes incident environment                    |
-| GKE MCP                       | read-only Kubernetes/GKE evidence adapter          |
-| Prometheus / Cloud Monitoring | infrastructure and payment metrics                 |
-| OpenTelemetry                 | traces and cross-service context                   |
-| Cloud Logging                 | canonical GKE/application logs                     |
-| Elasticsearch                 | hybrid runbook/postmortem/prior-incident retrieval |
-| Cloud SQL PostgreSQL          | authoritative incident state, approvals, audit     |
-| Redis / Memorystore           | ephemeral cache, locks, throttles                  |
-| Pub/Sub                       | alert-to-worker decoupling                         |
-| Google Cloud Storage          | immutable evidence and benchmark artifacts         |
-| Identity Platform             | enterprise OIDC/SAML identity                      |
-| Terraform                     | GCP plus AWS Lightsail infrastructure              |
-| AWS Lightsail                 | independent processor simulator                    |
-| Supabase                      | sanitized public demo data and feedback            |
-| Hugging Face Spaces           | read-only public replay/eval deployment            |
-| Vercel                        | operator UI                                        |
-| LangSmith                     | agent traces/eval exploration                      |
-| Grafana                       | operational dashboards                             |
-
-## Development philosophy
-
-```text
-Explore / Research
--> Plan
--> Implement
--> Verify
-```
-
-For AI behavior:
-
-```text
-hypothesis
--> baseline
--> experiment
--> evaluation
-```
-
-For incident response, correct final diagnosis is not enough. The execution path must also be authorized, evidence-grounded, bounded, observable, and reproducible.
-
-## MVP
-
-The first useful version is intentionally narrow:
-
-```text
-one local payment service
-+ one injected incident
-+ Kubernetes evidence
-+ payment metric
-+ ranked root cause
-+ evidence citations
-+ remediation proposal
-+ deterministic denial of unsafe action
-+ incident report
-```
-
-The distributed cloud system is added after this loop is correct.
-
-## Documentation
-
-- `PRD.md`
-- `docs/system-design.md`
-- `docs/HLD.md`
-- `docs/LLD.md`
-- `docs/architecture-alternatives.md`
-- `docs/agent-harness.md`
-- `docs/tool-contracts.md`
-- `docs/evidence-model.md`
-- `docs/incident-memory.md`
-- `docs/policy-and-approvals.md`
-- `docs/payment-telemetry.md`
-- `docs/scenarios.md`
-- `docs/evaluation.md`
-- `docs/benchmark-methodology.md`
-- `docs/security.md`
-- `docs/threat-model.md`
-- `docs/gke-and-mcp.md`
-- `docs/elasticsearch-retrieval.md`
-- `docs/observability.md`
-- `docs/reliability.md`
-- `docs/deployment.md`
-- `docs/public-demo.md`
-
-## Local setup
+Use Python 3.12+ and `uv`:
 
 ```bash
 uv sync --frozen
 uv run payops serve
+```
+
+Open `http://127.0.0.1:8000/docs`. This command starts the loopback development API and returns explicitly marked mock evidence. It does not configure operational credentials or a public identity tenant.
+
+For development checks:
+
+```bash
+uv run ruff check .
+uv run pyright
 uv run pytest
 ```
 
-The current runnable path is a loopback-only mock API at `http://127.0.0.1:8000/docs`.
-It persists incidents locally and returns `EVIDENCE_INSUFFICIENT` with explicitly marked
-mock evidence. Operational collectors, authentication and cloud deployment are planned;
-the architecture above describes the target system. Do not expose this development API publicly.
+The operational deterministic CLI requires an explicit kubeconfig and external runtime directory. [Commands](docs/commands.md) and [local cluster setup](infra/kubernetes/local/README.md) describe that path. Run scenario commands separately from other measurements.
 
-Exact working commands are maintained in `docs/commands.md`.
+## How an investigation runs
+
+```mermaid
+flowchart TD
+    A[Incident and scoped operator identity] --> B[Bounded operational reads]
+    B --> C[Immutable evidence and verified context]
+    C --> D[LangGraph checkpoint]
+    D --> E[Reserve SQL budget]
+    E --> F[LangChain messages and model adapter]
+    F --> G{Validated decision}
+    G -->|Read request| B
+    G -->|Cited finish or refusal| H[Verify sources and current authority]
+    H --> I[Persist investigation report]
+    J[Separate action proposal] --> K[Deterministic policy]
+    K --> L[Human approval and revalidation]
+    L --> M[SQL claim and bounded executor]
+```
+
+The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell commands. Logs and retrieved documents remain untrusted data. Budget reservations survive restarts; a timeout limits result acceptance without claiming that a remote request was cancelled. See [reasoning and recovery](docs/reasoning.md) and [policy and approvals](docs/policy-and-approvals.md).
+
+## Stack and deployment status
+
+The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
+
+The target deployment adds GKE/Cloud SQL/Memorystore, Pub/Sub, cloud evidence storage, AWS processor hosting and a Hugging Face read-only replay demo. Those services are described in the design documents and are not current deployment claims. Public UI, GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
+
+## Documentation
+
+- [Product requirements](PRD.md), [system design](docs/system-design.md), [HLD](docs/HLD.md) and [LLD](docs/LLD.md)
+- [Evidence model](docs/evidence-model.md), [reasoning](docs/reasoning.md) and [security](docs/security.md)
+- [Scenario catalog](docs/scenarios.md), [frozen release labels](evals/golden/README.md) and [benchmark methodology](docs/benchmark-methodology.md)
+- [Results](docs/results.md), [commands](docs/commands.md) and [deployment plan](docs/deployment.md)
+
+Operator journals, failed runs, source hashes, review notes, interview material and the blog draft live outside the code repository in `../resources/pay_ops`. They preserve private runtime evidence separately from source and the future sanitized public demo.
+
+## Work still required
+
+Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. Deployment and the recorded demo follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
