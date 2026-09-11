@@ -1,4 +1,4 @@
-﻿# PayOps
+# PayOps
 
 PayOps investigates Kubernetes payment incidents by correlating health, logs, traces, deployment changes and payment telemetry. Each hypothesis cites stored evidence. A bounded LangChain reasoning loop runs inside a durable LangGraph workflow; authorization, budgets and remediation policy execute in ordinary Python outside the model.
 
@@ -91,4 +91,3 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 ## Work still required
 
 Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. Deployment and the recorded demo follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
-

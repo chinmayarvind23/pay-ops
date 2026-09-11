@@ -1,4 +1,4 @@
-﻿# Failure Scenarios
+# Failure Scenarios
 
 The suite contains six groups with four scenarios each. Seventeen local variants now
 have activation and restoration evidence; see [results](results.md) for scope and
@@ -131,4 +131,3 @@ are tested. The committed-image Kubernetes run at `56e6337` qualified all five
 stages and exact cleanup. Mean work duration was 0.290 seconds at 500m, 1.504 seconds
 at 100m and 0.275 seconds after recovery. See [results](results.md) for evidence and
 the distinction between workload measurements and agent performance.
-

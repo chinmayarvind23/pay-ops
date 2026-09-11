@@ -613,3 +613,11 @@ run `79a03f72e74943bb95504b7e6e09ddca`. The operator experiment ran from
 23:28:09 to 23:29:55 UTC on September 11, 2026. This duration includes rollouts and
 controls; it is not agent latency or a diagnosis measurement. The qualified count
 is now 17/24; model quality, timing and cost targets remain unmeasured.
+
+SCHED-03 requires an actual autoscaler backed by observed resource metrics. The
+local cluster initially had no metrics.k8s.io API registration. Metrics Server
+v0.9.0 is vendored separately from payment manifests, with its upstream image
+pinned to the inspected OCI digest. Server-side dry run accepted all nine upstream
+objects on Kubernetes v1.35.8. Kubelet certificate verification is initially kept
+enabled; actual scrape/API readiness must be established before HPA experiments.
+This prerequisite does not add scenario qualification or model metrics.
