@@ -20,7 +20,7 @@ ROLES: dict[Service, str] = {
     "ledger-sim": "ledger",
     "webhook-sim": "webhook",
 }
-MAX_LOG_BYTES = 65536
+MAX_LOG_BYTES = 131072
 MAX_LOG_LINES = 2000
 MAX_SPANS = 128
 LOG_QUERY = "trace.console-log.v1"

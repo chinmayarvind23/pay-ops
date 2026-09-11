@@ -109,7 +109,7 @@ class Backend:
                 "--tail=2000",
                 "--since-time=2024-01-01T00:00:00+00:00",
                 "--timestamps=true",
-                "--limit-bytes=65536",
+                "--limit-bytes=131072",
             )
             if self.change == "malformed_log":
                 return b"2024-01-01T00:00:12Z {\n"

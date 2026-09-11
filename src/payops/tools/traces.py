@@ -34,7 +34,7 @@ MAX_COMMANDS_PER_SERVICE = 8
 MAX_COMMANDS = 40
 MAX_SECONDS = 30.0
 MAX_METADATA_BYTES = 1048576
-MAX_SOURCE_BYTES = 655360
+MAX_SOURCE_BYTES = 10 * MAX_LOG_BYTES
 type Object = dict[str, JsonValue]
 
 
@@ -369,7 +369,7 @@ class TraceRead:
                 "--tail=2000",
                 f"--since-time={scope.start.isoformat()}",
                 "--timestamps=true",
-                "--limit-bytes=65536",
+                f"--limit-bytes={MAX_LOG_BYTES}",
             ),
             budget,
             True,

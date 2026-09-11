@@ -216,7 +216,7 @@ def test_out_of_window_and_empty_logs_remain_bounded_samples() -> None:
 @pytest.mark.parametrize(
     "data",
     [
-        b"x" * 65537,
+        b"x" * 131073,
         b"2024-01-01T00:00:12Z x\n" * 2001,
         b"no prefix\n",
         b"2024-01-01T00:00:12Z \xff\n",
@@ -234,7 +234,7 @@ def test_exact_line_or_byte_limit_is_reported() -> None:
     """Reaching a source cap cannot be mistaken for a complete export."""
     assert parse_console_log(b"2024-01-01T00:00:12Z x\n" * 2000, scope()).limit_reached
     prefix = b"2024-01-01T00:00:12Z "
-    assert parse_console_log(prefix + b"x" * (65536 - len(prefix)), scope()).limit_reached
+    assert parse_console_log(prefix + b"x" * (131072 - len(prefix)), scope()).limit_reached
 
 
 @pytest.mark.parametrize("seconds", [0, -1, 601])
