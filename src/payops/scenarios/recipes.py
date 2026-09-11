@@ -1,7 +1,8 @@
-"""Four reviewed mutations are fixtures, not generic Kubernetes patch requests."""
+"""Reviewed fixed mutations and a replay workload cannot become generic patch requests."""
 
 from copy import deepcopy
 
+from payops.sandbox.models import FaultConfig
 from payops.scenarios.contracts import (
     CaseId,
     DeploymentName,
@@ -15,12 +16,27 @@ VARIANTS: dict[CaseId, str] = {
     "ROLLOUT-02": "invalid PAYOPS_SANDBOX_CONFIG processor origin; not missing PROCESSOR_URL",
     "ROLLOUT-03": "readiness path mismatch on a running sandbox process",
     "DEP-01": "local processor replicas zero; not an AWS Lightsail outage",
+    "DEP-02": "local processor B adds 400ms delay and returns 429; not Lightsail",
+    "PAY-01": "local processor B declines every selected synthetic sample",
+    "PAY-02": "local processor adds 600ms only to the eu synthetic region",
+    "PAY-03": "local processor declines every debit synthetic sample",
+    "PAY-04": "webhook exact replay succeeds; changed-payload retry conflicts; no pod mutation",
+}
+
+PACKAGE_A_CASES: tuple[CaseId, ...] = ("DEP-02", "PAY-01", "PAY-02", "PAY-03", "PAY-04")
+PACKAGE_A_FAULTS: dict[CaseId, FaultConfig] = {
+    "DEP-02": FaultConfig(processor="B", delay_ms=400, rate_limit_every=1),
+    "PAY-01": FaultConfig(processor="B", decline_every=1),
+    "PAY-02": FaultConfig(region="eu", delay_ms=600),
+    "PAY-03": FaultConfig(payment_method="debit", decline_every=1),
 }
 
 
 def target(case_id: CaseId) -> DeploymentName:
-    """Only the processor outage touches a dependency Deployment."""
-    return "processor-adapter" if case_id == "DEP-01" else "payments-api"
+    """Closed targets isolate faults to the synthetic dependency or explicit webhook probe."""
+    if case_id == "PAY-04":
+        return "webhook-sim"
+    return "processor-adapter" if case_id in ("DEP-01", *PACKAGE_A_FAULTS) else "payments-api"
 
 
 def container(spec: JsonObject) -> JsonObject:
@@ -60,12 +76,22 @@ def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
     item = container(spec)
+    if case_id == "PAY-04":
+        return spec
+    if case_id in PACKAGE_A_FAULTS:
+        spec["strategy"] = {"type": "Recreate"}
+        env = object_items(item["env"])
+        env.append(
+            {"name": "PAYOPS_SANDBOX_FAULT", "value": PACKAGE_A_FAULTS[case_id].model_dump_json()}
+        )
+        item["env"] = list(env)
+        return spec
     if case_id == "DEP-01":
         spec["replicas"] = 0
         return spec
     spec["strategy"] = {"type": "Recreate"}
     if case_id == "ROLLOUT-01":
-        item["image"] = "payops-sandbox:startup-failure"
+        item["image"] = "payops-sandbox:revision-b"
     elif case_id == "ROLLOUT-02":
         env = object_items(item["env"])
         for entry in env:
@@ -79,6 +105,8 @@ def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
 
 def activation(case_id: CaseId, observation: JsonObject) -> bool:
     """Accept actual runtime/probe evidence rather than a successful patch response."""
+    if case_id in PACKAGE_A_CASES:
+        return observation.get("package_a_verified") is True
     pods = object_items(observation.get("pods", []))
     if case_id == "DEP-01":
         return not pods and observation.get("sample_status") == 503

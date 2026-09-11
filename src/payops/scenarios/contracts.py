@@ -5,8 +5,18 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-CaseId = Literal["ROLLOUT-01", "ROLLOUT-02", "ROLLOUT-03", "DEP-01"]
-DeploymentName = Literal["payments-api", "processor-adapter"]
+CaseId = Literal[
+    "ROLLOUT-01",
+    "ROLLOUT-02",
+    "ROLLOUT-03",
+    "DEP-01",
+    "DEP-02",
+    "PAY-01",
+    "PAY-02",
+    "PAY-03",
+    "PAY-04",
+]
+DeploymentName = Literal["payments-api", "processor-adapter", "webhook-sim"]
 type JsonObject = dict[str, JsonValue]
 
 

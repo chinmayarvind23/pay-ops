@@ -132,6 +132,57 @@ class FakeCluster:
         }
 
 
+class PackageObservation:
+    """A fake observer separates workload acceptance from Deployment patch success."""
+
+    def __init__(self, verified: bool = True, fail: bool = False) -> None:
+        """Explicit switches exercise both measured rejection and interrupted collection."""
+        self.verified = verified
+        self.fail = fail
+
+    def collect(self, case_id: CaseId, directory: Path) -> JsonObject:
+        """Return only the activation predicate needed to test runner restoration semantics."""
+        if self.fail:
+            raise RuntimeError("metric collection interrupted")
+        return {"package_a_verified": self.verified}
+
+
+@pytest.mark.parametrize("case_id", ["DEP-02", "PAY-01", "PAY-02", "PAY-03", "PAY-04"])
+def test_package_a_measured_activation_and_cleanup(case_id: CaseId, tmp_path: Path) -> None:
+    """New cases restore exact specs; webhook replay does not issue a meaningless patch."""
+    cluster = FakeCluster(case_id)
+    runner = LocalScenarioRunner(
+        tmp_path / "config",
+        tmp_path / "evidence",
+        cluster,
+        0.01,
+        0.001,
+        package_a=PackageObservation(),
+    )
+    receipt = runner.run(case_id)
+    assert receipt.activated and receipt.cleanup_verified
+    assert cluster.current == cluster.original
+    assert cluster.patches == (0 if case_id == "PAY-04" else 2)
+    assert not runner.block_file.exists()
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_package_a_rejected_measurements_still_restore(tmp_path: Path, fail: bool) -> None:
+    """A ready process or interrupted metric collection cannot count as fault activation."""
+    cluster = FakeCluster("PAY-01")
+    runner = LocalScenarioRunner(
+        tmp_path / "config",
+        tmp_path / "evidence",
+        cluster,
+        0.01,
+        0.001,
+        package_a=PackageObservation(False, fail),
+    )
+    receipt = runner.run("PAY-01")
+    assert not receipt.activated and receipt.failure is not None and receipt.cleanup_verified
+    assert cluster.current == cluster.original and not runner.block_file.exists()
+
+
 @pytest.mark.parametrize("case_id", ["ROLLOUT-01", "ROLLOUT-02", "ROLLOUT-03", "DEP-01"])
 def test_activation_and_exact_cleanup(case_id: CaseId, tmp_path: Path) -> None:
     """All four recipes must restore captured state and write verifiable artifact hashes."""

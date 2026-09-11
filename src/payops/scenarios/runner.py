@@ -20,7 +20,15 @@ from payops.scenarios.contracts import (
     utc_timestamp,
 )
 from payops.scenarios.kubectl import KubectlGateway
-from payops.scenarios.recipes import VARIANTS, activation, fault_spec, target, validate_baseline
+from payops.scenarios.package_a import PackageAHarness, PackageAObserver
+from payops.scenarios.recipes import (
+    PACKAGE_A_CASES,
+    VARIANTS,
+    activation,
+    fault_spec,
+    target,
+    validate_baseline,
+)
 
 
 class CleanupUnverified(RuntimeError):
@@ -45,6 +53,7 @@ class LocalScenarioRunner:
         gateway: ClusterGateway | None = None,
         timeout_seconds: float = 90,
         poll_seconds: float = 2,
+        package_a: PackageAObserver | None = None,
     ) -> None:
         """Bound total activation/cleanup waits and persist a cross-process contamination latch."""
         if not 0 < timeout_seconds <= 180 or not 0 < poll_seconds <= 5:
@@ -55,6 +64,7 @@ class LocalScenarioRunner:
         self.timeout = timeout_seconds
         self.poll = poll_seconds
         self.block_file = kubeconfig.resolve().with_name("payops-dev-scenario-lock.json")
+        self.package_a = package_a or PackageAHarness(kubeconfig)
 
     def _save(self, directory: Path, receipt: ScenarioReceipt, name: str, data: JsonObject) -> None:
         """Exclusive files and hashes preserve failed observations instead of rewriting history."""
@@ -188,16 +198,36 @@ class LocalScenarioRunner:
         """The caller holds restoration state before the first possibly ambiguous API write."""
         self._save(directory, receipt, "injection-plan", {"spec": injected})
         receipt.injection_requested_at = utc_timestamp()
-        self.gateway.replace_spec(target(case_id), original, injected)
+        if injected != original["spec"]:
+            self.gateway.replace_spec(target(case_id), original, injected)
+        if case_id in PACKAGE_A_CASES:
+            self._package_activation(case_id, injected, directory, receipt)
+        else:
+            self._wait(
+                directory,
+                receipt,
+                "activation",
+                lambda: self._activation(case_id),
+                lambda observed: activation(case_id, observed),
+            )
+        receipt.activated = True
+        receipt.activation_observed_at = utc_timestamp()
+
+    def _package_activation(
+        self, case_id: CaseId, injected: JsonObject, directory: Path, receipt: ScenarioReceipt
+    ) -> None:
+        """Require a ready process and measured fault behavior before activating the case."""
         self._wait(
             directory,
             receipt,
-            "activation",
-            lambda: self._activation(case_id),
-            lambda observed: activation(case_id, observed),
+            "workload-ready",
+            lambda: self.gateway.observe(target(case_id)),
+            lambda observed: deployment_ready(object_value(observed["deployment"]), injected),
         )
-        receipt.activated = True
-        receipt.activation_observed_at = utc_timestamp()
+        observed = self.package_a.collect(case_id, directory)
+        self._save(directory, receipt, "activation", observed)
+        if not activation(case_id, observed):
+            raise ValueError("Package A runtime behavior or metric window was not verified")
 
     @staticmethod
     def _investigate(receipt: ScenarioReceipt, callback: Callable[[], None] | None) -> None:

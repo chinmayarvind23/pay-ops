@@ -89,7 +89,7 @@ class KubectlGateway:
         }
 
     def deployment(self, name: DeploymentName) -> JsonObject:
-        """Only the two reviewed scenario targets can be read through this adapter."""
+        """Only reviewed scenario targets can be read through this adapter."""
         self.validate_target(name)
         return self._json(("get", "deployment", name))
 
@@ -154,7 +154,7 @@ class KubectlGateway:
     @staticmethod
     def validate_target(name: str) -> None:
         """Runtime callers cannot bypass the closed type alias with arbitrary resources."""
-        if name not in {"payments-api", "processor-adapter"}:
+        if name not in {"payments-api", "processor-adapter", "webhook-sim"}:
             raise ValueError("Deployment outside scenario allowlist")
 
     @contextmanager
