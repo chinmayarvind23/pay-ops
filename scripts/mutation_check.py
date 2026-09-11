@@ -361,8 +361,8 @@ POLICY_MUTATIONS = (
     Mutation(
         "policy_artifact_integrity",
         POLICY,
-        "            context.store.verify(item)",
-        "            pass",
+        "        store.verify(item)",
+        "        pass",
         POLICY_TESTS,
     ),
     Mutation(

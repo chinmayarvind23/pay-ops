@@ -11,6 +11,11 @@ mode into the action digest. Fixture evidence cannot authorize a live target. Th
 checks establish approval eligibility; artifact integrity alone does not prove that
 an action will address the incident's cause.
 
+Action evidence IDs must refer to current operational observations. RUNBOOK and
+MEMORY items can guide an investigation but cannot justify an effect. A PAYMENT
+item must also pass nested source verification and arithmetic recomputation, and
+its window must be complete. A valid outer artifact hash is insufficient.
+
 `payops.remediation` persists proposals, approvals and execution claims in SQL. The
 approver must be a different current identity from the proposer. Approval covers the
 exact digest and expires after five minutes. Before execution the broker refreshes the

@@ -17,7 +17,7 @@ from pydantic import (
     model_validator,
 )
 
-from payops.contracts import EvidenceItem, Identifier
+from payops.contracts import EvidenceItem, Identifier, utc_now
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
 from payops.evidence.normalize import Observation, normalize
 
@@ -219,30 +219,50 @@ def _watermark(raw: Object, service: Service, at: float) -> float | None:
     return watermark
 
 
-def _parse(item: EvidenceItem, payload: Object, service: Service) -> Parsed:
-    """Bind exact query strings, source timestamps and fixed scope before interpreting counters."""
+def _parse_payload(payload: Object, service: Service) -> Parsed:
+    """Both live readers and retained lineage apply the same source validation rules."""
     if set(payload) != {"evaluated_at", "query", "watermark_query", "metrics", "watermark"}:
         raise EvidenceIntegrityError("unexpected raw snapshot payload fields")
     query, watermark_query = snapshot_queries(service)
-    if (
-        item.query != query
-        or payload.get("query") != query
-        or payload.get("watermark_query") != watermark_query
-    ):
+    if payload.get("query") != query or payload.get("watermark_query") != watermark_query:
         raise EvidenceIntegrityError("snapshot query provenance disagrees")
     at = _finite(payload.get("evaluated_at"))
-    if at > item.collected_at.timestamp() or item.observed_at > item.collected_at:
-        raise EvidenceIntegrityError("snapshot timestamp is after collection")
     values = _metric_values(payload, service, at)
     mark = _watermark(payload, service, at)
-    observed = mark if mark is not None else at
-    if abs(item.observed_at.timestamp() - observed) > 0.001:
-        raise EvidenceIntegrityError("observation metadata disagrees with source time")
     epoch = values.pop((EPOCH, ()), None)
     available = values.pop(("up", ()), None) == 1
     if epoch is not None and mark is not None and epoch > mark:
         raise EvidenceIntegrityError("process epoch is after its scrape")
     return Parsed(at, mark, epoch, available, tuple(sorted(values.items())))
+
+
+def snapshot_observation(payload: Object, service: Service) -> Observation:
+    """A live snapshot keeps the actual scrape time; an empty watermark stays explicitly missing."""
+    parsed = _parse_payload(payload, service)
+    if parsed.evaluated_at > utc_now().timestamp():
+        raise EvidenceIntegrityError("snapshot timestamp is after collection")
+    observed = parsed.watermark if parsed.watermark is not None else parsed.evaluated_at
+    return Observation(
+        source="PROMETHEUS",
+        resource=service,
+        observed_at=datetime.fromtimestamp(observed, UTC),
+        query=snapshot_queries(service)[0],
+        summary=f"Payment snapshot for {service}; target available: {parsed.available}",
+        payload=payload,
+    )
+
+
+def _parse(item: EvidenceItem, payload: Object, service: Service) -> Parsed:
+    """Bind retained metadata to exact query and source time before interpreting counters."""
+    parsed = _parse_payload(payload, service)
+    if item.query != snapshot_queries(service)[0]:
+        raise EvidenceIntegrityError("snapshot query provenance disagrees")
+    if parsed.evaluated_at > item.collected_at.timestamp() or item.observed_at > item.collected_at:
+        raise EvidenceIntegrityError("snapshot timestamp is after collection")
+    observed = parsed.watermark if parsed.watermark is not None else parsed.evaluated_at
+    if abs(item.observed_at.timestamp() - observed) > 0.001:
+        raise EvidenceIntegrityError("observation metadata disagrees with source time")
+    return parsed
 
 
 def _coverage(first: Parsed, last: Parsed, interval: MeasurementInterval) -> Status:

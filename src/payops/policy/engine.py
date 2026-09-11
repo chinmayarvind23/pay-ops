@@ -7,8 +7,9 @@ from hashlib import sha256
 
 from pydantic import JsonValue
 
-from payops.contracts import Incident, utc_now
+from payops.contracts import EvidenceItem, Incident, utc_now
 from payops.evidence.artifacts import ArtifactStore
+from payops.evidence.payment_window import verify_payment_window
 from payops.policy.contracts import (
     ACTION,
     Action,
@@ -82,6 +83,19 @@ def scope_failure(proposal: Action, context: PolicyContext, now: datetime) -> st
     return None
 
 
+def operational_evidence(item: EvidenceItem, store: ArtifactStore) -> str | None:
+    """Retrieved guidance cannot authorize effects, and derived numbers require valid lineage."""
+    if item.source in {"RUNBOOK", "MEMORY"}:
+        return "EVIDENCE_NOT_OPERATIONAL"
+    if item.source == "PAYMENT":
+        window = verify_payment_window(item, store)
+        if window.status != "complete":
+            return "EVIDENCE_NOT_OPERATIONAL"
+    else:
+        store.verify(item)
+    return None
+
+
 def evidence_failure(proposal: Action, context: PolicyContext, now: datetime) -> str | None:
     """Only recent verified incident evidence may justify a proposed operational change."""
     report = context.incident.report
@@ -99,7 +113,9 @@ def evidence_failure(proposal: Action, context: PolicyContext, now: datetime) ->
                 return "EVIDENCE_STALE"
             if not 0 <= (now - item.collected_at).total_seconds() <= 300:
                 return "EVIDENCE_STALE"
-            context.store.verify(item)
+            failure = operational_evidence(item, context.store)
+            if failure is not None:
+                return failure
     except (KeyError, ValueError, OSError):
         return "EVIDENCE_INVALID"
     return None

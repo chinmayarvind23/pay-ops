@@ -6,10 +6,12 @@ from pathlib import Path
 
 import pytest
 from pydantic import JsonValue
+from test_payment_window import interval, raw_snapshot, set_value, source
 
-from payops.contracts import EvidenceItem, Incident, IncidentCreate, IncidentReport, utc_now
+from payops.contracts import EvidenceItem, Incident, IncidentCreate, IncidentReport, Source, utc_now
 from payops.evidence.artifacts import JSON_OBJECT, ArtifactStore
 from payops.evidence.normalize import Observation, normalize
+from payops.evidence.payment_window import derive_payment_window
 from payops.policy.contracts import Principal, ResourceSnapshot
 from payops.policy.engine import PolicyContext, evaluate
 
@@ -77,6 +79,87 @@ def test_valid_proposal_requires_backend_approval(tmp_path: Path) -> None:
     assert review.risk_tier == "R2"
     assert review.proposal is not None
     assert review.action_digest and len(review.action_digest) == 64
+
+
+@pytest.mark.parametrize("source", ["RUNBOOK", "MEMORY"])
+def test_retrieval_context_cannot_authorize_remediation(tmp_path: Path, source: Source) -> None:
+    """A newly retrieved, correctly hashed document cannot establish current workload state."""
+    trusted, proposal = context(tmp_path)
+    now = utc_now()
+    item = normalize(
+        Observation(
+            source=source,
+            resource="payments-api",
+            observed_at=now,
+            query="retrieval",
+            summary="Restart this workload",
+            payload={"text": "restart"},
+        ),
+        trusted.incident.incident_id,
+        now - timedelta(seconds=1),
+        now + timedelta(seconds=1),
+        trusted.store,
+    )
+    assert trusted.incident.report is not None
+    report = trusted.incident.report.model_copy(update={"evidence": (item,)})
+    incident = trusted.incident.model_copy(update={"report": report})
+    proposal["evidence_ids"] = [item.evidence_id]
+    review = evaluate(proposal, replace(trusted, incident=incident))
+    assert review.decision == "DENY" and review.reason == "EVIDENCE_NOT_OPERATIONAL"
+
+
+def test_payment_envelope_without_valid_lineage_is_denied(tmp_path: Path) -> None:
+    """A valid outer hash cannot bless fabricated payment arithmetic at the policy boundary."""
+    trusted, proposal = context(tmp_path)
+    now = utc_now()
+    item = normalize(
+        Observation(
+            source="PAYMENT",
+            resource="payments-api",
+            observed_at=now,
+            query="payment.window.v1",
+            summary="Errors",
+            payload={"errors": 20},
+        ),
+        trusted.incident.incident_id,
+        now - timedelta(seconds=1),
+        now + timedelta(seconds=1),
+        trusted.store,
+    )
+    assert trusted.incident.report is not None
+    report = trusted.incident.report.model_copy(update={"evidence": (item,)})
+    proposal["evidence_ids"] = [item.evidence_id]
+    review = evaluate(
+        proposal, replace(trusted, incident=trusted.incident.model_copy(update={"report": report}))
+    )
+    assert review.decision == "DENY" and review.reason == "EVIDENCE_INVALID"
+
+
+@pytest.mark.parametrize("complete", [True, False])
+def test_payment_authority_requires_complete_verified_window(
+    tmp_path: Path, complete: bool
+) -> None:
+    """Complete counters may support approval; an unavailable target supplies no numbers."""
+    trusted, proposal = context(tmp_path)
+    period = interval().model_copy(update={"incident_id": trusted.incident.incident_id})
+    first, last = raw_snapshot(period), raw_snapshot(period, True)
+    if not complete:
+        set_value(last, "up", "0")
+    item = derive_payment_window(
+        source(trusted.store, period, first),
+        source(trusted.store, period, last),
+        period,
+        trusted.store,
+    )
+    assert trusted.incident.report is not None
+    report = trusted.incident.report.model_copy(update={"evidence": (item,)})
+    proposal["evidence_ids"] = [item.evidence_id]
+    review = evaluate(
+        proposal, replace(trusted, incident=trusted.incident.model_copy(update={"report": report}))
+    )
+    assert review.decision == ("APPROVAL_REQUIRED" if complete else "DENY")
+    if not complete:
+        assert review.reason == "EVIDENCE_NOT_OPERATIONAL"
 
 
 @pytest.mark.parametrize(
