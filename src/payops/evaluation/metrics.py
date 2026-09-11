@@ -84,7 +84,11 @@ def attribution_accuracy(
     correct = invalid = 0
     for link in unique:
         item = evidence.get(link.evidence_id)
-        if item is None or item.incident_id != link.incident_id or item.evidence_id != link.evidence_id:
+        if (
+            item is None
+            or item.incident_id != link.incident_id
+            or item.evidence_id != link.evidence_id
+        ):
             invalid += 1
             continue
         try:

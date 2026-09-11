@@ -1,15 +1,17 @@
 """Read adapters cannot turn model choices into shell commands or broad resource access."""
 
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import httpx
 import pytest
+from pydantic import JsonValue
 
 from payops.contracts import utc_now
 from payops.evidence.normalize import Observation
 from payops.tools.collect import collect_local
-from payops.tools.kubernetes import KubernetesRead
+from payops.tools.kubernetes import KubernetesRead, items, object_value
 from payops.tools.prometheus import PrometheusRead
 
 
@@ -214,8 +216,16 @@ def test_collection_retains_failures_and_continues(tmp_path: Path) -> None:
             )
 
         def events(self, service: str) -> tuple[Observation, ...]:
-            """No current events is a valid empty observation set."""
-            return ()
+            """Old events remain excluded even when returned by the current pod query."""
+            return (
+                Observation(
+                    source="KUBERNETES",
+                    resource=service,
+                    observed_at=utc_now() - timedelta(hours=1),
+                    query="events",
+                    summary="Old event",
+                ),
+            )
 
         def logs(self, service: str) -> Observation:
             """A simulated permission failure must appear in the result."""
@@ -236,5 +246,89 @@ def test_collection_retains_failures_and_continues(tmp_path: Path) -> None:
 
     result = collect_local(FakeKubernetes(), FakePrometheus(), tmp_path)
     assert len(result.evidence) == 10
-    assert len(result.failures) == 5
+    assert len(result.failures) == 10
+    assert sum(item.error_type == "OutsideQueryWindow" for item in result.failures) == 5
     assert "sensitive backend details" not in (tmp_path / "collection.json").read_text()
+
+
+def test_kubernetes_rejects_malformed_and_oversized_objects(tmp_path: Path) -> None:
+    """Malformed collections and source byte overruns fail before they become evidence."""
+    config = tmp_path / "config"
+    config.write_text("test")
+    with pytest.raises(ValueError, match="object"):
+        object_value(None)
+    oversized: list[JsonValue] = [{} for _ in range(65)]
+    malformed: tuple[JsonValue, ...] = (None, oversized)
+    for raw in malformed:
+        with pytest.raises(ValueError, match="collection"):
+            items(raw)
+    reader = KubernetesRead(config, lambda _: "x" * 262145)
+    with pytest.raises(ValueError, match="byte budget"):
+        reader.collect("payments-api")
+    with pytest.raises(ValueError, match="byte budget"):
+        reader.logs("payments-api")
+    with pytest.raises(ValueError, match="allowlist"):
+        reader.events("secrets")
+    with pytest.raises(ValueError, match="kubeconfig"):
+        KubernetesRead(tmp_path / "missing")
+
+
+@pytest.mark.parametrize("failure", ["none", "foreign_label", "foreign_namespace", "bad_name"])
+def test_pod_projection_validates_ownership(tmp_path: Path, failure: str) -> None:
+    """A compromised response cannot attach another workload's termination state."""
+    config = tmp_path / "config"
+    config.write_text("test")
+
+    def invoke(args: tuple[str, ...]) -> str:
+        """Expose a real pod status shape while varying its ownership independently."""
+        if "deployment" in args:
+            return json.dumps({"metadata": {"name": "payments-api", "namespace": "payops-sandbox"}})
+        return json.dumps(
+            {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "bad name" if failure == "bad_name" else "payments-api-a-b",
+                            "namespace": "foreign"
+                            if failure == "foreign_namespace"
+                            else "payops-sandbox",
+                            "labels": {
+                                "app.kubernetes.io/name": "foreign"
+                                if failure == "foreign_label"
+                                else "payments-api"
+                            },
+                        },
+                        "status": {
+                            "phase": "Running",
+                            "containerStatuses": [{"name": "sandbox", "ready": True}],
+                        },
+                    }
+                ]
+            }
+        )
+
+    reader = KubernetesRead(config, invoke)
+    if failure != "none":
+        with pytest.raises(ValueError):
+            reader.collect("payments-api")
+    else:
+        observations = reader.collect("payments-api")
+        assert len(observations) == 3
+        assert observations[1].payload["kind"] == "Pod"
+        assert observations[2].payload["pod_count"] == 1
+
+
+def test_logs_are_timestamped_and_bounded_at_dispatch(tmp_path: Path) -> None:
+    """A successful empty log read still carries the exact bounded query contract."""
+    config = tmp_path / "config"
+    config.write_text("test")
+    calls: list[tuple[str, ...]] = []
+
+    def invoke(args: tuple[str, ...]) -> str:
+        """Inspect actual argv without invoking a shell or external program."""
+        calls.append(args)
+        return ""
+
+    result = KubernetesRead(config, invoke).logs("payments-api")
+    assert result.payload == {"lines": ""}
+    assert {"--tail=100", "--since=5m", "--timestamps=true", "--limit-bytes=32768"} <= set(calls[0])
