@@ -22,3 +22,14 @@ kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payo
 
 Do not claim metrics availability until the API is Available and returns fresh
 measurements for all five sandbox services. See the [upstream requirements](https://kubernetes-sigs.github.io/metrics-server/) for network and certificate prerequisites.
+
+The observed kind kubelet certificates have no IP SANs, so default verified
+scraping fails. The `kind/` overlay adds `--kubelet-insecure-tls` for this local,
+dedicated test cluster only. It disables kubelet certificate verification while
+retaining HTTPS and service-account authorization. Never use this overlay for a
+cloud or shared cluster; use properly issued kubelet serving certificates there.
+The base manifest keeps kubelet verification enabled.
+
+```powershell
+kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev apply -k infra/kubernetes/metrics-server/kind
+```
