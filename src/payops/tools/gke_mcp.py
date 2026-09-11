@@ -40,7 +40,7 @@ Status = Literal[
     "TIMEOUT",
 ]
 MAX_TEXT_BYTES = 65536
-JSON_OBJECT = TypeAdapter(JsonObject)
+JSON_OBJECT = TypeAdapter[JsonObject](JsonObject)
 
 
 class StrictContract(Contract):
@@ -108,7 +108,7 @@ class McpSessionInfo(StrictContract):
 
 
 Request = Annotated[ResourceRead | EventRead | LogRead, Field(discriminator="operation")]
-REQUEST = TypeAdapter(Request)
+REQUEST = TypeAdapter[Request](Request)
 
 
 class McpTransport(Protocol):
@@ -336,7 +336,7 @@ class GkeMcpAdapter:
         if not 0 < timeout_seconds <= 30 or not 1 <= len(grants) <= 64:
             raise ValueError("invalid MCP adapter budget")
         self._scope = scope
-        self._incident_id = TypeAdapter(Identifier).validate_python(incident_id)
+        self._incident_id = TypeAdapter[Identifier](Identifier).validate_python(incident_id)
         self._grants = {(grant.resource_type, grant.name): grant for grant in grants}
         if len(self._grants) != len(grants):
             raise ValueError("duplicate resource grants")
