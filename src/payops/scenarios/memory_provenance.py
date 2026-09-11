@@ -1,6 +1,7 @@
 """Bind memory evidence to an owned rollout and its actual post-injection pod lifetime."""
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from pydantic import JsonValue
 
@@ -17,7 +18,12 @@ def timestamp(value: JsonValue) -> datetime | None:
     return parsed if parsed.tzinfo is not None else None
 
 
-def deployment_matches(observed: JsonObject, previous: JsonObject, expected: JsonObject) -> bool:
+def deployment_matches(
+    observed: JsonObject,
+    previous: JsonObject,
+    expected: JsonObject,
+    target: Literal["payments-api", "risk-sim"] = "payments-api",
+) -> bool:
     """A matching spec must belong to the captured Deployment and an observed newer generation."""
     document = object_value(observed.get("deployment", {}))
     metadata = object_value(document.get("metadata", {}))
@@ -25,7 +31,7 @@ def deployment_matches(observed: JsonObject, previous: JsonObject, expected: Jso
     generation = metadata.get("generation")
     return (
         metadata.get("uid") == prior["uid"]
-        and metadata.get("name") == "payments-api"
+        and metadata.get("name") == prior.get("name") == target
         and metadata.get("namespace") == "payops-sandbox"
         and document.get("spec") == expected
         and type(generation) is int
@@ -82,10 +88,14 @@ def template_matches(pod: JsonObject, expected: JsonObject) -> bool:
 
 
 def current_pods(
-    observed: JsonObject, previous: JsonObject, expected: JsonObject, requested_at: str
+    observed: JsonObject,
+    previous: JsonObject,
+    expected: JsonObject,
+    requested_at: str,
+    target: Literal["payments-api", "risk-sim"] = "payments-api",
 ) -> list[JsonObject]:
     """Resolve Pod to ReplicaSet to original Deployment and reject pre-injection pod creation."""
-    if not deployment_matches(observed, previous, expected):
+    if not deployment_matches(observed, previous, expected, target):
         return []
     requested = timestamp(requested_at)
     if requested is None:

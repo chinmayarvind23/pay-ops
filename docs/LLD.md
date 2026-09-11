@@ -377,3 +377,17 @@ These checks validate one process's allocation evidence only. A caller must stil
 bind raw current/previous logs to owned container IDs and actual OOMKilled
 termination records, capture two distinct OOM lifetimes and verify restoration.
 No repeated-OOM or Kubernetes qualification is claimed by the record parser.
+
+OOM-02 previous-log validation now brackets the read with two owned risk rollout
+snapshots. The exact Deployment UID/name/generation/template, ReplicaSet ownership
+and fresh pod creation are checked using the shared provenance logic with an
+explicit closed risk target. Both snapshots must identify the same previous
+containerd container, image, restart count and start/finish times. Exit137 requires
+OOMKilled; invalid or future timestamps reject. Allocation progression must fit
+that lifetime before its raw log digest is retained.
+
+Repeated-OOM acceptance requires two distinct container IDs with adjacent restart
+counts, nonoverlapping lifetimes and different log digests from the same pod/image.
+Duplicate polling cannot increase the count. Collector integration must preserve
+both snapshots and raw logs, including rejected reads; this component does not by
+itself qualify a Kubernetes case. Existing payments provenance defaults remain.
