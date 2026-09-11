@@ -526,3 +526,16 @@ records and owned Kubernetes OOM termination are still required for qualificatio
 The driver drains all tasks before closing its client and port-forward. Seventeen
 fixture-transport tests passed with 100% statement/branch validator coverage and
 strict typing. They verify transport orchestration, not live Kubernetes effects.
+
+OOM-04 deployment derivation now requires the normal payments entrypoint, exact
+role/config environment, v1 risk protocol, 2-second peer timeout, no existing CPU
+or memory workload, and normal 50m/96Mi requests with 500m/256Mi limits. It changes
+only the image to concurrency-ab9a869, strategy to Recreate and the deployment-only
+concurrency_memory flag. Serial, parallel and recovery traffic use this same spec;
+unrelated fields, including ephemeral-storage bounds, are preserved. The caller
+must still verify the imported runtime image digest before live evidence is valid.
+OOM-04 is registered for specialized receipts and explicitly rejected by both the
+generic runner and generic recipe. Twelve focused tests cover unchanged originals,
+invalid baselines and rejection before writes; 54 tests including generic scenario
+regressions pass. Strict typing and lint pass; spec coverage is 100% statement and
+branch. Kubernetes lifecycle and live qualification remain pending (16/24).
