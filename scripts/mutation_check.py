@@ -40,12 +40,17 @@ POLICY_CONTRACT = "src/payops/policy/contracts.py"
 RECORD = "src/payops/remediation/contracts.py"
 STORE = "src/payops/remediation/store.py"
 BROKER = "src/payops/remediation/broker.py"
+BUDGET = "src/payops/orchestrator/budget.py"
+REGISTRY = "src/payops/tools/registry.py"
+VERIFY = "src/payops/evidence/verification.py"
 SCHEMA_TESTS = "tests/unit/test_contracts.py tests/unit/test_lineage.py"
 EVIDENCE_TESTS = "tests/unit/test_evidence.py"
 METRIC_TESTS = "tests/unit/test_metrics.py"
 GRAPH_TESTS = "tests/unit/test_graph.py"
 POLICY_TESTS = "tests/unit/test_policy.py"
 BROKER_TESTS = "tests/unit/test_remediation.py"
+BUDGET_TESTS = "tests/unit/test_reasoning_budget.py"
+REGISTRY_TESTS = "tests/unit/test_registry.py tests/unit/test_mutation_boundaries.py"
 CORE_MUTATIONS = (
     Mutation("schema_extra_fields", CONTRACT, 'extra="forbid"', 'extra="allow"', SCHEMA_TESTS),
     Mutation("schema_frozen", CONTRACT, "frozen=True", "frozen=False", SCHEMA_TESTS),
@@ -556,7 +561,230 @@ BROKER_MUTATIONS = (
         BROKER_TESTS,
     ),
 )
-MUTATIONS = CORE_MUTATIONS + POLICY_MUTATIONS + BROKER_MUTATIONS
+BUDGET_MUTATIONS = (
+    *(
+        Mutation(f"budget_{name}", BUDGET, predicate, "False", BUDGET_TESTS)
+        for name, predicate in (
+            ("model_calls", "len(model) > self.limits.model_calls"),
+            ("tokens", "sum(charge.tokens() for charge in model) > self.limits.tokens"),
+            ("cost", "sum(charge.cost() for charge in model) > self.limits.cost_nano_usd"),
+            (
+                "tool_calls",
+                "sum(len(charge.requests) for charge in reads) > self.limits.tool_calls",
+            ),
+            (
+                "backend_reads",
+                "sum(charge.backend_reads() for charge in reads) > self.limits.backend_reads",
+            ),
+        )
+    ),
+    Mutation(
+        "budget_output_tokens",
+        BUDGET,
+        "self.input_tokens + self.output_token_limit",
+        "self.input_tokens",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_output_cost",
+        BUDGET,
+        "(self.output_token_limit * self.price.output_nano_usd)",
+        "0",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_cache_cost",
+        BUDGET,
+        "max(\n            self.price.input_nano_usd, self.price.cached_input_nano_usd\n        )",
+        "self.price.input_nano_usd",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_replay_dispatch",
+        BUDGET,
+        'raise BudgetConflict("budget changed before replay")\n            return "EXISTING"',
+        'raise BudgetConflict("budget changed before replay")\n            return "NEW"',
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_operation_binding", BUDGET, "if existing != charge:", "if False:", BUDGET_TESTS
+    ),
+    Mutation(
+        "budget_reopen_binding",
+        BUDGET,
+        "existing.binding_sha256 != binding_sha256",
+        "False",
+        BUDGET_TESTS,
+    ),
+    Mutation("budget_reopen_limits", BUDGET, "existing.limits != limits", "False", BUDGET_TESTS),
+    Mutation(
+        "budget_row_identity", BUDGET, "if record.run_id != row.run_id:", "if False:", BUDGET_TESTS
+    ),
+    Mutation(
+        "budget_compare_and_set",
+        BUDGET,
+        "BudgetRow.payload == raw_payload,",
+        "True,",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_nested_charge_validation",
+        BUDGET,
+        "        charge = CHARGE.validate_json(charge.model_dump_json())",
+        "        pass",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_catalog_census",
+        BUDGET,
+        "self.backend_read_count != sum(\n"
+        "            CATALOG[item.tool].backend_reads for item in self.requests\n        )",
+        "False",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_stale_replay",
+        BUDGET,
+        "if self.get(expected.run_id) != expected:",
+        "if False:",
+        BUDGET_TESTS,
+    ),
+)
+COMPLETION_MUTATIONS = (
+    Mutation(
+        "budget_completion_unique",
+        BUDGET,
+        "len(completed) != len(self.completions)",
+        "False",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_completion_reserved",
+        BUDGET,
+        "not completed <= {\n            charge.operation_id for charge in self.charges\n        }",
+        "False",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_completion_digest",
+        BUDGET,
+        "existing != receipt or self.get(expected.run_id) != expected",
+        "self.get(expected.run_id) != expected",
+        BUDGET_TESTS,
+    ),
+    Mutation(
+        "budget_completion_replay",
+        BUDGET,
+        'raise BudgetConflict("completion differs or budget changed")\n'
+        '            return "EXISTING"',
+        'raise BudgetConflict("completion differs or budget changed")\n            return "NEW"',
+        BUDGET_TESTS,
+    ),
+)
+REGISTRY_MUTATIONS = (
+    Mutation(
+        "registry_service_scope",
+        REGISTRY,
+        "or item.resource != request.service",
+        "",
+        REGISTRY_TESTS,
+    ),
+    Mutation(
+        "registry_publication_gate",
+        REGISTRY,
+        "return self._publish(results)",
+        "return results",
+        REGISTRY_TESTS,
+    ),
+    Mutation(
+        "registry_publication_timeout",
+        REGISTRY,
+        'return status if completed <= deadline else "TIMEOUT"',
+        "return status",
+        REGISTRY_TESTS,
+    ),
+    Mutation(
+        "registry_publication_discard",
+        REGISTRY,
+        'if item.status == "OK" and status != "OK"',
+        "if False",
+        REGISTRY_TESTS,
+    ),
+    Mutation(
+        "registry_reservation_denial",
+        REGISTRY,
+        "if not self._reserve(validated, cost):",
+        "if False:",
+        REGISTRY_TESTS,
+    ),
+    Mutation(
+        "registry_late_read",
+        REGISTRY,
+        "if result.completed_at > deadline:",
+        "if False:",
+        REGISTRY_TESTS,
+    ),
+)
+GRAPH_BOUNDARY_MUTATIONS = (
+    Mutation(
+        "graph_backend_allowance",
+        NODES,
+        "if backend > state.budget.max_backend_reads:",
+        "if False:",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_backend_dispatch_reservation",
+        NODES,
+        "or state.backend_reads_reserved < required_reads",
+        "",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_payment_read_census",
+        NODES,
+        '34 if state.collection_profile == "payment_windows_v1" else 30\n            )',
+        "30\n            )",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_resume_profile",
+        GRAPH,
+        "if existing.collection_profile != self.collection_profile:",
+        "if False:",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_nested_payment",
+        VERIFY,
+        "            verify_payment_window(item, store)",
+        "            pass",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_nested_trace",
+        VERIFY,
+        "            verify_trace_span(item, store)",
+        "            pass",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_nested_retrieval",
+        VERIFY,
+        "            verify_retrieval_evidence(item, store)",
+        "            pass",
+        GRAPH_TESTS,
+    ),
+)
+MUTATIONS = (
+    CORE_MUTATIONS
+    + POLICY_MUTATIONS
+    + BROKER_MUTATIONS
+    + BUDGET_MUTATIONS
+    + COMPLETION_MUTATIONS
+    + REGISTRY_MUTATIONS
+    + GRAPH_BOUNDARY_MUTATIONS
+)
 
 
 def snapshot(repo: Path, destination: Path) -> dict[str, str]:
@@ -676,11 +904,18 @@ def run_metadata(repo: Path, baseline: Path) -> dict[str, Any]:
     ).stdout.strip()
     return {
         "git_sha": revision,
+        "git_status": subprocess.run(
+            ["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True, check=True
+        ).stdout,
         "lock_sha256": hashlib.sha256((repo / "uv.lock").read_bytes()).hexdigest(),
         "source_hashes": snapshot(repo, baseline),
         "started_at": datetime.now(UTC).isoformat(),
         "python": sys.version,
-        "dependency_versions": {name: version(name) for name in ("pytest", "pydantic")},
+        "python_executable": sys.executable,
+        "dependency_versions": {
+            name: version(name)
+            for name in ("pytest", "pydantic", "sqlalchemy", "langgraph", "opentelemetry-sdk")
+        },
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "results": [],
     }
@@ -701,7 +936,7 @@ def main() -> int:
     manifest = run_metadata(repo, baseline)
     selection = (
         f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} "
-        f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS}"
+        f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS} {BUDGET_TESTS} {REGISTRY_TESTS}"
     )
     baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result

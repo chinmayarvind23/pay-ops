@@ -3,8 +3,8 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Ten local fault reproductions now have verified activation and
-cleanup, including a real kernel OOM termination. These are separate results:
+each workload. Eleven local fault reproductions now have verified activation and
+cleanup, including a real kernel OOM termination and scheduler rejection of an oversized CPU request. These are separate results:
 only the original four cases have been scored for diagnosis.
 
 The committed capability evaluation at `dca7806` denied all 120 manifest attempts
@@ -17,7 +17,16 @@ audit events. This component result does not establish 120 novel exploits or
 
 Raw evidence lives outside the repository under `resources/pay_ops/evidence`:
 `baseline-committed/9e577303-b653-4e70-b988-e319c341f05e`, `chunk-05-oom`, and
-`attack-suite/dca7806-component-001`. Each result retains its scope and provenance.
+`attack-suite/dca7806-component-001`, and `chunk-06-scheduler/9a4fe93c84ce49eaaf9d4b5d5fafcac5`. Each result retains its scope and provenance.
+
+The committed trace reader at `cb41de9` retained five LOG sources and thirteen verified
+TRACE artifacts from an explicit historical five-minute interval. Independent review
+found one nine-span path across all five services with eight resolved parent edges;
+four additional spans retain unresolved parents. The read used 25 commands under a
+separate 40-command reservation and generated no new traffic. This is a bounded
+observation sample, not proof of trace completeness or investigation accuracy.
+Evidence: `trace-reader/cb41de9-readonly-002`. The earlier empty quiet-window capture
+remains retained separately.
 
 ## Release targets still open
 
