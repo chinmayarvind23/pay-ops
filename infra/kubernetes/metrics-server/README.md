@@ -1,4 +1,4 @@
-# Local autoscaling metrics
+﻿# Local autoscaling metrics
 
 Vendored from the Apache-2.0 licensed [Metrics Server v0.9.0 release](https://github.com/kubernetes-sigs/metrics-server/releases/tag/v0.9.0).
 The upstream components.yaml SHA-256 is `1cec29a5267809306a2c6ec74a3e449abbb705b4a8beed0c8a1963910f72c79b`.
@@ -15,7 +15,7 @@ This is not the cloud deployment configuration.
 From the repository root:
 
 ```powershell
-kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev apply -f infra/kubernetes/metrics-server/components.yaml
+kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev apply -f infra/kubernetes/metrics-server/base/components.yaml
 kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev get apiservice v1beta1.metrics.k8s.io
 kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev top pods -n payops-sandbox
 ```
@@ -33,3 +33,4 @@ The base manifest keeps kubelet verification enabled.
 ```powershell
 kubectl --kubeconfig ../resources/pay_ops/runtime/kubeconfig --context kind-payops-dev apply -k infra/kubernetes/metrics-server/kind
 ```
+
