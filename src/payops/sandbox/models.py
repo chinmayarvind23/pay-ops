@@ -10,6 +10,7 @@ Role = Literal["payments", "risk", "ledger", "processor", "webhook"]
 Processor = Literal["A", "B"]
 Region = Literal["us", "eu"]
 Method = Literal["credit", "debit"]
+RiskProtocol = Literal["v1", "v2"]
 
 
 class Sample(BaseModel):
@@ -30,6 +31,14 @@ class SimulationResult(BaseModel):
     role: Role
     status: Literal["accepted", "declined"]
     synthetic: Literal[True] = True
+
+
+class RiskSampleV2(BaseModel):
+    """A versioned wire envelope makes rollout incompatibility a real schema failure."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    protocol: Literal["payops-risk-v2"]
+    sample: Sample
 
 
 class FaultConfig(BaseModel):
@@ -88,6 +97,7 @@ class SandboxConfig(BaseModel):
     explicit_synthetic_hosts: tuple[str, ...] = ()
     timeout_seconds: float = Field(default=2.0, gt=0, le=10)
     idempotency_capacity: int = Field(default=10000, ge=1, le=100000)
+    risk_protocol: RiskProtocol = "v1"
 
     @model_validator(mode="after")
     def validate_origins(self) -> Self:

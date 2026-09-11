@@ -6,7 +6,7 @@ from opentelemetry import propagate, trace
 from opentelemetry.trace import SpanKind
 from pydantic import ValidationError
 
-from payops.sandbox.models import Role, Sample, SandboxConfig, SimulationResult
+from payops.sandbox.models import RiskSampleV2, Role, Sample, SandboxConfig, SimulationResult
 
 
 async def call_peer(
@@ -29,7 +29,11 @@ async def call_peer(
             ) as client:
                 response = await client.post(
                     config.destination(role).rstrip("/") + "/simulate",
-                    json=sample.model_dump(),
+                    json=(
+                        RiskSampleV2(protocol="payops-risk-v2", sample=sample).model_dump()
+                        if role == "risk" and config.risk_protocol == "v2"
+                        else sample.model_dump()
+                    ),
                     headers=headers,
                 )
         except httpx.TimeoutException as exc:

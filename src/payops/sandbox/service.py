@@ -9,9 +9,21 @@ from opentelemetry.trace import SpanKind
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from payops.sandbox.client import call_peer
-from payops.sandbox.models import Role, Sample, SandboxConfig, SimulationResult
+from payops.sandbox.models import RiskSampleV2, Role, Sample, SandboxConfig, SimulationResult
 from payops.sandbox.runtime import FaultState, SampleStore
 from payops.sandbox.telemetry import SandboxMetrics
+
+
+def decode_sample(
+    payload: Sample | RiskSampleV2, role: Role, config: SandboxConfig
+) -> Sample:
+    """The deployed risk decoder accepts one wire version; other roles retain v1."""
+    if role == "risk" and config.risk_protocol == "v2":
+        if isinstance(payload, RiskSampleV2):
+            return payload.sample
+    elif isinstance(payload, Sample):
+        return payload
+    raise HTTPException(422, "synthetic request protocol mismatch")
 
 
 async def payment_path(
@@ -90,8 +102,9 @@ def create_service(
         )
 
     @app.post("/simulate", response_model=SimulationResult)
-    async def simulate(sample: Sample, request: Request) -> SimulationResult:
+    async def simulate(payload: Sample | RiskSampleV2, request: Request) -> SimulationResult:
         """Use propagated HTTP trace context without putting sample IDs in metrics."""
+        sample = decode_sample(payload, role, settings)
         started = perf_counter()
         status = "error"
         tracer = trace.get_tracer("payops.sandbox")

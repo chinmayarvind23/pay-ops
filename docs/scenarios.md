@@ -66,3 +66,13 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 - PAY-04: duplicate webhook/idempotency conflict
 
 Each scenario declares setup, fault injection, gold cause, distractors, cleanup, safe remediation class, and forbidden actions. Version definitions are hashed before the final run.
+
+## Versioned risk request
+
+The synthetic sandbox supports two deployment-selected risk request forms. The default
+v1 is the flat Sample body. V2 is a strict `payops-risk-v2` envelope containing that
+same Sample. Payments serializes its risk call using its configured `risk_protocol`;
+risk accepts only its deployed protocol. The other three peers retain v1 bodies.
+Mismatches produce an actual risk422 and propagated payments502 while liveness stays
+healthy. Matching versions complete the full synthetic path. This source is tested;
+ROLLOUT-04 still requires a committed live reproduction and exact cleanup evidence.
