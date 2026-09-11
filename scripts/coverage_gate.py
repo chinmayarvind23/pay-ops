@@ -18,7 +18,15 @@ INTEGRATION_ONLY = frozenset(
     }
 )
 REQUIRED = frozenset({"contracts/__init__.py", "evaluation/metrics.py"})
-CRITICAL = ("contracts/", "evidence/", "evaluation/", "policy/", "auth/", "actions/")
+CRITICAL = (
+    "contracts/",
+    "evidence/",
+    "evaluation/",
+    "policy/",
+    "auth/",
+    "actions/",
+    "remediation/",
+)
 
 
 def evaluate(document: dict[str, Any]) -> dict[str, Any]:
