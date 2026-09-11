@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "OOM-01": "same bounded payments working set survives 256Mi control and OOMKills at 128Mi",
     "ROLLOUT-01": "local fixed bad image exits during Python startup",
     "ROLLOUT-02": "invalid PAYOPS_SANDBOX_CONFIG processor origin; not missing PROCESSOR_URL",
     "ROLLOUT-03": "readiness path mismatch on a running sandbox process",
@@ -75,6 +76,10 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
+    if case_id == "OOM-01":
+        spec = memory_control_spec(original)
+        object_value(object_value(container(spec)["resources"])["limits"])["memory"] = "128Mi"
+        return spec
     item = container(spec)
     if case_id == "PAY-04":
         return spec
@@ -108,6 +113,8 @@ def activation(case_id: CaseId, observation: JsonObject) -> bool:
     if case_id in PACKAGE_A_CASES:
         return observation.get("package_a_verified") is True
     pods = object_items(observation.get("pods", []))
+    if case_id == "OOM-01":
+        return False  # OOM requires the runner's captured rollout provenance, absent here.
     if case_id == "DEP-01":
         return not pods and observation.get("sample_status") == 503
     if case_id == "ROLLOUT-03":
@@ -118,6 +125,37 @@ def activation(case_id: CaseId, observation: JsonObject) -> bool:
             for event in events
         ) and any(_running_unready(pod) for pod in pods)
     return any(_crashed(pod) for pod in pods)
+
+
+def memory_control_spec(original: JsonObject) -> JsonObject:
+    """The control changes the image/worker flag while preserving its 256Mi memory cap."""
+    spec = deepcopy(original)
+    item = container(spec)
+    limits = object_value(object_value(item.get("resources", {})).get("limits", {}))
+    if limits.get("memory") != "256Mi" or item.get("command") or item.get("args"):
+        raise ValueError("memory control requires unchanged 256Mi baseline and image entrypoint")
+    spec["strategy"] = {"type": "Recreate"}
+    item["image"] = "payops-sandbox:revision-c"
+    env = object_items(item["env"])
+    env.append({"name": "PAYOPS_SYNTHETIC_MEMORY_WORKLOAD", "value": "bounded-v1"})
+    item["env"] = list(env)
+    return spec
+
+
+def oom_killed(pod: JsonObject) -> bool:
+    """Require actual OOMKilled, exit 137 and a restart, rather than a generic termination code."""
+    statuses = object_items(object_value(pod.get("status", {})).get("containerStatuses", []))
+    for status in statuses:
+        previous = object_value(object_value(status.get("lastState", {})).get("terminated", {}))
+        if (
+            status.get("name") == "sandbox"
+            and previous.get("reason") == "OOMKilled"
+            and previous.get("exitCode") == 137
+            and type(status.get("restartCount")) is int
+            and int(str(status["restartCount"])) >= 1
+        ):
+            return True
+    return False
 
 
 def _crashed(pod: JsonObject) -> bool:

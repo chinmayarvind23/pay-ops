@@ -1,0 +1,5 @@
+FROM payops-sandbox:local
+# The neutral revision adds one fixed synthetic worker to the reviewed application runtime.
+COPY src/payops/scenarios/__init__.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/__init__.py
+COPY src/payops/scenarios/memory_workload.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/memory_workload.py
+CMD ["python", "-m", "payops.scenarios.memory_workload"]

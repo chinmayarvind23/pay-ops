@@ -151,6 +151,57 @@ class KubectlGateway:
             "events": list[JsonValue](relevant),
         }
 
+    def memory_observation(self) -> JsonObject:
+        """Read current payments pod identities before requesting bounded memory-workload logs."""
+        observed = self.observe("payments-api")
+        pods = object_items(observed["pods"])
+        if len(pods) > 2:
+            raise ValueError("memory workload has unexpected pod multiplicity")
+        replicas = object_items(
+            self._json(("get", "replicasets", "-l", "app.kubernetes.io/name=payments-api"))["items"]
+        )
+        if len(replicas) > 32:
+            raise ValueError("memory workload has unexpected ReplicaSet multiplicity")
+        observed["replica_sets"] = list[JsonValue](replicas)
+        logs: list[JsonValue] = []
+        for pod in pods:
+            metadata = object_value(pod["metadata"])
+            name = str(metadata.get("name", ""))
+            if re.fullmatch(r"payments-api-[a-z0-9]+-[a-z0-9]+", name) is None:
+                raise ValueError("memory log target is not a payments pod")
+            logs.append(self._memory_log(name, str(metadata["uid"]), False))
+            statuses = object_items(
+                object_value(pod.get("status", {})).get("containerStatuses", [])
+            )
+            if any(int(str(status.get("restartCount", 0))) > 0 for status in statuses):
+                logs.append(self._memory_log(name, str(metadata["uid"]), True))
+        observed["memory_logs"] = logs
+        return observed
+
+    def _memory_log(self, name: str, uid: str, previous: bool) -> JsonObject:
+        """Terminating-container log errors remain evidence and do not invent a memory event."""
+        args = (
+            "logs",
+            f"pod/{name}",
+            "--container=sandbox",
+            "--timestamps=true",
+            "--tail=80",
+            "--since=2m",
+            "--limit-bytes=32768",
+        )
+        try:
+            output = self._invoke((*args, "--previous=true") if previous else args)
+            if len(output.encode()) > 65536:
+                raise ValueError("memory log response exceeds byte bound")
+            return {"pod_uid": uid, "pod_name": name, "previous": previous, "text": output}
+        except (OSError, subprocess.SubprocessError) as exc:
+            return {
+                "pod_uid": uid,
+                "pod_name": name,
+                "previous": previous,
+                "error_type": type(exc).__name__,
+            }
+
     @staticmethod
     def validate_target(name: str) -> None:
         """Runtime callers cannot bypass the closed type alias with arbitrary resources."""

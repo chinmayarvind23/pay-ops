@@ -6,6 +6,7 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 CaseId = Literal[
+    "OOM-01",
     "ROLLOUT-01",
     "ROLLOUT-02",
     "ROLLOUT-03",
@@ -63,6 +64,9 @@ class ScenarioReceipt(BaseModel):
     cleanup_started_at: str | None = None
     cleanup_verified_at: str | None = None
     activated: bool = False
+    control_verified: bool = False
+    control_verified_at: str | None = None
+    control_pod_uids: tuple[str, ...] = ()
     cleanup_verified: bool = False
     failure: str | None = None
     cleanup_failure: str | None = None

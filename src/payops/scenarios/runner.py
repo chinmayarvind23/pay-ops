@@ -16,16 +16,20 @@ from payops.scenarios.contracts import (
     ClusterGateway,
     JsonObject,
     ScenarioReceipt,
+    object_items,
     object_value,
     utc_timestamp,
 )
 from payops.scenarios.kubectl import KubectlGateway
+from payops.scenarios.memory import MemoryObserver, MemoryRead, control_holding
+from payops.scenarios.memory_provenance import current_pods, fault_activated
 from payops.scenarios.package_a import PackageAHarness, PackageAObserver
 from payops.scenarios.recipes import (
     PACKAGE_A_CASES,
     VARIANTS,
     activation,
     fault_spec,
+    memory_control_spec,
     target,
     validate_baseline,
 )
@@ -54,6 +58,7 @@ class LocalScenarioRunner:
         timeout_seconds: float = 90,
         poll_seconds: float = 2,
         package_a: PackageAObserver | None = None,
+        memory: MemoryObserver | None = None,
     ) -> None:
         """Bound total activation/cleanup waits and persist a cross-process contamination latch."""
         if not 0 < timeout_seconds <= 180 or not 0 < poll_seconds <= 5:
@@ -65,6 +70,7 @@ class LocalScenarioRunner:
         self.poll = poll_seconds
         self.block_file = kubeconfig.resolve().with_name("payops-dev-scenario-lock.json")
         self.package_a = package_a or PackageAHarness(kubeconfig)
+        self.memory = memory or MemoryRead(kubeconfig)
 
     def _save(self, directory: Path, receipt: ScenarioReceipt, name: str, data: JsonObject) -> None:
         """Exclusive files and hashes preserve failed observations instead of rewriting history."""
@@ -109,6 +115,7 @@ class LocalScenarioRunner:
         injected: JsonObject,
         directory: Path,
         receipt: ScenarioReceipt,
+        intermediate: JsonObject | None = None,
     ) -> None:
         """Restore exact captured spec only if no concurrent operator changed the resource."""
         current = self.gateway.deployment(target(case_id))
@@ -117,7 +124,7 @@ class LocalScenarioRunner:
         if object_value(current["metadata"])["uid"] != object_value(original["metadata"])["uid"]:
             raise CleanupUnverified("Deployment identity changed")
         if current_spec != original_spec:
-            if current_spec != injected:
+            if current_spec != injected and current_spec != intermediate:
                 raise CleanupUnverified("Deployment spec changed outside this run")
             self.gateway.replace_spec(target(case_id), current, original_spec)
         self._wait(
@@ -139,17 +146,24 @@ class LocalScenarioRunner:
         directory, receipt = self._start(case_id)
         original: JsonObject | None = None
         injected: JsonObject | None = None
+        intermediate: JsonObject | None = None
         try:
             original = self._baseline(case_id, directory, receipt)
             injected = fault_spec(case_id, object_value(original["spec"]))
-            self._inject(case_id, original, injected, directory, receipt)
+            expected = original
+            if case_id == "OOM-01":
+                intermediate = memory_control_spec(object_value(original["spec"]))
+                expected = self._memory_control(
+                    original, intermediate, injected, directory, receipt
+                )
+            self._inject(case_id, expected, injected, directory, receipt)
             self._investigate(receipt, after_activation)
         except BaseException as exc:
             receipt.failure = f"{type(exc).__name__}: {exc}"
             if not isinstance(exc, Exception):
                 raise
         finally:
-            self._finish(case_id, original, injected, directory, receipt)
+            self._finish(case_id, original, injected, directory, receipt, intermediate)
         return receipt
 
     def _start(self, case_id: CaseId) -> tuple[Path, ScenarioReceipt]:
@@ -200,7 +214,21 @@ class LocalScenarioRunner:
         receipt.injection_requested_at = utc_timestamp()
         if injected != original["spec"]:
             self.gateway.replace_spec(target(case_id), original, injected)
-        if case_id in PACKAGE_A_CASES:
+        if case_id == "OOM-01":
+            self._wait(
+                directory,
+                receipt,
+                "activation",
+                self.memory.collect,
+                lambda item: fault_activated(
+                    item,
+                    original,
+                    injected,
+                    str(receipt.injection_requested_at),
+                    receipt.control_pod_uids,
+                ),
+            )
+        elif case_id in PACKAGE_A_CASES:
             self._package_activation(case_id, injected, directory, receipt)
         else:
             self._wait(
@@ -229,6 +257,61 @@ class LocalScenarioRunner:
         if not activation(case_id, observed):
             raise ValueError("Package A runtime behavior or metric window was not verified")
 
+    def _memory_control(
+        self,
+        original: JsonObject,
+        control: JsonObject,
+        injected: JsonObject,
+        directory: Path,
+        receipt: ScenarioReceipt,
+    ) -> JsonObject:
+        """Persist all three reviewed states before the first ambiguous control mutation."""
+        requested_at = utc_timestamp()
+        self._save(
+            directory,
+            receipt,
+            "mutation-journal",
+            {
+                "deployment": "payments-api",
+                "control_requested_at": requested_at,
+                "uid": object_value(original["metadata"])["uid"],
+                "original": original["spec"],
+                "control": control,
+                "fault": injected,
+            },
+        )
+        self.gateway.replace_spec("payments-api", original, control)
+        observed = self._wait(
+            directory,
+            receipt,
+            "memory-control",
+            lambda: self._control_observation(original, control, requested_at),
+            lambda item: control_holding(item) and sample_healthy(item),
+        )
+        current = object_value(observed["deployment"])
+        if object_value(current["metadata"])["uid"] != object_value(original["metadata"])["uid"]:
+            raise CleanupUnverified("control Deployment identity changed")
+        receipt.control_verified = True
+        receipt.control_verified_at = utc_timestamp()
+        receipt.control_pod_uids = tuple(
+            str(object_value(pod["metadata"])["uid"]) for pod in object_items(observed["pods"])
+        )
+        return current
+
+    def _control_observation(
+        self, original: JsonObject, control: JsonObject, requested_at: str
+    ) -> JsonObject:
+        """Pair a measured cgroup-memory hold with a fresh accepted payment in the control."""
+        observed = self.memory.collect()
+        owned = current_pods(observed, original, control, requested_at)
+        if len(owned) != 1 or len(object_items(observed.get("pods", []))) != 1:
+            return observed
+        if deployment_ready(object_value(observed["deployment"]), control) and control_holding(
+            observed
+        ):
+            observed.update(self.gateway.healthy())
+        return observed
+
     @staticmethod
     def _investigate(receipt: ScenarioReceipt, callback: Callable[[], None] | None) -> None:
         """A label-free bound collector runs while the fault is active, before finally cleanup."""
@@ -248,12 +331,13 @@ class LocalScenarioRunner:
         injected: JsonObject | None,
         directory: Path,
         receipt: ScenarioReceipt,
+        intermediate: JsonObject | None = None,
     ) -> None:
         """Even ambiguous patch failures attempt recovery and retain an auditable final receipt."""
         if original is not None and injected is not None:
             receipt.cleanup_started_at = utc_timestamp()
             try:
-                self._restore(case_id, original, injected, directory, receipt)
+                self._restore(case_id, original, injected, directory, receipt, intermediate)
             except Exception as exc:
                 receipt.cleanup_failure = f"{type(exc).__name__}: {exc}"
                 self.block_file.write_text(receipt.model_dump_json(indent=2), encoding="utf-8")
