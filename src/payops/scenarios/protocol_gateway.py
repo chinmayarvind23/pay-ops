@@ -54,13 +54,23 @@ class ProtocolGateway(SamplingGateway):
 
 
 def protocol_identities(
-    state: JsonObject, original: JsonObject, payments: JsonObject, risk: JsonObject
+    state: JsonObject,
+    original: JsonObject,
+    payments: JsonObject,
+    risk: JsonObject,
+    *,
+    risk_image_id: str | None = None,
 ) -> dict[str, PodIdentity]:
     """Reuse all five owner/template/image checks before projecting the complete identity map."""
     reference = deepcopy(original)
     expected = deployment_map(reference)
     expected["payments-api"]["spec"], expected["risk-sim"]["spec"] = payments, risk
-    runtime_identities(state, reference, object_value(expected["processor-adapter"]["spec"]))
+    runtime_identities(
+        state,
+        reference,
+        object_value(expected["processor-adapter"]["spec"]),
+        risk_image_id=risk_image_id,
+    )
     documents = deployment_map(state)
     identities: dict[str, PodIdentity] = {}
     for service in SERVICES:

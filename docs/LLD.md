@@ -433,3 +433,20 @@ The first frozen OOM-02 attempt at bb4f85c stopped in scope preflight: the new
 mutation or latch occurred; final runtime/source verification passed. The adapter
 now uses256KiB and a real inert subprocess test verifies that interface contract.
 The failed attempt remains under chunk-11-leak/dfa8e9abd17b4a0f8f03e5a08cc49215.
+
+The second OOM-02 attempt252d2c2 completed the release allocation sequence but
+failed the five-service settle check. The reused sampling validator intentionally
+requires unchanged original images; the retention experiment changes risk's image.
+Attempt30f426c939064fd09a19d1da4b050c4d/run79fc69dffa80489583cd88a72842423d remains
+unqualified. Original risk restoration, accepted payment, final source/runtime and
+absence of the latch were verified.
+
+The runtime validator now accepts an explicit risk-only image identity while
+retaining original image checks for every other service. OOM-02 accepts that override
+only after matching the pinned kind-import digest
+sha256:a86b7fed7a764c470d118c6e1e610f8fd5b697686c5334e78b95a2bb800a7106.
+The imported config86c1984cd9bdd5b79362eafe4d4263ad398cc78213b4b93d22e2747d88f7cd30
+matches the independently tested9d4efd5 Docker image config and installed-source
+proof. Control and retained processes must still use the same runtime image.
+Restoration uses the original image rule. A new source revision/run is required;
+the previous attempt is not retroactively qualified.

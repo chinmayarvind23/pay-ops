@@ -181,3 +181,25 @@ def test_preflight_rejects_changed_baseline(field: str) -> None:
         metadata["labels"] = {"app.kubernetes.io/name": "payments-api"}
     with pytest.raises(ValueError):
         validate_runtime_baseline(state)
+
+
+def test_explicit_risk_image_keeps_other_image_checks() -> None:
+    """A reviewed risk worker image cannot authorize a processor image change or wrong digest."""
+    cluster = SamplingCluster(Clock())
+    original, changed = cluster.state(), cluster.state()
+    spec = object_value(cluster.documents["processor-adapter"]["spec"])
+    risk = next(
+        p
+        for p in object_items(changed["pods"])
+        if str(object_value(p["metadata"])["name"]).startswith("risk-sim-")
+    )
+    status = object_items(object_value(risk["status"])["containerStatuses"])[0]
+    status["imageID"] = "sha256:reviewed-worker"
+    with pytest.raises(ValueError, match="image identity"):
+        runtime_identities(changed, original, spec)
+    runtime_identities(changed, original, spec, risk_image_id="sha256:reviewed-worker")
+    with pytest.raises(ValueError, match="image identity"):
+        runtime_identities(changed, original, spec, risk_image_id="sha256:wrong-worker")
+    mutate(changed, "image")
+    with pytest.raises(ValueError, match="image identity"):
+        runtime_identities(changed, original, spec, risk_image_id="sha256:reviewed-worker")

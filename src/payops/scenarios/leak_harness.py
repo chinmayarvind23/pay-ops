@@ -17,7 +17,7 @@ from payops.scenarios.contracts import (
 from payops.scenarios.leak_evidence import parse_records, validate_progression
 from payops.scenarios.leak_gateway import LeakGateway
 from payops.scenarios.leak_lifetime import OomLifetime, capture_lifetime, repeated_oom, termination
-from payops.scenarios.leak_specs import leak_specs
+from payops.scenarios.leak_specs import RUNTIME_IMAGE_DIGEST, leak_specs
 from payops.scenarios.memory_provenance import current_pods, timestamp
 from payops.scenarios.protocol_gateway import protocol_identities
 from payops.scenarios.runner import CleanupUnverified, LocalScenarioRunner, sample_healthy
@@ -73,7 +73,13 @@ class LeakHarness(LocalScenarioRunner):
         def accept(state: JsonObject) -> bool:
             """A replaced peer invalidates isolation even when the replacement is healthy."""
             try:
-                identities = protocol_identities(state, context.original, payments, expected)
+                identities = protocol_identities(
+                    state,
+                    context.original,
+                    payments,
+                    expected,
+                    risk_image_id=context.control_image if expected == context.control else None,
+                )
                 return all(
                     identities[name] == prior
                     for name, prior in baseline.items()
@@ -146,6 +152,8 @@ class LeakHarness(LocalScenarioRunner):
                 )
                 if time.monotonic() >= deadline:
                     break
+                if frames[0][2].rpartition("@")[2] != RUNTIME_IMAGE_DIGEST:
+                    raise ValueError("control image does not match the verified worker manifest")
                 context.control_image = frames[0][2]
                 self._settle(context, context.control, directory, receipt)
                 self._wait(

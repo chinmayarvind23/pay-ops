@@ -21,7 +21,7 @@ from payops.scenarios.contracts import (
 )
 from payops.scenarios.leak_gateway import LeakGateway
 from payops.scenarios.leak_harness import LeakHarness, LeakRun
-from payops.scenarios.leak_specs import leak_specs
+from payops.scenarios.leak_specs import RUNTIME_IMAGE_DIGEST, leak_specs
 
 
 class FixtureGateway(LeakGateway):
@@ -190,7 +190,9 @@ def test_real_fault_stage_requires_two_distinct_captures(tmp_path: Path) -> None
     assert len([a for a in receipt.artifacts if "oom-lifetime" in a.name]) == 3
 
 
-@pytest.mark.parametrize("failure", ["none", "changed-container", "restart", "incomplete"])
+@pytest.mark.parametrize(
+    "failure", ["none", "changed-container", "restart", "incomplete", "wrong-image"]
+)
 def test_actual_control_capture_and_rejection(tmp_path: Path, failure: str) -> None:
     """Drive the actual collector/validator path; a race or incomplete log blocks fault entry."""
     gateway = FixtureGateway()
@@ -212,7 +214,7 @@ def test_actual_control_capture_and_rejection(tmp_path: Path, failure: str) -> N
                 "restartCount": 0,
                 "ready": True,
                 "containerID": "containerd://" + "a" * 64,
-                "imageID": "sha256:fixed-image",
+                "imageID": "docker.io/library/worker@" + RUNTIME_IMAGE_DIGEST,
                 "state": {"running": {"startedAt": START.isoformat()}},
             }
         ]
@@ -225,6 +227,11 @@ def test_actual_control_capture_and_rejection(tmp_path: Path, failure: str) -> N
         status["containerID"] = "containerd://" + "b" * 64
     elif failure == "restart":
         status["restartCount"] = 1
+    elif failure == "wrong-image":
+        status["imageID"] = "docker.io/library/worker@sha256:wrong"
+        object_items(object_value(pod["status"])["containerStatuses"])[0]["imageID"] = status[
+            "imageID"
+        ]
     records = sequence("released-v1")
     if failure == "incomplete":
         records = records[:-1]

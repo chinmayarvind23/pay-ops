@@ -6,6 +6,8 @@ from payops.scenarios.contracts import JsonObject, object_items, object_value
 from payops.scenarios.recipes import container, validate_baseline
 
 IMAGE = "payops-sandbox:leak-9d4efd5"
+# The kind import manifest resolves to the independently verified 9d4efd5 image config.
+RUNTIME_IMAGE_DIGEST = "sha256:a86b7fed7a764c470d118c6e1e610f8fd5b697686c5334e78b95a2bb800a7106"
 
 
 def leak_specs(document: JsonObject) -> tuple[JsonObject, JsonObject]:
