@@ -245,3 +245,15 @@ window, rejects duplicates and inconsistent durations, and then binds both kerne
 snapshots to the collector's incident and process identity for delta validation.
 The final harness must retain the returned raw bytes and runtime snapshots before
 qualification; this adapter does not itself publish a scenario result.
+
+`scenarios.cpu_contract.PLAN` freezes the five-stage order and three 50,000-round
+requests per stage. Work is disabled in original/final stages. The two work specs
+enable capture and use Recreate; only the CPU limit differs between 500m control
+and 100m restriction. Memory, resource requests and peer settings are preserved.
+Stage aggregation requires distinct sequential samples, matching actual kernel
+quotas and positive CPU consumption. Both control and recovered mean work times
+must be at most one second. Restricted mean time must be 1–4.5 seconds and at least
+twice each control; mean throttled time must exceed 0.5 seconds and three times
+each control. These thresholds come from the retained prequalification calibration
+and must not be tuned against a qualification run. They measure work duration,
+not end-to-end investigation latency. The journaled lifecycle remains to be wired.
