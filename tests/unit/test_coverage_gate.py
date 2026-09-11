@@ -46,12 +46,14 @@ def test_coverage_thresholds_fail_closed(
     assert json.loads(output.read_text())["passed"] is (expected == 0)
 
 
-@pytest.mark.parametrize("module", ["protected_api.py", "memory/data_clients.py"])
+@pytest.mark.parametrize(
+    "module", ["protected_api.py", "memory/data_clients.py", "orchestrator/reasoning.py"]
+)
 @pytest.mark.parametrize("coverage_value,expected", [(94.999, 1), (95.0, 0)])
 def test_authority_boundaries_require_critical_coverage(
     tmp_path: Path, module: str, coverage_value: float, expected: int
 ) -> None:
-    """Authentication routes and data trust boundaries cannot pass the ordinary module floor."""
+    """Authentication, data and model trust boundaries cannot pass the ordinary module floor."""
     files = {
         "src/payops/contracts/__init__.py": {"summary": {"percent_covered": 100}},
         "src/payops/evaluation/metrics.py": {"summary": {"percent_covered": 100}},
