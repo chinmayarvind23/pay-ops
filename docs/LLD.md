@@ -329,3 +329,21 @@ admission-error events reject. Lost responses at every write boundary exercise
 independent restoration. Live activation and cleanup were verified at `e69b814` (run
 `05baf15280ff466395e32655c94a54e9`). The actual event reported insufficient memory;
 all three resource specs and identities were restored and all five services healthy.
+
+### Retained-allocation worker (OOM-02, not yet qualified)
+
+The startup-only risk worker has two closed modes: retained-v1 keeps each touched
+8Mi allocation; released-v1 drops each allocation immediately. Both attempt at
+most40 chunks, wait0.5seconds between chunks and use the same256Mi cgroup limit.
+There is a10second startup grace and35second monotonic lifetime limit. Kernel
+memory.max is checked before allocation and on every step. Host execution, other
+roles, unspecified modes and other limits reject. No HTTP request can enable it.
+
+Each record includes actual memory.current/memory.max, retained byte count, step,
+PID, UTC timestamp and monotonic time. These logs establish allocation progression,
+not OOM termination. Qualification still requires actual Kubernetes OOMKilled
+termination and restart identities, repeated progression under an unchanged limit,
+a successful released control, bounded recovery and healthy payment traffic.
+The kernel's [cgroup memory controller](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
+provides the memory limit and OOM accounting; an application exception is insufficient.
+The worker has unit coverage but is not yet wired to a container entrypoint or harness.
