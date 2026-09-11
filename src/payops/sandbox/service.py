@@ -11,6 +11,7 @@ from opentelemetry.trace import SpanKind
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from payops.sandbox.client import call_peer
+from payops.sandbox.concurrency_memory import ConcurrentMemory
 from payops.sandbox.cpu import CpuWork
 from payops.sandbox.models import RiskSampleV2, Role, Sample, SandboxConfig, SimulationResult
 from payops.sandbox.runtime import FaultState, SampleStore
@@ -45,9 +46,12 @@ async def execute_sample(
     faults: FaultState,
     transport: httpx.AsyncBaseTransport | None,
     cpu: CpuWork,
+    memory: ConcurrentMemory,
 ) -> SimulationResult:
     """Apply trusted fault state before executing the role's bounded simulation."""
     declined = await faults.apply(sample)
+    if not declined and config.concurrency_memory:
+        await memory.run(sample.sample_id)
     if not declined and config.cpu_rounds:
         consumed = await cpu.run(sample.sample_id)
         trace.get_current_span().set_attribute("sandbox.cpu.rounds", config.cpu_rounds)
@@ -67,13 +71,14 @@ async def process_sample(
     store: SampleStore,
     transport: httpx.AsyncBaseTransport | None,
     cpu: CpuWork,
+    memory: ConcurrentMemory,
 ) -> SimulationResult:
     """Reservations protect each role independently; failure frees only its local slot."""
     cached = store.reserve(sample)
     if cached is not None:
         return cached
     try:
-        result = await execute_sample(role, sample, config, faults, transport, cpu)
+        result = await execute_sample(role, sample, config, faults, transport, cpu, memory)
         store.complete(sample.sample_id, result)
         return result
     except BaseException:
@@ -94,14 +99,18 @@ def create_service(
     fault_state = faults or FaultState()
     store = SampleStore(settings.idempotency_capacity)
     metrics = SandboxMetrics()
+    if settings.concurrency_memory and role != "payments":
+        raise ValueError("concurrent-memory profile requires payments role")
+    memory = ConcurrentMemory(settings.concurrency_memory)
     cpu = CpuWork(settings.cpu_rounds, settings.cpu_capture)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        """Service shutdown closes admission while bounded in-flight CPU work finishes."""
+        """Close admission while bounded in-flight CPU and memory work finishes."""
         try:
             yield
         finally:
+            memory.close()
             cpu.close()
 
     app = FastAPI(title=f"PayOps synthetic {role}", lifespan=lifespan)
@@ -132,7 +141,7 @@ def create_service(
         ):
             try:
                 result = await process_sample(
-                    role, sample, settings, fault_state, store, transport, cpu
+                    role, sample, settings, fault_state, store, transport, cpu, memory
                 )
                 status = result.status
                 return result

@@ -100,10 +100,13 @@ class SandboxConfig(BaseModel):
     risk_protocol: RiskProtocol = "v1"
     cpu_rounds: int = Field(default=0, ge=0, le=200000)
     cpu_capture: bool = False
+    concurrency_memory: bool = False
 
     @model_validator(mode="after")
     def validate_origins(self) -> Self:
         """Validate all peers at startup so later requests use immutable safe origins."""
+        if self.concurrency_memory and self.cpu_rounds:
+            raise ValueError("CPU and concurrent-memory experiments must be isolated")
         if self.cpu_capture and not self.cpu_rounds:
             raise ValueError("CPU capture requires enabled work")
         for url in (self.risk_url, self.processor_url, self.ledger_url, self.webhook_url):

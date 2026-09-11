@@ -84,8 +84,9 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
         raise ValueError("indirect environment is outside this local harness")
     for item in env:
         if item.get("name") == "PAYOPS_SANDBOX_CONFIG":
-            if SandboxConfig.model_validate_json(str(item.get("value"))).cpu_rounds:
-                raise ValueError("active CPU workload cannot become a healthy baseline")
+            settings = SandboxConfig.model_validate_json(str(item.get("value")))
+            if settings.cpu_rounds or settings.concurrency_memory:
+                raise ValueError("active synthetic workload cannot become a healthy baseline")
     return deepcopy(spec)
 
 

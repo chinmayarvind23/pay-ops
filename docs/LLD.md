@@ -465,3 +465,27 @@ activation. The independent verifier initially kept only the first snapshot of
 each container ID; it now retains the latest count for that same immutable
 termination, verifies unchanged times/pod/image, and still counts exactly two
 container IDs. No capture or acceptance threshold was changed.
+
+### Request-concurrency memory experiment (OOM-04, not yet qualified)
+
+The optional deployment-only concurrency_memory profile holds32Mi of touched
+resident memory for1second per accepted non-replay payment request. Up to8requests
+can be admitted on the owning ASGI loop; excess work rejects503 without queuing.
+It requires the synthetic payments role in a Linux256Mi cgroup. Closed or disabled
+profiles cannot allocate; ordinary disabled startup does not read cgroup files.
+Each request releases its allocation and admission slot in finally, including
+cancellation or capture failure. No background allocator is created.
+
+Logs link each sample to admitted/allocated/released phases, actual active count,
+fixed workload size, kernel current/maximum memory, UTC and monotonic time. The
+profile runs after idempotency reservation and before peer calls; successful
+replays skip work and failures abandon only the local reservation. It cannot be
+combined with CPU work or enabled through an HTTP sample. Other scenario baseline
+checks reject an already-active memory profile.
+
+The planned contrast keeps the same image, resource limits and per-request work,
+changing only traffic concurrency. Acceptance still needs complete low-concurrency
+controls, measured overlap/kernel growth under high concurrency, actual pressure
+or OOM evidence, payment effects and verified restoration. This worker/integration
+is not live qualification. Twelve worker tests reached100%statement/branch coverage;
+37focused worker/service/CPU regression tests passed with strict targeted typing.
