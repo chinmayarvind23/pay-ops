@@ -206,3 +206,17 @@ it. Work occurs after local idempotency reservation and before peer calls. Compl
 replay skips execution, and failure abandons the reservation. Runtime quota and
 cgroup measurements belong to the separate scenario harness; this component alone
 does not establish a measured CPU-throttling incident.
+
+`scenarios.cpu_counters` validates bounded raw cgroup-v2 records before computing
+integer microsecond deltas. It requires all six bandwidth/accounting fields,
+retains additional kernel fields, and rejects duplicates, resets, field-set drift,
+quota changes, overlapping observations and changed Pod/container identities.
+Each snapshot must be acquired within two seconds; a pair spans at most thirty.
+Missing counters are errors rather than zero utilization. The module revalidates
+immutable model copies at the arithmetic boundary.
+
+These checks validate supplied records; they do not acquire or authenticate them.
+The remaining CPU scenario collector must establish ownership around acquisition
+and retain the original sources. Qualification must compare restricted execution
+with the same workload at the normal quota, since calibration found throttling at
+both quotas. Neither this validator nor the calibration qualifies OOM-03.
