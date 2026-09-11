@@ -1,0 +1,5 @@
+FROM payops-sandbox:local
+# Only the fixed failure module is added; the reviewed baseline runtime stays intact.
+COPY src/payops/scenarios/__init__.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/__init__.py
+COPY src/payops/scenarios/startup_failure.py /app/.venv/lib/python3.12/site-packages/payops/scenarios/startup_failure.py
+CMD ["python", "-m", "payops.scenarios.startup_failure"]

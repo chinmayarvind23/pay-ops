@@ -1,6 +1,27 @@
 # Failure Scenarios
 
-The suite contains six groups with four scenarios each.
+The planned suite contains six groups with four scenarios each. Four local variants are
+implemented and have live activation and restoration evidence: startup failure
+(ROLLOUT-01), invalid sandbox configuration (ROLLOUT-02), readiness path regression
+(ROLLOUT-03), and a local processor outage (DEP-01). The configuration variant does
+not claim a missing production environment variable; the processor variant does
+not claim an AWS outage. The remaining cases below are planned.
+
+The operator harness only targets the dedicated `kind-payops-dev` cluster. It saves
+the original deployment, records activation, restores the exact specification and
+requires a successful synthetic payment before releasing its persistent run latch.
+Unverified cleanup blocks later runs. This harness is not a model-facing tool.
+
+From the repository root, after the local sandbox is running:
+
+```powershell
+docker build -f src/payops/scenarios/Dockerfile.startup_failure -t payops-sandbox:startup-failure .
+../resources/pay_ops/tools/kind-v0.33.0.exe load docker-image payops-sandbox:startup-failure --name payops-dev
+uv run python -m payops.scenarios.run --scenario ROLLOUT-01 --kubeconfig ../resources/pay_ops/runtime/kubeconfig --output ../resources/pay_ops/evidence/scenarios
+```
+
+Receipts distinguish injection/cleanup time from investigation time, retain failures,
+and hash every captured artifact. See `src/payops/scenarios/` for the closed recipes.
 
 ## Resource
 
