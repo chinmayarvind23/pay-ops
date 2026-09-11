@@ -1,5 +1,50 @@
 # High-Level Design
 
+## Implemented local architecture
+
+The local worker runs a native LangGraph with SQLite checkpoints and per-incident file
+locks. Its collector reads the synthetic `kind` cluster and Prometheus. An optional
+reasoner uses LangChain messages, a bounded provider adapter and six fixed read tools.
+SQL budget reservations and immutable evidence receipts make completed operations
+replayable without repeating remote work. The default worker uses deterministic ranking.
+
+```mermaid
+flowchart LR
+    CLI[Trusted local operator] --> W[LangGraph investigation worker]
+    W --> C[Kubernetes and payment collectors]
+    C --> K[Five synthetic services in kind]
+    C --> P[Prometheus]
+    W --> A[Immutable evidence artifacts]
+    W --> L[Bounded reasoning loop]
+    L --> B[SQL budget ledger]
+    L --> M[Pinned OpenAI Responses adapter]
+    L --> R[Scoped read registry]
+    R --> C
+    R --> E[Elasticsearch retrieval]
+    W --> CP[SQLite graph checkpoints]
+    AUTH[Current identity and authorization] --> R
+    AUTH --> L
+    PRO[Separate remediation proposal] --> POL[Deterministic policy and approval broker]
+    POL --> SQL[SQL action records and audit]
+    POL --> FX[Fixture executor]
+```
+
+The OpenAI adapter is verified through synthetic transport tests; paid calls and a
+live model benchmark remain open. PostgreSQL, Redis and Elasticsearch adapters have
+separate local TLS integration evidence. The graph's SQLite checkpoint store is a
+single-host implementation; deploying multiple workers requires a shared checkpoint
+backend and distributed ownership. Redis cache contents never authorize an action.
+
+The protected API factory verifies identity and scope, but the default `payops serve`
+command exposes only the loopback mock path. The approved-action broker has a fixture
+executor. Public login, model operator hosting and operational mutation deployment
+must not be inferred from their component tests.
+
+## Target cloud architecture
+
+The diagram below remains the deployment target. Pub/Sub delivery, cloud storage,
+GKE runtime, AWS hosting and the public replay surfaces are not yet deployed results.
+
 ```mermaid
 flowchart LR
     U[Slack / UI / Benchmark] --> A[FastAPI]
