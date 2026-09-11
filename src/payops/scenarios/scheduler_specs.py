@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
+from typing import Literal
 
 from payops.scenarios.contracts import JsonObject, object_items, object_value
 from payops.scenarios.memory_provenance import (
@@ -39,7 +40,7 @@ LIMITS: JsonObject = {
 }
 
 
-def node_identity(observed: JsonObject) -> JsonObject:
+def node_identity(observed: JsonObject, resource: Literal["cpu", "memory"] = "cpu") -> JsonObject:
     """The fixed request is safe only while both known nodes still expose exactly22 CPUs."""
     nodes = object_items(observed.get("nodes", []))
     result: JsonObject = {}
@@ -67,6 +68,11 @@ def node_identity(observed: JsonObject) -> JsonObject:
         ):
             raise ValueError("scheduler node capacity/health/taints outside reviewed baseline")
         result[name] = metadata["uid"]
+        if resource == "memory":
+            amount = resource_quantity(object_value(status["allocatable"]).get("memory"))
+            if not 0 < amount < resource_quantity("16Gi"):
+                raise ValueError("memory request must exceed every node allocatable capacity")
+            result[name] = {"uid": metadata["uid"], "allocatable_memory_bytes": str(amount)}
     if set(result) != {"payops-dev-control-plane", "payops-dev-worker"} or len(nodes) != 2:
         raise ValueError("scheduler requires exactly the two reviewed nodes")
     return result
@@ -250,23 +256,26 @@ def activated(
     requested_at: str,
     nodes: JsonObject,
     old_uids: tuple[str, ...],
+    kind: Literal["cpu", "memory"] = "cpu",
 ) -> bool:
-    """Ownership, actual scheduler state and fresh CPU rejection must all describe this rollout."""
+    """Ownership, scheduler state and fresh resource rejection must describe this rollout."""
     resource = object_value(container(expected)["resources"])
     if (
-        node_identity(observed) != nodes
-        or object_value(resource["requests"]).get("cpu") != "23"
-        or object_value(resource["limits"]).get("cpu") != "23"
+        node_identity(observed, kind) != nodes
+        or object_value(resource["requests"]).get(kind) != ("23" if kind == "cpu" else "16Gi")
+        or object_value(resource["limits"]).get(kind) != ("23" if kind == "cpu" else "16Gi")
     ):
         return False
     return any(
         object_value(pod["metadata"])["uid"] not in old_uids
-        and _pending_cpu(pod, observed, requested_at)
+        and _pending_resource(pod, observed, requested_at, kind)
         for pod in current_pods(observed, original, expected, requested_at)
     )
 
 
-def _pending_cpu(pod: JsonObject, observed: JsonObject, requested_at: str) -> bool:
+def _pending_resource(
+    pod: JsonObject, observed: JsonObject, requested_at: str, kind: Literal["cpu", "memory"]
+) -> bool:
     """An admitted unscheduled pod is distinct from admission rejection or a crashed container."""
     status = object_value(pod.get("status", {}))
     if (
@@ -283,7 +292,7 @@ def _pending_cpu(pod: JsonObject, observed: JsonObject, requested_at: str) -> bo
         and scheduled[0].get("reason") == "Unschedulable"
         and _fresh(scheduled[0].get("lastTransitionTime"), requested_at)
         and any(
-            _scheduler_event(event, pod, requested_at)
+            _scheduler_event(event, pod, requested_at, kind)
             for event in object_items(observed.get("events", []))
         )
     )
@@ -299,8 +308,10 @@ def _fresh(value: object, requested_at: str) -> bool:
     )
 
 
-def _scheduler_event(event: JsonObject, pod: JsonObject, requested_at: str) -> bool:
-    """A scheduler-owned event must name the current pod and actual insufficient-CPU result."""
+def _scheduler_event(
+    event: JsonObject, pod: JsonObject, requested_at: str, kind: Literal["cpu", "memory"]
+) -> bool:
+    """A scheduler-owned event must name the current pod and actual resource rejection."""
     involved = object_value(event.get("involvedObject", {}))
     stamp = (
         object_value(event.get("series", {})).get("lastObservedTime")
@@ -319,6 +330,6 @@ def _scheduler_event(event: JsonObject, pod: JsonObject, requested_at: str) -> b
         and involved.get("namespace") == "payops-sandbox"
         and event.get("reason") == "FailedScheduling"
         and reporter == "default-scheduler"
-        and "Insufficient cpu" in str(event.get("message", ""))
+        and f"Insufficient {kind}" in str(event.get("message", ""))
         and _fresh(stamp, requested_at)
     )

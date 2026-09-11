@@ -1,10 +1,12 @@
 """Memory recipe admission, capacity and preservation checks, without live qualification."""
 
 from copy import deepcopy
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from test_memory import replace_field
-from test_scheduler import SchedulerFixture
+from test_scheduler import SchedulerFixture, task
 
 from payops.scenarios.contracts import JsonObject, object_items, object_value
 from payops.scenarios.recipes import container
@@ -62,3 +64,52 @@ def test_memory_plan_preserves_every_unrelated_field_and_recovery_headroom() -> 
     injected["payments"]["strategy"] = object_value(original["payments"]["spec"])["strategy"]
     assert injected == {key: value["spec"] for key, value in original.items()}
     assert original == untouched
+
+
+@pytest.mark.parametrize("fail_at", range(7))
+@pytest.mark.parametrize("after_apply", [False, True])
+def test_memory_lifecycle_restores_independent_resources(
+    tmp_path: Path, fail_at: int, after_apply: bool
+) -> None:
+    """Lost responses on all six writes must retain the established recovery semantics."""
+    fixture = SchedulerFixture(fail_at, after_apply)
+    runner = task(tmp_path, fixture)
+    receipt = runner.run("SCHED-02")
+    if fail_at == 0:
+        assert receipt.activated and receipt.cleanup_verified and not receipt.failure
+    elif fail_at <= 3:
+        assert not receipt.activated and receipt.failure and receipt.cleanup_verified
+    else:
+        assert receipt.activated and receipt.cleanup_failure and runner.block_file.exists()
+    if receipt.cleanup_verified:
+        assert all(
+            fixture.documents[key]["spec"] == value["spec"]
+            for key, value in fixture.originals.items()
+        )
+
+
+@pytest.mark.parametrize("message", ["Insufficient cpu", "FailedCreate quota exceeded", ""])
+def test_memory_requires_actual_memory_scheduler_event(tmp_path: Path, message: str) -> None:
+    """CPU rejection and admission errors cannot qualify the memory scenario."""
+    fixture = SchedulerFixture()
+    snapshot = fixture.snapshot
+
+    def changed_event() -> JsonObject:
+        """Retain all correct ownership and pending state while corrupting the reason."""
+        observed = snapshot()
+        object_items(observed["events"])[0]["message"] = message
+        return observed
+
+    with patch.object(fixture, "snapshot", side_effect=changed_event):
+        receipt = task(tmp_path, fixture).run("SCHED-02")
+    assert not receipt.activated and receipt.failure and receipt.cleanup_verified
+
+
+def test_memory_capacity_abort_precedes_all_writes(tmp_path: Path) -> None:
+    """A schedulable request must not be submitted even with otherwise healthy preflight."""
+    fixture = SchedulerFixture()
+    observed = fixture.snapshot()
+    replace_field(observed, ("nodes", 1, "status", "allocatable", "memory"), "32Gi")
+    with patch.object(fixture, "snapshot", return_value=observed):
+        receipt = task(tmp_path, fixture).run("SCHED-02")
+    assert receipt.failure and not receipt.activated and not fixture.writes

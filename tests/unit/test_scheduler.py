@@ -40,7 +40,7 @@ def nodes() -> list[JsonValue]:
                 else []
             },
             "status": {
-                "allocatable": {"cpu": "22"},
+                "allocatable": {"cpu": "22", "memory": "16124080Ki"},
                 "conditions": [
                     {"type": name, "status": "True" if name == "Ready" else "False"}
                     for name in ("Ready", "MemoryPressure", "DiskPressure", "PIDPressure")
@@ -123,7 +123,10 @@ class SchedulerFixture(MemoryCluster):
         cpu = object_value(
             object_value(container(object_value(self.current["spec"]))["resources"])["requests"]
         )["cpu"]
-        if cpu == "23":
+        memory = object_value(
+            object_value(container(object_value(self.current["spec"]))["resources"])["requests"]
+        )["memory"]
+        if cpu == "23" or memory == "16Gi":
             pod = object_items(observed["pods"])[0]
             object_value(pod["metadata"])["uid"] = "pending-pod"
             pod["status"] = {
@@ -159,7 +162,7 @@ class SchedulerFixture(MemoryCluster):
                 "lastTimestamp": "2020-01-01T00:00:00Z"
                 if self.stale
                 else datetime.now(UTC).isoformat(),
-                "message": "0/2 nodes: 1 Insufficient cpu, 1 untolerated control-plane taint",
+                "message": "Insufficient memory" if memory == "16Gi" else "Insufficient cpu",
             }
         ]
         observed.update(

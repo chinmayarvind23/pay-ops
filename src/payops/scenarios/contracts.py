@@ -10,6 +10,7 @@ CaseId = Literal[
     "TELEM-03",
     "OOM-01",
     "SCHED-01",
+    "SCHED-02",
     "ROLLOUT-01",
     "ROLLOUT-02",
     "ROLLOUT-03",

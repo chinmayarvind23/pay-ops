@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Literal
 
 from payops.scenarios.contracts import (
     CaseId,
@@ -19,6 +20,7 @@ from payops.scenarios.runner import (
     sample_healthy,
 )
 from payops.scenarios.scheduler_gateway import SchedulerAccess, SchedulerGateway, Slot
+from payops.scenarios.scheduler_memory import memory_plans
 from payops.scenarios.scheduler_specs import (
     activated,
     capture,
@@ -51,15 +53,17 @@ class SchedulerHarness(LocalScenarioRunner):
         self, case_id: CaseId = "SCHED-01", after_activation: Callable[[], None] | None = None
     ) -> ScenarioReceipt:
         """No high-resource write can precede the complete journal of all possible specs."""
-        if case_id != "SCHED-01":
-            raise ValueError("scheduler harness accepts only SCHED-01")
+        if case_id not in {"SCHED-01", "SCHED-02"}:
+            raise ValueError("scheduler harness accepts only SCHED-01/SCHED-02")
+        kind: Literal["cpu", "memory"] = "memory" if case_id == "SCHED-02" else "cpu"
         directory, receipt = self._start(case_id)
         original: dict[Slot, JsonObject] = {}
         injected: dict[Slot, JsonObject] = {}
         try:
             before = self._preflight(directory, receipt)
             original = capture(before)
-            injected = plans(original)
+            node_identity(before, kind)
+            injected = memory_plans(original) if kind == "memory" else plans(original)
             self._save(
                 directory,
                 receipt,
@@ -68,7 +72,7 @@ class SchedulerHarness(LocalScenarioRunner):
                     "variant": VARIANTS[case_id],
                     "original": {str(key): value for key, value in original.items()},
                     "injected": {str(key): value for key, value in injected.items()},
-                    "node_identity": node_identity(before),
+                    "node_identity": node_identity(before, kind),
                     "order": ["quota", "limits", "payments"],
                 },
             )
@@ -119,6 +123,11 @@ class SchedulerHarness(LocalScenarioRunner):
             lambda: self.access.resource("limits"),
             lambda item: item.get("spec") == injected["limits"],
         )
+        kind: Literal["cpu", "memory"] = "memory" if receipt.case_id == "SCHED-02" else "cpu"
+        placement = self.access.snapshot()
+        self._save(directory, receipt, "placement-before-injection", placement)
+        if node_identity(placement, kind) != node_identity(before, kind):
+            raise ValueError("node identity/capacity changed before workload injection")
         receipt.injection_requested_at = utc_timestamp()
         self.access.replace_resource("payments", original["payments"], injected["payments"])
         old_uids = tuple(
@@ -134,8 +143,9 @@ class SchedulerHarness(LocalScenarioRunner):
                 original["payments"],
                 injected["payments"],
                 str(receipt.injection_requested_at),
-                node_identity(before),
+                node_identity(before, "memory" if receipt.case_id == "SCHED-02" else "cpu"),
                 old_uids,
+                "memory" if receipt.case_id == "SCHED-02" else "cpu",
             ),
         )
         receipt.activated = True

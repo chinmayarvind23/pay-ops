@@ -5,21 +5,12 @@ from copy import deepcopy
 from payops.scenarios.contracts import JsonObject, object_items, object_value
 from payops.scenarios.recipes import container
 from payops.scenarios.scheduler_gateway import Slot
-from payops.scenarios.scheduler_specs import node_identity, resource_quantity
+from payops.scenarios.scheduler_specs import node_identity
 
 
 def memory_node_identity(observed: JsonObject) -> JsonObject:
     """Bind node UIDs and capacity; reject nodes capable of placing the 16Gi request."""
-    identities = node_identity(observed)
-    result: JsonObject = {}
-    for node in object_items(observed["nodes"]):
-        name = str(object_value(node["metadata"])["name"])
-        capacity = object_value(object_value(node["status"])["allocatable"]).get("memory")
-        amount = resource_quantity(capacity)
-        if not 0 < amount < resource_quantity("16Gi"):
-            raise ValueError("memory request must exceed every reviewed node's allocatable memory")
-        result[name] = {"uid": identities[name], "allocatable_memory_bytes": str(amount)}
-    return result
+    return node_identity(observed, "memory")
 
 
 def memory_plans(original: dict[Slot, JsonObject]) -> dict[Slot, JsonObject]:

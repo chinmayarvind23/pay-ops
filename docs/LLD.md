@@ -321,6 +321,9 @@ all unrelated fields remain unchanged. Injection uses Recreate. This follows
 [Kubernetes request-based placement](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 and [quota admission accounting](https://kubernetes.io/docs/concepts/policy/resource-quotas/).
 
-The recipe and capacity contract have fixture coverage; integration with the
-three-object journal, fresh `Insufficient memory` evidence and a live cleanup
-proof remain required. This contract does not increase the qualified case count.
+The shared three-object journal now selects this recipe for SCHED-02. Node
+identity and capacity are checked before admission expansion, again immediately
+before workload injection, and during activation. Qualification requires a fresh
+`Insufficient memory` event naming the current owned Pending pod; CPU-only and
+admission-error events reject. Lost responses at every write boundary exercise
+independent restoration. Live activation and cleanup proof remain required. This contract does not increase the qualified case count.
