@@ -235,3 +235,13 @@ and check ownership and restart state around collection. Counter deltas cover th
 whole container, including background activity; thread CPU time covers the hash
 worker. The two are retained separately. A local three-request container check
 verified real file acquisition at 500m; Kubernetes qualification remains pending.
+
+`scenarios.cpu_sources.CpuGateway` reads only the current payments container log,
+with a 128KiB/2000-line ceiling. It reuses the five-service owner, image and exact
+spec checks before and after acquisition and rejects any changed identity. Its
+inherited mutation interface is limited to the payments Deployment. The source
+selector requires one completion for the fresh sample inside the operator's HTTP
+window, rejects duplicates and inconsistent durations, and then binds both kernel
+snapshots to the collector's incident and process identity for delta validation.
+The final harness must retain the returned raw bytes and runtime snapshots before
+qualification; this adapter does not itself publish a scenario result.
