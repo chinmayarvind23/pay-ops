@@ -162,6 +162,7 @@ def runtime_identities(
     previous_processor: PodIdentity | None = None,
     *,
     risk_image_id: str | None = None,
+    payments_image_id: str | None = None,
 ) -> tuple[PodIdentity, PodIdentity]:
     """All five services retain original ownership/code; a changed sampler requires a fresh pod."""
     documents, prior = deployment_map(state), deployment_map(original)
@@ -172,11 +173,9 @@ def runtime_identities(
         )
         metadata = _deployment(documents[name], prior[name], expected)
         pod, previous = _pod(state, name), _pod(original, name)
-        expected_image = (
-            risk_image_id
-            if name == "risk-sim" and risk_image_id is not None
-            else _status(previous)["imageID"]
-        )
+        overrides = {"risk-sim": risk_image_id, "payments-api": payments_image_id}
+        override = overrides.get(name)
+        expected_image = _status(previous)["imageID"] if override is None else override
         if _status(pod)["imageID"] != expected_image:
             raise ValueError("sampling actual image identity changed")
         identities[name] = _identity(pod, object_items(state["replicas"]), metadata, expected)

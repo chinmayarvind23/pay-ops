@@ -558,3 +558,16 @@ the raw-log SHA-256 and derived occupancy. Callers must supply previously valida
 traffic and runtime identity. Nine join tests reached 100% statement/branch
 coverage; 67 related regressions, strict typing and lint passed. The full lifecycle
 collector and live recovery experiment are still pending; qualification is 16/24.
+
+OOM-04 acquisition reuses LeakGateway's bounded Kubernetes transport through a
+payments-only ConcurrencyGateway. The target selects both the Deployment/ReplicaSet
+snapshot and current/previous pod logs; write validation independently rejects all
+other resources. The existing risk harness keeps its original target. Both paths
+retain 256KiB/12-second read bounds and exact namespace/container restrictions.
+Runtime identity verification now accepts an explicit payments image expectation,
+forwarded through protocol_identities. All other image and ownership checks remain
+in force; an omitted override still requires the original image. The lifecycle
+caller must verify the worker against the pinned import manifest before supplying
+this expectation. Four new transport/isolation tests plus existing leak, sampling,
+protocol and CPU observer regressions passed (57 tests); strict typing and lint
+passed. This implements acquisition dependencies, not live OOM-04 qualification.

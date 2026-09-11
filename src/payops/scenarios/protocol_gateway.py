@@ -60,6 +60,7 @@ def protocol_identities(
     risk: JsonObject,
     *,
     risk_image_id: str | None = None,
+    payments_image_id: str | None = None,
 ) -> dict[str, PodIdentity]:
     """Reuse all five owner/template/image checks before projecting the complete identity map."""
     reference = deepcopy(original)
@@ -70,6 +71,7 @@ def protocol_identities(
         reference,
         object_value(expected["processor-adapter"]["spec"]),
         risk_image_id=risk_image_id,
+        payments_image_id=payments_image_id,
     )
     documents = deployment_map(state)
     identities: dict[str, PodIdentity] = {}

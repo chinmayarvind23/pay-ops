@@ -2,6 +2,7 @@
 
 import re
 from datetime import UTC, datetime
+from typing import Literal
 
 from payops.evidence.artifacts import JSON_OBJECT
 from payops.scenarios.contracts import JsonObject, object_items, object_value
@@ -13,6 +14,8 @@ LOG_BYTES = 262144
 
 class LeakGateway(SamplingGateway):
     """The trusted lifecycle runner can alter only risk-sim in the dedicated local namespace."""
+
+    log_target: Literal["risk-sim", "payments-api"] = "risk-sim"
 
     @staticmethod
     def validate_target(name: str) -> None:
@@ -28,13 +31,15 @@ class LeakGateway(SamplingGateway):
         return JSON_OBJECT.validate_json(raw)
 
     def snapshot(self) -> JsonObject:
-        """Retain the risk controller chain without silently filtering multiple target pods."""
-        result = self.observe("risk-sim")
+        """Retain the fixed target's controller chain without filtering multiple pods."""
+        result = self.observe(self.log_target)
         replicas = object_items(
-            self._json(("get", "replicasets", "-l", "app.kubernetes.io/name=risk-sim"))["items"]
+            self._json(("get", "replicasets", "-l", "app.kubernetes.io/name=" + self.log_target))[
+                "items"
+            ]
         )
         if len(object_items(result["pods"])) > 2 or len(replicas) > 32:
-            raise ValueError("risk rollout exceeds reviewed object counts")
+            raise ValueError("workload rollout exceeds reviewed object counts")
         result["replica_sets"] = list(replicas)
         return result
 
@@ -43,12 +48,12 @@ class LeakGateway(SamplingGateway):
         metadata = object_value(pod["metadata"])
         name = str(metadata.get("name", ""))
         if (
-            re.fullmatch(r"risk-sim-[a-z0-9]+-[a-z0-9]+", name) is None
+            re.fullmatch(re.escape(self.log_target) + r"-[a-z0-9]+-[a-z0-9]+", name) is None
             or metadata.get("namespace") != "payops-sandbox"
             or not metadata.get("uid")
             or type(previous) is not bool
         ):
-            raise ValueError("invalid risk log identity")
+            raise ValueError("invalid workload log identity")
         args = (
             *self._prefix,
             "logs",
@@ -61,7 +66,7 @@ class LeakGateway(SamplingGateway):
         )
         raw = bounded_read((*args, "--previous=true") if previous else args, LOG_BYTES, 12)
         if len(raw) >= LOG_BYTES:
-            raise ValueError("risk log capture is capped")
+            raise ValueError("workload log capture is capped")
         return {
             "pod_uid": metadata["uid"],
             "pod_name": name,
