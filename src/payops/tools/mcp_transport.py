@@ -8,7 +8,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Never, cast
+from typing import Never, TypeGuard, cast
 
 import anyio
 import mcp_types
@@ -136,9 +136,14 @@ async def _stop(process: ServerProcess) -> None:
         if process.stdout:
             with suppress(OSError, anyio.BrokenResourceError, anyio.ClosedResourceError):
                 await process.stdout.aclose()
-        if isinstance(process, Process):
+        if _is_async_process(process):
             with anyio.move_on_after(1):
                 await process.aclose()
+
+
+def _is_async_process(process: object) -> TypeGuard[Process]:
+    """Narrow SDK platform unions without assuming Windows job wrappers expose aclose."""
+    return isinstance(process, Process)
 
 
 class _BoundedPipe:
