@@ -54,9 +54,10 @@ def select_record(raw: bytes, sample: Sample, start: datetime, end: datetime) ->
             <= end + tolerance
         ):
             raise ValueError("CPU completion is outside its request window")
-        gap = (record.after.started_at - record.before.completed_at).total_seconds()
+        gap = (record.after.monotonic_started_ns - record.before.monotonic_completed_ns) / 1e9
         if (
-            not 0 <= record.wall_seconds <= gap + 0.001
+            not 0 <= gap <= 30
+            or not 0 <= record.wall_seconds <= gap + 0.001
             or record.thread_cpu_seconds > record.wall_seconds + 0.001
         ):
             raise ValueError("CPU work duration exceeds acquisition interval")
@@ -71,7 +72,11 @@ def record_delta(record: CpuRecord, incident: str, identity: PodIdentity) -> Cpu
     record = CpuRecord.model_validate_json(record.model_dump_json())
     snapshots = [
         CpuSnapshot.model_validate(
-            {**item.model_dump(), "incident_id": incident, "identity": identity}
+            {
+                **item.model_dump(exclude={"monotonic_started_ns", "monotonic_completed_ns"}),
+                "incident_id": incident,
+                "identity": identity,
+            }
         )
         for item in (record.before, record.after)
     ]

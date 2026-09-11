@@ -75,6 +75,23 @@ def test_acquisition_clock_bounds(seconds: float) -> None:
         KernelSnapshot(
             started_at=now,
             completed_at=now + timedelta(seconds=seconds),
+            monotonic_started_ns=0,
+            monotonic_completed_ns=1,
+            cpu_stat=RAW.decode(),
+            cpu_max="50000 100000",
+        )
+
+
+@pytest.mark.parametrize("end", [0, 2000000002])
+def test_monotonic_acquisition_bounds(end: int) -> None:
+    """Elapsed acquisition is checked independently of adjustable UTC timestamps."""
+    now = utc_now()
+    with pytest.raises(ValueError, match="monotonic acquisition"):
+        KernelSnapshot(
+            started_at=now,
+            completed_at=now,
+            monotonic_started_ns=1,
+            monotonic_completed_ns=end,
             cpu_stat=RAW.decode(),
             cpu_max="50000 100000",
         )

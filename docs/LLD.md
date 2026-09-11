@@ -288,3 +288,13 @@ tolerance. The second live attempt exposed a 3.7ms container/host offset; it rem
 unqualified with verified cleanup. Diagnostic replay verifies its three control
 records under the revised clock rules, but does not retroactively qualify that
 attempt. Work counts, quota treatments and performance thresholds are unchanged.
+
+Plan v3 retains monotonic nanosecond timestamps at the start and end of each
+kernel-file acquisition. Work duration is compared with that monotonic interval,
+not the difference between UTC timestamps. The third live attempt observed a
+77.5ms disagreement between those clocks during one restricted request. Comparing
+them as interchangeable durations was invalid. UTC still locates the request and
+its container-local spans; monotonic time validates elapsed work and acquisition
+bounds. Negative or stale monotonic intervals fail validation. Three real container
+captures verify the new fields; the third Kubernetes attempt remains unqualified
+with exact restoration, and v3 still requires a fresh complete qualification run.

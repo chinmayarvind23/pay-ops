@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from pathlib import Path
-from time import monotonic
+from time import monotonic, monotonic_ns
 from typing import Self
 
 from pydantic import AwareDatetime, model_validator
@@ -11,7 +11,7 @@ from pydantic import AwareDatetime, model_validator
 from payops.contracts import utc_now
 from payops.evidence.trace_span import Immutable
 from payops.sandbox.models import Sample
-from payops.scenarios.cpu_counters import Raw, counters, quota
+from payops.scenarios.cpu_counters import Counter, Raw, counters, quota
 
 
 class KernelSnapshot(Immutable):
@@ -19,6 +19,8 @@ class KernelSnapshot(Immutable):
 
     started_at: AwareDatetime
     completed_at: AwareDatetime
+    monotonic_started_ns: Counter
+    monotonic_completed_ns: Counter
     cpu_stat: Raw
     cpu_max: Raw
 
@@ -27,6 +29,8 @@ class KernelSnapshot(Immutable):
         """Reject slow acquisition and malformed kernel files before publishing a record."""
         if not 0 <= (self.completed_at - self.started_at).total_seconds() <= 2:
             raise ValueError("CPU source acquisition exceeds two seconds")
+        if not 0 <= self.monotonic_completed_ns - self.monotonic_started_ns <= 2_000_000_000:
+            raise ValueError("CPU monotonic acquisition exceeds two seconds")
         counters(self.cpu_stat)
         quota(self.cpu_max)
         return self
@@ -35,6 +39,7 @@ class KernelSnapshot(Immutable):
 def snapshot() -> KernelSnapshot:
     """Read only two fixed cgroup-v2 files with a hard byte cap, never caller paths."""
     started = utc_now()
+    mono_started = monotonic_ns()
     values: dict[str, str] = {}
     for name in ("cpu.stat", "cpu.max"):
         with (Path("/sys/fs/cgroup") / name).open("rb") as source:
@@ -45,6 +50,8 @@ def snapshot() -> KernelSnapshot:
     return KernelSnapshot(
         started_at=started,
         completed_at=utc_now(),
+        monotonic_started_ns=mono_started,
+        monotonic_completed_ns=monotonic_ns(),
         cpu_stat=values["cpu.stat"],
         cpu_max=values["cpu.max"],
     )

@@ -26,9 +26,19 @@ def source() -> tuple[CpuRecord, bytes]:
         sample_id="synthetic-source",
         rounds=50000,
         before=KernelSnapshot.model_validate(
-            before.model_dump(exclude={"incident_id", "identity"})
+            {
+                **before.model_dump(exclude={"incident_id", "identity"}),
+                "monotonic_started_ns": 0,
+                "monotonic_completed_ns": 1000000,
+            }
         ),
-        after=KernelSnapshot.model_validate(after.model_dump(exclude={"incident_id", "identity"})),
+        after=KernelSnapshot.model_validate(
+            {
+                **after.model_dump(exclude={"incident_id", "identity"}),
+                "monotonic_started_ns": 2000000000,
+                "monotonic_completed_ns": 2001000000,
+            }
+        ),
         wall_seconds=1.9,
         thread_cpu_seconds=0.2,
     )
@@ -56,6 +66,55 @@ def test_known_request_projects_actual_counter_difference() -> None:
         )
         == record
     )
+
+
+def test_duration_uses_monotonic_sources_despite_utc_adjustment() -> None:
+    """UTC correction cannot shorten the independently measured monotonic work interval."""
+    record, _ = source()
+    shifted = record.model_copy(
+        update={
+            "after": record.after.model_copy(
+                update={
+                    "started_at": record.after.started_at - timedelta(seconds=0.1),
+                    "completed_at": record.after.completed_at - timedelta(seconds=0.1),
+                }
+            )
+        }
+    )
+    raw = f"{record.after.completed_at.isoformat()} {shifted.model_dump_json()}\n".encode()
+    assert (
+        select_record(
+            raw,
+            Sample(sample_id=record.sample_id),
+            record.before.started_at,
+            record.after.completed_at,
+        )
+        == shifted
+    )
+
+
+@pytest.mark.parametrize("start", [0, 31000000000])
+def test_monotonic_pair_reset_or_staleness_fails(start: int) -> None:
+    """A clock mismatch or stale source pair cannot validate an invented elapsed duration."""
+    record, _ = source()
+    shifted = record.model_copy(
+        update={
+            "after": record.after.model_copy(
+                update={
+                    "monotonic_started_ns": start,
+                    "monotonic_completed_ns": start + 1000000,
+                }
+            )
+        }
+    )
+    raw = f"{record.after.completed_at.isoformat()} {shifted.model_dump_json()}\n".encode()
+    with pytest.raises(ValueError):
+        select_record(
+            raw,
+            Sample(sample_id=record.sample_id),
+            record.before.started_at,
+            record.after.completed_at,
+        )
 
 
 @pytest.mark.parametrize(
