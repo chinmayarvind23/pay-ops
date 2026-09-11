@@ -1,6 +1,6 @@
 """SQL-backed walking-skeleton persistence with atomic idempotent creation."""
 
-from sqlalchemy import Engine, String, Text, create_engine, select
+from sqlalchemy import Engine, String, Text, create_engine, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
@@ -54,7 +54,7 @@ class IncidentStore:
                 row = session.scalar(select(IncidentRow).where(IncidentRow.idempotency_key == key))
                 if row is None:
                     raise
-                previous = Incident.model_validate_json(row.payload)
+                previous = self._decode(row)
                 if previous.request != request:
                     raise IdempotencyConflict("idempotency key has a different payload") from None
                 return previous
@@ -64,16 +64,39 @@ class IncidentStore:
         """Revalidate persisted JSON to detect corrupt or incompatible records."""
         with Session(self.engine) as session:
             row = session.get(IncidentRow, incident_id)
-            return Incident.model_validate_json(row.payload) if row else None
+            return self._decode(row) if row else None
+
+    @staticmethod
+    def _decode(row: IncidentRow) -> Incident:
+        """Bind valid nested incident JSON to its storage key before returning it to a caller."""
+        incident = Incident.model_validate_json(row.payload)
+        if incident.incident_id != row.incident_id:
+            raise ValueError("incident row identity mismatch")
+        return incident
 
     def save_report(self, report: IncidentReport) -> Incident:
-        """Reports attach only to existing incidents; no implicit cross-scope upsert."""
+        """Publish the first report atomically; all racing or retried callers return that winner."""
         with Session(self.engine) as session:
             row = session.get(IncidentRow, report.incident_id)
             if row is None:
                 raise KeyError(report.incident_id)
-            incident = Incident.model_validate_json(row.payload)
+            incident = self._decode(row)
+            if incident.report is not None:
+                return incident
             updated = Incident.model_validate({**incident.model_dump(), "report": report})
-            row.payload = updated.model_dump_json()
+            winner = session.execute(
+                update(IncidentRow)
+                .where(
+                    IncidentRow.incident_id == report.incident_id,
+                    IncidentRow.payload == row.payload,
+                )
+                .values(payload=updated.model_dump_json())
+                .returning(IncidentRow.incident_id)
+            ).scalar_one_or_none()
             session.commit()
-            return updated
+            if winner is not None:
+                return updated
+        saved = self.get(report.incident_id)
+        if saved is None or saved.report is None:
+            raise RuntimeError("committed incident report is unavailable")
+        return saved

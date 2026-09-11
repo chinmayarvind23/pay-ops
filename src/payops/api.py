@@ -67,7 +67,8 @@ def create_app(database_url: str = "sqlite:///payops-local.db") -> FastAPI:
         if incident.report is not None:
             return incident.report
         report = investigate_mock(incident)
-        store.save_report(report)
-        return report
+        saved = store.save_report(report)
+        assert saved.report is not None
+        return saved.report
 
     return app
