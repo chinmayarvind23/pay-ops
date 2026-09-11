@@ -85,7 +85,7 @@ def scope_failure(proposal: Action, context: PolicyContext, now: datetime) -> st
 
 def operational_evidence(item: EvidenceItem, store: ArtifactStore) -> str | None:
     """Retrieved guidance cannot authorize effects, and derived numbers require valid lineage."""
-    if item.source in {"RUNBOOK", "MEMORY"}:
+    if item.source in {"RUNBOOK", "MEMORY"} or item.source == "TRACE":
         return "EVIDENCE_NOT_OPERATIONAL"
     if item.source == "PAYMENT":
         window = verify_payment_window(item, store)

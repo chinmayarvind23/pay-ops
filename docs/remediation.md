@@ -11,8 +11,8 @@ mode into the action digest. Fixture evidence cannot authorize a live target. Th
 checks establish approval eligibility; artifact integrity alone does not prove that
 an action will address the incident's cause.
 
-Action evidence IDs must refer to current operational observations. RUNBOOK and
-MEMORY items can guide an investigation but cannot justify an effect. A PAYMENT
+Action evidence IDs must refer to current operational observations. RUNBOOK,
+MEMORY and TRACE items can guide an investigation but cannot justify an effect. A PAYMENT
 item must also pass nested source verification and arithmetic recomputation, and
 its window must be complete. A valid outer artifact hash is insufficient.
 

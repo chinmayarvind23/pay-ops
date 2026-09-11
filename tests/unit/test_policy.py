@@ -81,9 +81,9 @@ def test_valid_proposal_requires_backend_approval(tmp_path: Path) -> None:
     assert review.action_digest and len(review.action_digest) == 64
 
 
-@pytest.mark.parametrize("source", ["RUNBOOK", "MEMORY"])
+@pytest.mark.parametrize("source", ["RUNBOOK", "MEMORY", "TRACE"])
 def test_retrieval_context_cannot_authorize_remediation(tmp_path: Path, source: Source) -> None:
-    """A newly retrieved, correctly hashed document cannot establish current workload state."""
+    """Correctly hashed diagnostic context cannot establish action authority."""
     trusted, proposal = context(tmp_path)
     now = utc_now()
     item = normalize(
