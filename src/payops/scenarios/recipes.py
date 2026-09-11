@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 
-from payops.sandbox.models import FaultConfig
+from payops.sandbox.models import FaultConfig, SandboxConfig
 from payops.scenarios.contracts import (
     CaseId,
     DeploymentName,
@@ -79,6 +79,10 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
         raise ValueError("unexpected environment or active fault in baseline")
     if any("valueFrom" in item for item in env):
         raise ValueError("indirect environment is outside this local harness")
+    for item in env:
+        if item.get("name") == "PAYOPS_SANDBOX_CONFIG":
+            if SandboxConfig.model_validate_json(str(item.get("value"))).cpu_rounds:
+                raise ValueError("active CPU workload cannot become a healthy baseline")
     return deepcopy(spec)
 
 

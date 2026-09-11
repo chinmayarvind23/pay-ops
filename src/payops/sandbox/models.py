@@ -98,6 +98,7 @@ class SandboxConfig(BaseModel):
     timeout_seconds: float = Field(default=2.0, gt=0, le=10)
     idempotency_capacity: int = Field(default=10000, ge=1, le=100000)
     risk_protocol: RiskProtocol = "v1"
+    cpu_rounds: int = Field(default=0, ge=0, le=200000)
 
     @model_validator(mode="after")
     def validate_origins(self) -> Self:

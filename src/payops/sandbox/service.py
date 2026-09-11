@@ -1,5 +1,7 @@
 """Five isolated application roles model dependencies without financial operations."""
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from time import perf_counter
 
 import httpx
@@ -9,14 +11,13 @@ from opentelemetry.trace import SpanKind
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from payops.sandbox.client import call_peer
+from payops.sandbox.cpu import CpuWork
 from payops.sandbox.models import RiskSampleV2, Role, Sample, SandboxConfig, SimulationResult
 from payops.sandbox.runtime import FaultState, SampleStore
 from payops.sandbox.telemetry import SandboxMetrics
 
 
-def decode_sample(
-    payload: Sample | RiskSampleV2, role: Role, config: SandboxConfig
-) -> Sample:
+def decode_sample(payload: Sample | RiskSampleV2, role: Role, config: SandboxConfig) -> Sample:
     """The deployed risk decoder accepts one wire version; other roles retain v1."""
     if role == "risk" and config.risk_protocol == "v2":
         if isinstance(payload, RiskSampleV2):
@@ -43,9 +44,14 @@ async def execute_sample(
     config: SandboxConfig,
     faults: FaultState,
     transport: httpx.AsyncBaseTransport | None,
+    cpu: CpuWork,
 ) -> SimulationResult:
     """Apply trusted fault state before executing the role's bounded simulation."""
     declined = await faults.apply(sample)
+    if not declined and config.cpu_rounds:
+        consumed = await cpu.run()
+        trace.get_current_span().set_attribute("sandbox.cpu.rounds", config.cpu_rounds)
+        trace.get_current_span().set_attribute("sandbox.cpu.thread_seconds", consumed)
     if role == "payments" and not declined:
         return await payment_path(sample, config, transport)
     return SimulationResult(
@@ -60,13 +66,14 @@ async def process_sample(
     faults: FaultState,
     store: SampleStore,
     transport: httpx.AsyncBaseTransport | None,
+    cpu: CpuWork,
 ) -> SimulationResult:
     """Reservations protect each role independently; failure frees only its local slot."""
     cached = store.reserve(sample)
     if cached is not None:
         return cached
     try:
-        result = await execute_sample(role, sample, config, faults, transport)
+        result = await execute_sample(role, sample, config, faults, transport, cpu)
         store.complete(sample.sample_id, result)
         return result
     except BaseException:
@@ -87,7 +94,17 @@ def create_service(
     fault_state = faults or FaultState()
     store = SampleStore(settings.idempotency_capacity)
     metrics = SandboxMetrics()
-    app = FastAPI(title=f"PayOps synthetic {role}")
+    cpu = CpuWork(settings.cpu_rounds)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        """Service shutdown closes admission while bounded in-flight CPU work finishes."""
+        try:
+            yield
+        finally:
+            cpu.close()
+
+    app = FastAPI(title=f"PayOps synthetic {role}", lifespan=lifespan)
 
     @app.get("/health")
     async def health() -> dict[str, str | bool]:
@@ -114,7 +131,9 @@ def create_service(
             kind=SpanKind.SERVER,
         ):
             try:
-                result = await process_sample(role, sample, settings, fault_state, store, transport)
+                result = await process_sample(
+                    role, sample, settings, fault_state, store, transport, cpu
+                )
                 status = result.status
                 return result
             except HTTPException as exc:

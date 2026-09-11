@@ -189,3 +189,20 @@ Persist after triage, evidence collection, root-cause ranking, policy decision, 
 ## Idempotency
 
 Action key includes incident, action type, resource, and expected resource revision. Duplicate Pub/Sub delivery must not duplicate remediation.
+
+## Implemented bounded synthetic CPU execution
+
+`sandbox.cpu.CpuWork` adds an optional deployment-owned workload to the existing
+request path. A single ThreadPoolExecutor and lock protect admission; no second
+request is queued. The underlying future is shielded from caller cancellation so
+the worker retains its slot even if cancellation arrives before execution begins.
+Only the worker's finally block releases a successfully submitted slot. Shutdown
+closes admission without cancelling admitted work; the cooperative deadline bounds
+normal completion but cannot preempt a native hash or a suspended process.
+
+The workload uses a fixed hash count and bounded buffer rather than sleep or an
+invented utilization metric. Configuration defaults to zero; requests cannot alter
+it. Work occurs after local idempotency reservation and before peer calls. Completed
+replay skips execution, and failure abandons the reservation. Runtime quota and
+cgroup measurements belong to the separate scenario harness; this component alone
+does not establish a measured CPU-throttling incident.

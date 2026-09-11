@@ -91,3 +91,22 @@ does not contain a request ID. Trace sources are bounded and verified against cu
 runtime identities. The generic scenario runner rejects this case. Lifecycle, semantic
 source and streamed HTTP tests pass. The retained live experiment reproduced all
 four stages and verified exact restoration; model diagnosis remains unevaluated.
+
+## CPU workload prerequisite
+
+The sandbox's deployment configuration now accepts `cpu_rounds` (default 0, maximum
+200,000). A fresh non-declined request performs that many fixed SHA-256 operations
+over a bounded buffer before its normal dependency path. Completed idempotent replay
+skips the work. HTTP input cannot set this value.
+
+One worker per service keeps the ASGI event loop available and rejects excess work
+instead of queueing it. Cancellation does not release admission until the worker
+exits. A cooperative five-second wall deadline, checked every 128 rounds, bounds
+the work; it does not preempt native execution or eliminate OS scheduling delays.
+Spans record configured rounds and observed thread CPU time, which may round to
+zero for short work on coarse clocks. The default profile creates no worker pool.
+
+Other fault harnesses reject an active CPU workload as a healthy baseline. This
+control enables the planned OOM-03 quota experiment, but does not itself qualify
+CPU throttling. Qualification still requires a frozen workload, actual cgroup
+throttled-period/time deltas, matched controls and exact cleanup.
