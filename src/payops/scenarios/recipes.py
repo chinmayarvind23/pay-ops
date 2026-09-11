@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "ROLLOUT-04": "risk v2 rejects a real v1 request; matching v2 caller restores compatibility",
     "TELEM-03": "processor latency, actual sampler suppression and restored-sampling control",
     "SCHED-01": "local oversized CPU request cannot fit node; not CPU utilization saturation",
     "OOM-01": "same bounded payments working set survives 256Mi control and OOMKills at 128Mi",
@@ -39,6 +40,8 @@ def target(case_id: CaseId) -> DeploymentName:
     """Closed targets isolate faults to the synthetic dependency or explicit webhook probe."""
     if case_id == "PAY-04":
         return "webhook-sim"
+    if case_id == "ROLLOUT-04":
+        return "risk-sim"
     return (
         "processor-adapter"
         if case_id in ("DEP-01", "TELEM-03", *PACKAGE_A_FAULTS)
@@ -82,7 +85,7 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
-    if case_id in {"SCHED-01", "TELEM-03"}:
+    if case_id in {"SCHED-01", "TELEM-03", "ROLLOUT-04"}:
         raise ValueError("case requires its specialized journaled harness")
     if case_id == "OOM-01":
         spec = memory_control_spec(original)
@@ -121,7 +124,7 @@ def activation(case_id: CaseId, observation: JsonObject) -> bool:
     if case_id in PACKAGE_A_CASES:
         return observation.get("package_a_verified") is True
     pods = object_items(observation.get("pods", []))
-    if case_id in {"OOM-01", "TELEM-03"}:
+    if case_id in {"OOM-01", "TELEM-03", "ROLLOUT-04"}:
         return False  # These cases require provenance available only to their specialized harness.
     if case_id == "DEP-01":
         return not pods and observation.get("sample_status") == 503

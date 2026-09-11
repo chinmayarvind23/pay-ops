@@ -76,3 +76,17 @@ risk accepts only its deployed protocol. The other three peers retain v1 bodies.
 Mismatches produce an actual risk422 and propagated payments502 while liveness stays
 healthy. Matching versions complete the full synthetic path. This source is tested;
 ROLLOUT-04 still requires a committed live reproduction and exact cleanup evidence.
+
+`ProtocolHarness` now implements four stages: original v1, risk v2 with a v1 caller,
+matching v2 caller, and restored v1. It journals both complete Deployment specs before
+the first write, uses UID/version/spec compare-and-swap, and attempts each restoration
+even when the other write or evidence persistence fails. Unknown replacement specs
+are not overwritten; unverified cleanup retains the shared scenario latch.
+
+Each stage sends one fresh A/us/credit payment. Positive controls require its complete
+nine-span path across five owned processes. The mismatch requires the actual payments
+502, the risk 422 access record within the request window, and two error spans without
+a successful downstream path. The risk access record is temporal corroboration; it
+does not contain a request ID. Trace sources are bounded and verified against current
+runtime identities. The generic scenario runner rejects this case. Lifecycle, semantic
+source and streamed HTTP tests pass; live qualification remains pending.

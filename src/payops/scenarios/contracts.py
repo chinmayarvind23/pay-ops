@@ -12,6 +12,7 @@ CaseId = Literal[
     "ROLLOUT-01",
     "ROLLOUT-02",
     "ROLLOUT-03",
+    "ROLLOUT-04",
     "DEP-01",
     "DEP-02",
     "PAY-01",
@@ -19,7 +20,7 @@ CaseId = Literal[
     "PAY-03",
     "PAY-04",
 ]
-DeploymentName = Literal["payments-api", "processor-adapter", "webhook-sim"]
+DeploymentName = Literal["payments-api", "processor-adapter", "webhook-sim", "risk-sim"]
 type JsonObject = dict[str, JsonValue]
 
 
