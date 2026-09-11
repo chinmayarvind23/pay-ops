@@ -6,10 +6,12 @@ from pathlib import Path
 
 import pytest
 from filelock import FileLock, Timeout
+from test_payment_window import interval, raw_snapshot, source
 
 from payops.contracts import Incident, IncidentCreate, RootCauseHypothesis, utc_now
 from payops.evidence.artifacts import ArtifactStore
 from payops.evidence.normalize import Observation, normalize
+from payops.evidence.payment_window import derive_payment_window
 from payops.orchestrator import nodes
 from payops.orchestrator.graph import InvestigationWorker
 from payops.orchestrator.nodes import incident_directory, route
@@ -44,6 +46,41 @@ def test_native_checkpoint_resume_does_not_recollect(tmp_path: Path) -> None:
     assert second.start(incident) == completed
     assert second.resume(incident.incident_id) == completed
     assert len(second.history(incident.incident_id)) >= 6
+
+
+@pytest.mark.parametrize(
+    "limit,expected", [(33, "BUDGET_EXHAUSTED"), (34, "EVIDENCE_INSUFFICIENT")]
+)
+def test_payment_backend_reservation_precedes_collection(
+    tmp_path: Path, limit: int, expected: str
+) -> None:
+    """Twenty logical calls cannot conceal34 backend reads or replenish them on resume."""
+    calls: list[str] = []
+    incident = Incident(request=IncidentCreate(title="Alert"))
+    worker = InvestigationWorker(
+        tmp_path, collector(calls), collection_profile="payment_windows_v1"
+    )
+    state = worker.start(incident, InvestigationBudget(max_backend_reads=limit))
+    assert state.report is not None and state.report.terminal_state == expected
+    assert len(calls) == (1 if limit == 34 else 0)
+    assert state.backend_reads_reserved == (34 if limit == 34 else 0)
+    assert worker.resume(incident.incident_id) == state
+    with pytest.raises(ValueError, match="collection profile"):
+        InvestigationWorker(tmp_path, collector(calls)).resume(incident.incident_id)
+
+
+def test_legacy_checkpoint_cannot_dispatch_without_backend_reservation(tmp_path: Path) -> None:
+    """A pre-budget checkpoint may retain evidence, but cannot authorize new unreserved reads."""
+    calls: list[str] = []
+    incident = Incident(request=IncidentCreate(title="Alert"))
+    state = InvestigationState(
+        incident=incident,
+        budget=InvestigationBudget(),
+        phase="READS_RESERVED",
+        tool_calls_reserved=20,
+    )
+    result = nodes.unpack(nodes.InvestigationNodes(tmp_path, collector(calls)).collect(pack(state)))
+    assert result.terminal == "BUDGET_EXHAUSTED" and not calls
 
 
 @pytest.mark.parametrize("limit", ["steps", "tools", "deadline"])
@@ -166,6 +203,28 @@ def test_artifact_changed_after_pause_is_blocked(tmp_path: Path) -> None:
     assert worker.start(incident).phase == "EVIDENCE_COLLECTED"
     assert paths
     paths[0].write_text("changed")
+    result = InvestigationWorker(tmp_path, collect).resume(incident.incident_id)
+    assert result.report is not None and result.report.terminal_state == "SECURITY_BLOCK"
+
+
+def test_nested_payment_artifact_changed_after_pause_is_blocked(tmp_path: Path) -> None:
+    """Changed source bytes invalidate a derived envelope after checkpointing."""
+    paths: list[Path] = []
+
+    def collect(incident: Incident, output: Path) -> Collection:
+        """Build a complete payment window from real retained fixture artifacts."""
+        store = ArtifactStore(output / "artifacts")
+        period = interval().model_copy(update={"incident_id": incident.incident_id})
+        first = source(store, period, raw_snapshot(period))
+        last = source(store, period, raw_snapshot(period, True))
+        item = derive_payment_window(first, last, period, store)
+        paths.append(output / "artifacts" / f"{first.artifact_sha256}.json")
+        return Collection(incident_id=incident.incident_id, evidence=(item,), failures=())
+
+    incident = Incident(request=IncidentCreate(title="Payment corruption"))
+    worker = InvestigationWorker(tmp_path, collect, pause_before_ranking=True)
+    assert worker.start(incident).phase == "EVIDENCE_COLLECTED"
+    paths[0].write_text("tampered")
     result = InvestigationWorker(tmp_path, collect).resume(incident.incident_id)
     assert result.report is not None and result.report.terminal_state == "SECURITY_BLOCK"
 

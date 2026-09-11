@@ -1,7 +1,8 @@
 # Evaluation
 
-All numerical values below are acceptance targets. No release benchmark has measured
-them yet. The mock walking skeleton does not supply diagnosis, human timing or LLM cost evidence.
+The 24-case Recall, attribution, human timing and provider cost figures are acceptance
+targets. Component test and mutation results are measured separately and do not establish
+those release outcomes.
 
 ## Implemented metric verification
 
@@ -16,10 +17,10 @@ produce model timings without real model-step records.
 
 Run `uv run python scripts/mutation_check.py --output ../resources/pay_ops/evidence/mutations`
 for the enumerated semantic mutation suite. It tests isolated source snapshots and records
-source, test, lock and runner hashes. The suite has 84 specific schema/evidence/metric/graph/policy
+source, test, lock and runner hashes. The suite has 87 specific schema/evidence/metric/graph/policy
 mutations; passing it is not an exhaustive generated mutation score or a completed incident
 benchmark. Thirteen graph mutations cover crash-attempt accounting, scope, mode,
-read reservation, worker exclusion and retained collection behavior. Twenty-three policy
+read reservation, worker exclusion and retained collection behavior. Twenty-six policy
 mutations cover identity, scope, preconditions, evidence, modes and backend risk assignment.
 Twenty broker mutations cover approval invariants, identity refresh, expiry, atomic
 execution claims, audit persistence, duplicate dispatch and the executor idempotency key.

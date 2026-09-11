@@ -17,6 +17,7 @@ from payops.contracts import (
 from payops.tools.collect import CollectionFailure
 
 Phase = Literal["RECEIVED", "TRIAGED", "READS_RESERVED", "EVIDENCE_COLLECTED", "RANKED", "FINISHED"]
+CollectionProfile = Literal["instant_v1", "payment_windows_v1"]
 
 
 class InvestigationBudget(Contract):
@@ -24,6 +25,7 @@ class InvestigationBudget(Contract):
 
     max_steps: int = Field(default=4, ge=0, le=16)
     max_tool_calls: int = Field(default=20, ge=0, le=40)
+    max_backend_reads: int = Field(default=34, ge=0, le=64)
     node_start_deadline: AwareDatetime = Field(
         default_factory=lambda: utc_now() + timedelta(minutes=10)
     )
@@ -43,10 +45,12 @@ class InvestigationState(Contract):
     incident: Incident
     budget: InvestigationBudget
     mode: Literal["local_kind", "fixture_replay"] = "local_kind"
+    collection_profile: CollectionProfile = "instant_v1"
     phase: Phase = "RECEIVED"
     started_at: AwareDatetime = Field(default_factory=utc_now)
     steps_used: int = Field(default=0, ge=0, le=16)
     tool_calls_reserved: int = Field(default=0, ge=0, le=40)
+    backend_reads_reserved: int = Field(default=0, ge=0, le=64)
     evidence: tuple[EvidenceItem, ...] = ()
     failures: tuple[CollectionFailure, ...] = ()
     hypotheses: tuple[RootCauseHypothesis, ...] = ()

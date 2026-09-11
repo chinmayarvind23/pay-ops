@@ -6,8 +6,9 @@ from collections.abc import Callable
 from hashlib import sha256
 from pathlib import Path
 
-from payops.contracts import Incident, IncidentReport, utc_now
+from payops.contracts import EvidenceItem, Incident, IncidentReport, utc_now
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
+from payops.evidence.payment_window import verify_payment_window
 from payops.orchestrator.baseline import rank_evidence
 from payops.orchestrator.state import Envelope, InvestigationState, Phase, StepRecord, pack, unpack
 from payops.tools.collect import Collection, CollectionFailure
@@ -80,14 +81,24 @@ class InvestigationNodes:
         return self._step(state, "triage", operation)
 
     def reserve(self, state: Envelope) -> Envelope:
-        """Checkpoint twenty reserved reader calls before starting the one collection batch."""
+        """Checkpoint logical operations and backend commands/queries before collection dispatch."""
 
         def operation(state: InvestigationState) -> InvestigationState:
-            """The fixed collector plan has twenty calls; failed calls are not refunded."""
+            """Reserve 34 payment or 30 instant backend reads; failed calls are not refunded."""
             reserved = state.tool_calls_reserved + 20
+            backend = state.backend_reads_reserved + (
+                34 if state.collection_profile == "payment_windows_v1" else 30
+            )
             if reserved > state.budget.max_tool_calls:
                 return updated(state, terminal="BUDGET_EXHAUSTED")
-            return updated(state, phase="READS_RESERVED", tool_calls_reserved=reserved)
+            if backend > state.budget.max_backend_reads:
+                return updated(state, terminal="BUDGET_EXHAUSTED")
+            return updated(
+                state,
+                phase="READS_RESERVED",
+                tool_calls_reserved=reserved,
+                backend_reads_reserved=backend,
+            )
 
         return self._step(state, "reserve", operation)
 
@@ -97,6 +108,9 @@ class InvestigationNodes:
 
     def _collect(self, state: InvestigationState) -> InvestigationState:
         """An exclusive dispatch marker distinguishes retained output from an uncertain attempt."""
+        required_reads = 34 if state.collection_profile == "payment_windows_v1" else 30
+        if state.tool_calls_reserved < 20 or state.backend_reads_reserved < required_reads:
+            return updated(state, terminal="BUDGET_EXHAUSTED")
         output = incident_directory(self.root, state.incident.incident_id)
         output.mkdir(parents=True, exist_ok=True)
         result_path = output / "graph-collection.json"
@@ -132,7 +146,7 @@ class InvestigationNodes:
         for item in result.evidence:
             if item.incident_id != state.incident.incident_id:
                 raise EvidenceIntegrityError("evidence belongs to another incident")
-            store.verify(item)
+            verify_collected_item(item, store)
         return updated(
             state, phase="EVIDENCE_COLLECTED", evidence=result.evidence, failures=result.failures
         )
@@ -146,6 +160,8 @@ class InvestigationNodes:
                 incident_directory(self.root, state.incident.incident_id) / "artifacts"
             )
             try:
+                for item in state.evidence:
+                    verify_collected_item(item, store)
                 hypotheses = rank_evidence(state.evidence, store)
             except EvidenceIntegrityError:
                 return updated(state, terminal="SECURITY_BLOCK")
@@ -166,6 +182,16 @@ class InvestigationNodes:
             duration_seconds=sum(step.duration_seconds for step in current.steps),
         )
         return pack(updated(current, phase="FINISHED", report=report))
+
+
+def verify_collected_item(item: EvidenceItem, store: ArtifactStore) -> None:
+    """Retained derived evidence is revalidated after restart as well as before checkpointing."""
+    try:
+        store.verify(item)
+        if item.source == "PAYMENT":
+            verify_payment_window(item, store)
+    except ValueError:
+        raise EvidenceIntegrityError("collected evidence failed verification") from None
 
 
 def route(envelope: Envelope) -> str:

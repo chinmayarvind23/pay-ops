@@ -14,6 +14,7 @@ from langgraph.graph.state import CompiledStateGraph  # pyright: ignore[reportMi
 from payops.contracts import Incident
 from payops.orchestrator.nodes import Collector, InvestigationNodes, incident_directory, route
 from payops.orchestrator.state import (
+    CollectionProfile,
     Envelope,
     InvestigationBudget,
     InvestigationState,
@@ -56,6 +57,7 @@ class InvestigationWorker:
         *,
         pause_before_ranking: bool = False,
         mode: Literal["local_kind", "fixture_replay"] = "local_kind",
+        collection_profile: CollectionProfile = "instant_v1",
     ) -> None:
         """Only trusted code binds the database, readers and optional inspection breakpoint."""
         self.root = root.resolve()
@@ -64,13 +66,17 @@ class InvestigationWorker:
         self.nodes = InvestigationNodes(self.root / "incidents", collect)
         self.pause = pause_before_ranking
         self.mode: Literal["local_kind", "fixture_replay"] = mode
+        self.collection_profile: CollectionProfile = collection_profile
 
     def start(
         self, incident: Incident, budget: InvestigationBudget | None = None
     ) -> InvestigationState:
         """Repeated deliveries return saved state without replacing inputs or refilling budgets."""
         initial = InvestigationState(
-            incident=incident, budget=budget or InvestigationBudget(), mode=self.mode
+            incident=incident,
+            budget=budget or InvestigationBudget(),
+            mode=self.mode,
+            collection_profile=self.collection_profile,
         )
         return self._invoke(incident.incident_id, initial)
 
@@ -92,6 +98,8 @@ class InvestigationWorker:
                 existing = unpack(cast(Envelope, snapshot.values))
                 if existing.mode != self.mode:
                     raise ValueError("worker mode differs from saved investigation")
+                if existing.collection_profile != self.collection_profile:
+                    raise ValueError("collection profile differs from saved investigation")
                 if initial is not None:
                     if existing.incident != initial.incident:
                         raise ValueError("thread already belongs to a different incident")

@@ -22,6 +22,25 @@ claim that every counted request occurred strictly inside the requested interval
 `verify_payment_window` checks both source artifacts and recomputes the arithmetic.
 Live snapshot parsing and retained-artifact parsing share the same validation
 rules. This module has no scenario labels, expected traffic census or diagnosis
-thresholds. The current default collector and graph still use the earlier
-instant queries; window collection and explicit backend-read reservations are
-the next integration step.
+thresholds.
+
+`WindowCollector` selects payments plus processor for payment/processor alerts,
+or webhook plus payments for webhook alerts. Unsupported services require a
+separately selected collection profile. It persists a plan before dispatch:
+20 logical operations reserve 34 fixed backend commands/queries. The original
+instant-query profile reserves 30. These counts do not measure wire HTTP
+requests inside kubectl.
+
+The window collector captures initial snapshots, records the measurement start,
+reads Kubernetes status/events/logs and target availability, and records the
+measurement end. After one five-second scrape interval plus a 0.2-second margin,
+it makes one final snapshot attempt per service. A stale response produces a
+missing window. Individual stale events do not discard later current events.
+An interval longer than 180 seconds retains partial evidence and skips final
+reads. An exclusive plan file prevents accidental redispatch into the same output.
+
+The local graph CLI enables this profile with `--payment-windows`. Its checkpoint
+records logical and backend reservations independently, and a resumed worker must
+use the same profile. Older checkpoints without a backend reservation cannot
+dispatch new reads. PAYMENT lineage is verified before checkpointing and again
+before ranking after resume. The default CLI profile remains `instant_v1`.

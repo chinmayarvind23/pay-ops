@@ -4,9 +4,11 @@ Full incident duration decomposes into queue, evidence, retrieval, model, policy
 
 Do not optimize model latency if evidence collection dominates.
 
-Model-step p95 is `4.6 s`, computed from raw model-step timings.
+The model-step p95 target is `4.6 s`. No provider-backed model timing has been measured yet.
+When available, compute it from raw timings between evidence submission and accepted output.
 
-The investigation-time comparison `11.8 min -> 2.9 min` uses paired scenarios and one completion rule.
+The investigation-time target is `11.8 min -> 2.9 min`. Measuring it requires paired
+human investigations and one completion rule; that study has not run.
 
 LLM provider cost:
 
