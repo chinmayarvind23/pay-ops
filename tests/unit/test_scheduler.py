@@ -3,6 +3,7 @@
 import json
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import cast
 from unittest.mock import patch
@@ -599,3 +600,71 @@ def test_final_receipt_failure_never_releases_latch(tmp_path: Path, latch_fails:
                 receipt.cleanup_failure
             )
     assert runner.block_file.exists() and fixture.writes[-3:] == ["payments", "limits", "quota"]
+
+
+class SurgeQuotaFixture(SchedulerFixture):
+    """Model observed RollingUpdate overlap: pending23 plus peers2 plus new replacement0.5CPU."""
+
+    def __init__(self) -> None:
+        """The overlap exists only after an actual fault-template apply in this fixture."""
+        super().__init__()
+        self.fault_seen = False
+        self.surge_blocked = False
+        self.pending_limit = Decimal(0)
+
+    def replace_resource(self, slot: Slot, expected: JsonObject, spec: JsonObject) -> None:
+        """A successful restore patch can still fail to create its replacement due to quota."""
+        if slot == "payments":
+            request = object_value(object_value(container(spec)["resources"])["requests"])["cpu"]
+            quota = object_value(object_value(self.documents["quota"]["spec"])["hard"])
+            if request == "23":
+                self.fault_seen = True
+                self.pending_limit = cpu_limit(spec)
+            elif self.fault_seen:
+                required = (
+                    self.pending_limit
+                    + (len(SERVICES) - 1) * cpu_limit(object_value(self.original["spec"]))
+                    + cpu_limit(spec)
+                )
+                self.surge_blocked = Decimal(str(quota["limits.cpu"])) < required
+        super().replace_resource(slot, expected, spec)
+        if self.surge_blocked:
+            object_value(self.documents["payments"]["status"])["readyReplicas"] = 0
+            object_value(object_value(self.documents["quota"]["status"])["used"])["limits.cpu"] = (
+                "25"
+            )
+
+
+def cpu_limit(spec: JsonObject) -> Decimal:
+    """Derive replica limit in cores from actual fixture specs, including Kubernetes millicores."""
+    value = str(object_value(object_value(container(spec)["resources"])["limits"])["cpu"])
+    return Decimal(value[:-1]) / 1000 if value.endswith("m") else Decimal(value)
+
+
+@pytest.mark.parametrize("insufficient", ["25", "25.4"])
+def test_actual_rolling_update_overlap_requires_recovery_headroom(
+    tmp_path: Path, insufficient: str
+) -> None:
+    """The failed live25CPU allowance reproduces cleanup failure; reviewed26CPU permits recovery."""
+    original_plans = plans
+
+    def without_headroom(original: dict[Slot, JsonObject]) -> dict[Slot, JsonObject]:
+        """Reproduce the previous committed recipe without rewriting its retained live artifacts."""
+        result = original_plans(original)
+        object_value(result["quota"]["hard"])["limits.cpu"] = insufficient
+        return result
+
+    failed_fixture = SurgeQuotaFixture()
+    failed_runner = task(tmp_path / "old", failed_fixture)
+    with patch("payops.scenarios.scheduler.plans", side_effect=without_headroom):
+        failed = failed_runner.run()
+    assert failed.activated and not failed.cleanup_verified and failed_runner.block_file.exists()
+    assert failed_fixture.writes[-2:] == ["limits", "quota"]
+    corrected_fixture = SurgeQuotaFixture()
+    corrected_runner = task(tmp_path / "corrected", corrected_fixture)
+    corrected = corrected_runner.run()
+    assert (
+        corrected.activated
+        and corrected.cleanup_verified
+        and not corrected_runner.block_file.exists()
+    )

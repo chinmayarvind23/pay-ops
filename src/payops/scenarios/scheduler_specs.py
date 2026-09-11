@@ -197,7 +197,8 @@ def plans(original: dict[Slot, JsonObject]) -> dict[Slot, JsonObject]:
     result: dict[Slot, JsonObject] = {
         slot: deepcopy(object_value(document["spec"])) for slot, document in original.items()
     }
-    object_value(result["quota"]["hard"]).update({"requests.cpu": "24", "limits.cpu": "25"})
+    # Original RollingUpdate recovery needs one 500m replacement before deleting the pending pod.
+    object_value(result["quota"]["hard"]).update({"requests.cpu": "24", "limits.cpu": "26"})
     object_value(object_items(result["limits"]["limits"])[0]["max"])["cpu"] = "23"
     item = container(result["payments"])
     resources = object_value(item["resources"])
