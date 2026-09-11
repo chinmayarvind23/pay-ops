@@ -1,0 +1,18 @@
+{
+  "name": "payops-replay",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "format:check": "prettier --check index.html src/main.ts src/style.css tests/replay.test.ts",
+    "build": "bun build ./index.html --outdir ./dist --minify",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2"
+  }
+}

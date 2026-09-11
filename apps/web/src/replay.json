@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "source_revision": "6aa083a548e659c5fb6ce916070a9f377927e64d",
+  "cases": [
+    {
+      "case_id": "ROLLOUT-01",
+      "title": "Application exits during startup",
+      "report_sha256": "3a6bfdb1196409aeb52012a025b01d498ca47224aac0e4245c6885507df6e2ef",
+      "cleanup_verified": true,
+      "evidence": [
+        {
+          "id": "E01",
+          "source": "DEPLOYMENT",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:46:57.623907+00:00",
+          "source_sha256": "1762686ee47893eadf9ba04bb372472eac83baaa332c044d550507e89e71d2f8",
+          "facts": {
+            "replicas": 1,
+            "generation": 15,
+            "updatedReplicas": 1
+          }
+        },
+        {
+          "id": "E02",
+          "source": "KUBERNETES",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:46:57.623907+00:00",
+          "source_sha256": "5bb1ec5c324e3ba0b86dfb09cee7ba67faeb6bcd893c2dd538d23e3e51e3ad0a",
+          "facts": {
+            "generation": 1,
+            "running": true,
+            "restartCount": 1,
+            "ready": false,
+            "crashLoopBackOff": true,
+            "exitCode": 1
+          }
+        }
+      ],
+      "causes": [
+        {
+          "cause": "STARTUP_FAILURE",
+          "confidence": 0.75,
+          "supports": [
+            "E01",
+            "E02"
+          ],
+          "refutes": [],
+          "missing_evidence_count": 0
+        }
+      ],
+      "evidence_count": 30,
+      "terminal_state": "ESCALATED",
+      "duration_seconds": 5.302657700000054,
+      "ranking_method": "deterministic"
+    },
+    {
+      "case_id": "ROLLOUT-02",
+      "title": "Invalid processor configuration",
+      "report_sha256": "b2ba5ecd96eaeff43c38ece756c849678d566e8e647720cadc67560c30e48ebe",
+      "cleanup_verified": true,
+      "evidence": [
+        {
+          "id": "E01",
+          "source": "DEPLOYMENT",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:21.070534+00:00",
+          "source_sha256": "ed33866b2f7c221273b6a0e22d4cc46d604ff6eaf2fc395c7dac0a854edc1b49",
+          "facts": {
+            "replicas": 1,
+            "generation": 17,
+            "updatedReplicas": 1
+          }
+        },
+        {
+          "id": "E02",
+          "source": "KUBERNETES",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:21.070534+00:00",
+          "source_sha256": "2c0b65aae6bcfd3a29abb7a807ffa2f8cd28ec3f88c817959557e195a979c238",
+          "facts": {
+            "generation": 1,
+            "running": true,
+            "restartCount": 1,
+            "ready": false,
+            "crashLoopBackOff": false,
+            "exitCode": 1
+          }
+        },
+        {
+          "id": "E03",
+          "source": "LOG",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:23.564766+00:00",
+          "source_sha256": "e4f19e29699a7d09ec4d05aba0b33f6f67073fd92f05be3ecbe125becb343081",
+          "facts": {
+            "configurationValidationError": true,
+            "invalidSyntheticOrigin": true,
+            "http503Observed": false
+          }
+        }
+      ],
+      "causes": [
+        {
+          "cause": "INVALID_CONFIGURATION",
+          "confidence": 0.95,
+          "supports": [
+            "E01",
+            "E02",
+            "E03"
+          ],
+          "refutes": [],
+          "missing_evidence_count": 0
+        },
+        {
+          "cause": "STARTUP_FAILURE",
+          "confidence": 0.75,
+          "supports": [
+            "E01",
+            "E02"
+          ],
+          "refutes": [],
+          "missing_evidence_count": 0
+        }
+      ],
+      "evidence_count": 31,
+      "terminal_state": "ESCALATED",
+      "duration_seconds": 4.723756000000321,
+      "ranking_method": "deterministic"
+    },
+    {
+      "case_id": "ROLLOUT-03",
+      "title": "Readiness probe returns 404",
+      "report_sha256": "0f0bdbc5c2d369fd11c56bc183c947b6aa8a0a1f5a09388ac8e90cd671038d53",
+      "cleanup_verified": true,
+      "evidence": [
+        {
+          "id": "E01",
+          "source": "DEPLOYMENT",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:41.673734+00:00",
+          "source_sha256": "9a8f40ffe1230665a0eb574708c782bea2c91ec87a0106a8ee06ec0ec71ee6c6",
+          "facts": {
+            "replicas": 1,
+            "generation": 19,
+            "updatedReplicas": 1
+          }
+        },
+        {
+          "id": "E02",
+          "source": "KUBERNETES",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:41.673734+00:00",
+          "source_sha256": "ff84b81befdbc22bc7f7a0b014e7bf3bb9ab0f3c1cb14b33d30df365528ed5e6",
+          "facts": {
+            "generation": 1,
+            "running": true,
+            "restartCount": 0,
+            "ready": false,
+            "crashLoopBackOff": false
+          }
+        },
+        {
+          "id": "E03",
+          "source": "KUBERNETES",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:47:41+00:00",
+          "source_sha256": "1dfccf96524f5774c5ca67a7448200822def7c0f27e8ed0b21ab7c4bf9f09066",
+          "facts": {
+            "readinessProbe404": true
+          }
+        }
+      ],
+      "causes": [
+        {
+          "cause": "READINESS_PROBE_FAILURE",
+          "confidence": 0.9,
+          "supports": [
+            "E01",
+            "E02",
+            "E03"
+          ],
+          "refutes": [],
+          "missing_evidence_count": 0
+        }
+      ],
+      "evidence_count": 31,
+      "terminal_state": "ESCALATED",
+      "duration_seconds": 5.134954500000276,
+      "ranking_method": "deterministic"
+    },
+    {
+      "case_id": "DEP-01",
+      "title": "Processor has no running replicas",
+      "report_sha256": "115e8389f2c61eb7c005fc1dc63cbd2f6c617fadf00f90ae4ca6a64f1a664c98",
+      "cleanup_verified": true,
+      "evidence": [
+        {
+          "id": "E01",
+          "source": "DEPLOYMENT",
+          "service": "processor-adapter",
+          "observed_at": "2026-09-11T06:48:04.056945+00:00",
+          "source_sha256": "239251cb240cdff46dd95e5b781cfe9e20167e990bc9714e20eef5499a64d8ab",
+          "facts": {
+            "replicas": 0,
+            "generation": 7
+          }
+        },
+        {
+          "id": "E02",
+          "source": "KUBERNETES",
+          "service": "processor-adapter",
+          "observed_at": "2026-09-11T06:48:04.056945+00:00",
+          "source_sha256": "019f21f673f6506a6a3425090915c39b3ecb8bed8df383a69320db64adb9b451",
+          "facts": {
+            "pod_count": 0
+          }
+        },
+        {
+          "id": "E03",
+          "source": "LOG",
+          "service": "payments-api",
+          "observed_at": "2026-09-11T06:48:06.078661+00:00",
+          "source_sha256": "a877fc89b9e801f92b19a89ba2f0c9b038707b2d19ea4af6c7871ce5d481cebc",
+          "facts": {
+            "configurationValidationError": false,
+            "invalidSyntheticOrigin": false,
+            "http503Observed": true
+          }
+        }
+      ],
+      "causes": [
+        {
+          "cause": "PROCESSOR_UNAVAILABLE",
+          "confidence": 0.85,
+          "supports": [
+            "E01",
+            "E02",
+            "E03"
+          ],
+          "refutes": [],
+          "missing_evidence_count": 0
+        }
+      ],
+      "evidence_count": 28,
+      "terminal_state": "ESCALATED",
+      "duration_seconds": 12.614548900000045,
+      "ranking_method": "deterministic"
+    }
+  ],
+  "scope": "Four known local development cases with deterministic ranking",
+  "projection": "Selected facts only; raw logs, identifiers and local paths omitted",
+  "provider_measurement": false,
+  "human_timing_measurement": false
+}

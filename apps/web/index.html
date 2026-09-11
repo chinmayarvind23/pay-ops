@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Inspect recorded PayOps incident diagnoses and their verified evidence."
+    />
+    <title>PayOps · Incident replay</title>
+    <link rel="stylesheet" href="./src/style.css" />
+    <script type="module" src="./src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#investigation">Skip to investigation</a>
+    <header class="topbar">
+      <a class="brand" href="#">P<span>PayOps</span></a
+      ><span class="product">Incident replay</span
+      ><span class="recorded">Recorded local runs</span>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Recorded incidents">
+        <div class="eyebrow">DEVELOPMENT RUN / 01</div>
+        <h1>Investigations</h1>
+        <p class="sidebar-note">
+          Four incidents. Follow each diagnosis back to its evidence.
+        </p>
+        <nav id="case-list" aria-label="Choose an incident"></nav>
+        <div class="sidebar-foot">
+          <strong>Read-only replay</strong>
+          <p>
+            These are recorded experiments in a synthetic payment system. This
+            view cannot operate infrastructure.
+          </p>
+        </div>
+      </aside>
+      <main id="investigation" tabindex="-1">
+        <div class="page-heading">
+          <div>
+            <div id="case-label" class="eyebrow"></div>
+            <h2 id="case-title"></h2>
+          </div>
+          <span class="restored">Workload restored</span>
+        </div>
+        <div class="scope-note">
+          Deterministic development baseline
+          <span aria-hidden="true">/</span> Four known cases
+          <span aria-hidden="true">/</span> Model performance unmeasured
+        </div>
+        <section class="metrics" aria-label="Investigation summary">
+          <div>
+            <span>Collection + ranking</span><strong id="duration"></strong
+            ><small>Excludes fault injection and cleanup</small>
+          </div>
+          <div>
+            <span>Verified observations</span
+            ><strong id="evidence-count"></strong
+            ><small id="projected-count"></small>
+          </div>
+          <div>
+            <span>Investigation outcome</span
+            ><strong id="outcome" class="outcome"></strong
+            ><small>Recorded terminal state</small>
+          </div>
+        </section>
+        <div class="investigation-grid">
+          <section class="panel causes-panel" aria-labelledby="causes-heading">
+            <div class="panel-heading">
+              <h3 id="causes-heading">Ranked causes</h3>
+              <span>Recorded result</span>
+            </div>
+            <div id="causes"></div>
+            <p class="footnote">
+              Confidence is an uncalibrated ranking score. Select a citation to
+              inspect its source facts.
+            </p>
+          </section>
+          <section
+            class="panel evidence-panel"
+            aria-labelledby="evidence-heading"
+          >
+            <div class="panel-heading">
+              <h3 id="evidence-heading">Evidence</h3>
+              <span>Selected cited facts</span>
+            </div>
+            <div id="evidence"></div>
+          </section>
+        </div>
+        <details class="method">
+          <summary>How this replay was produced</summary>
+          <div>
+            <p>
+              The source run used fixed Kubernetes and Prometheus reads with
+              deterministic ranking. All four causes matched their development
+              labels at rank 1. This is a four-case development result; the
+              24-case model evaluation remains open.
+            </p>
+            <p>
+              Every retained report observation and referenced cleanup artifact
+              was verified before export. The replay contains selected numeric
+              facts and fixed log indicators. Raw logs, free-text summaries,
+              original incident identifiers and local paths are omitted. A false
+              log indicator means the pattern was not found in that bounded
+              capture.
+            </p>
+            <p>
+              Source digests identify the retained private artifacts. This
+              projection does not include those original bytes, and does not
+              claim that a digest alone proves source truth. Provider cost,
+              model latency and human investigation time have not been measured.
+            </p>
+            <div class="provenance">
+              <span>Source revision</span><code id="source-revision"></code
+              ><span>Recorded report SHA-256</span
+              ><code id="report-digest"></code>
+            </div>
+          </div>
+        </details>
+        <footer>
+          PayOps / Synthetic payment incident response
+          <span>September 11, 2026</span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
