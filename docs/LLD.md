@@ -330,7 +330,7 @@ independent restoration. Live activation and cleanup were verified at `e69b814` 
 `05baf15280ff466395e32655c94a54e9`). The actual event reported insufficient memory;
 all three resource specs and identities were restored and all five services healthy.
 
-### Retained-allocation worker (OOM-02, not yet qualified)
+### Retained-allocation worker (OOM-02, locally qualified)
 
 The startup-only risk worker has two closed modes: retained-v1 keeps each touched
 8Mi allocation; released-v1 drops each allocation immediately. Both attempt at
@@ -450,3 +450,18 @@ matches the independently tested9d4efd5 Docker image config and installed-source
 proof. Control and retained processes must still use the same runtime image.
 Restoration uses the original image rule. A new source revision/run is required;
 the previous attempt is not retroactively qualified.
+
+
+Frozen7d3e204 subsequently passed OOM-02. Run d2a14f09ce8349be8fd2c86fab89f44a
+completed the40-step release control, captured two distinct27-second OOM container
+lifetimes with converged restart counts1/2, then restored the original risk spec
+and image and verified all five services plus payment health. Independent artifact
+review reopened121hashes and111source/dependency hashes. Earlier failed attempts
+remain retained and unqualified.
+
+The kubelet briefly exposed the second termination while restartCount still read1;
+later snapshots converged to2. The runner waited for adjacent counts before
+activation. The independent verifier initially kept only the first snapshot of
+each container ID; it now retains the latest count for that same immutable
+termination, verifies unchanged times/pod/image, and still counts exactly two
+container IDs. No capture or acceptance threshold was changed.

@@ -1,8 +1,8 @@
 # Failure Scenarios
 
-The suite contains six groups with four scenarios each. Fifteen local variants now
+The suite contains six groups with four scenarios each. Sixteen local variants now
 have activation and restoration evidence; see [results](results.md) for scope and
-provenance. The remaining nine are OOM-02/04, SCHED-03/04, DEP-03/04 and
+provenance. The remaining eight are OOM-04, SCHED-03/04, DEP-03/04 and
 TELEM-01/02/04. Local processor variants do not establish an AWS outage, and local
 dependency behavior does not establish a deployed cloud integration.
 
@@ -25,7 +25,7 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 ## Resource
 
 - OOM-01: payments-api OOMKilled
-- OOM-02: risk-sim memory leak
+- OOM-02: risk-sim memory leak (bounded retention with two OOM lifetimes qualified at `7d3e204`)
 - OOM-03: CPU throttling
 - OOM-04: excessive synthetic concurrency pressure
 

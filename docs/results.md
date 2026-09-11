@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Fifteen local fault reproductions now have verified activation and
+each workload. Sixteen local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -108,3 +108,16 @@ artifact hashes and 104 source/dependency hashes. Evidence:
 `chunk-10-scheduler-memory/dbde043cbb0c40a5becafebbd61e01d8`, run
 `05baf15280ff466395e32655c94a54e9`. This establishes local reproduction and recovery;
 no diagnosis or model timing was measured in this run.
+
+
+OOM-02 qualified at `7d3e204` with the same 256Mi risk memory limit in both
+modes. The release control completed all 40 allocations without restarting.
+Retained mode produced two distinct OOMKilled container lifetimes in one owned
+pod, with verified restart counts 1 and 2. Peak recorded kernel memory before
+termination was 261005312 and 261206016 bytes. Original risk specification and
+image were restored, all five services were healthy, and payment traffic was
+accepted. Independent review checked 121 artifact hashes, 111 source/dependency
+hashes, raw allocation progression, image provenance and exact restoration.
+Evidence: `chunk-11-leak/2ba6ab40c6eb415a9034155ecfdaa52e`, run
+`d2a14f09ce8349be8fd2c86fab89f44a`. The two failed earlier attempts remain
+unqualified. This experiment does not measure model diagnosis or latency.
