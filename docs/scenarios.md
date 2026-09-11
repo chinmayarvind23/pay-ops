@@ -74,8 +74,8 @@ v1 is the flat Sample body. V2 is a strict `payops-risk-v2` envelope containing 
 same Sample. Payments serializes its risk call using its configured `risk_protocol`;
 risk accepts only its deployed protocol. The other three peers retain v1 bodies.
 Mismatches produce an actual risk422 and propagated payments502 while liveness stays
-healthy. Matching versions complete the full synthetic path. This source is tested;
-ROLLOUT-04 still requires a committed live reproduction and exact cleanup evidence.
+healthy. Matching versions complete the full synthetic path. ROLLOUT-04 was qualified
+locally at `5978c4f` with exact cleanup evidence; see [Results](results.md).
 
 `ProtocolHarness` now implements four stages: original v1, risk v2 with a v1 caller,
 matching v2 caller, and restored v1. It journals both complete Deployment specs before
@@ -89,4 +89,5 @@ nine-span path across five owned processes. The mismatch requires the actual pay
 a successful downstream path. The risk access record is temporal corroboration; it
 does not contain a request ID. Trace sources are bounded and verified against current
 runtime identities. The generic scenario runner rejects this case. Lifecycle, semantic
-source and streamed HTTP tests pass; live qualification remains pending.
+source and streamed HTTP tests pass. The retained live experiment reproduced all
+four stages and verified exact restoration; model diagnosis remains unevaluated.

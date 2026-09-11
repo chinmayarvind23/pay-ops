@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Twelve local fault reproductions now have verified activation and
+each workload. Thirteen local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of an oversized CPU request. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -46,6 +46,21 @@ traffic and acceptance thresholds. Evidence:
 it does not add a diagnosis score or establish global trace completeness. Its
 157.63-second lifecycle duration measures the operator experiment, including controls
 and cleanup, rather than agent investigation latency.
+
+The ROLLOUT-04 experiment at `5978c4f` reproduced a real risk request-schema mismatch
+while all five services remained ready. Four fresh probes returned 200 for original
+v1, 502 for a v1 caller against risk v2, 200 for the matching v2 caller, and 200 after
+exact original-spec restoration. The mismatch retained the actual upstream risk 422
+access record and two error spans. Each successful control retained the complete
+nine-span path across five services.
+
+A separate post-run verification reopened 103 retained files and 96 source hashes,
+checked all four observations, verified original Deployment identities/specs and
+image-layer/config correspondence, and confirmed the recorded scenario latch was
+absent. Evidence: `chunk-08-protocol/db7bf3b7ef444bb5949554da578a333c`, run
+`e0129da4358b4180b651a2298212cac4`. The root performed this review without additional
+agents. This is local fault qualification, not a new diagnosis score, live-model
+measurement or human timing result.
 
 ## Release targets still open
 
