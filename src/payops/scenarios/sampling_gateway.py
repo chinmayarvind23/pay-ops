@@ -64,21 +64,26 @@ def validate_runtime_baseline(state: JsonObject) -> None:
     runtime_identities(state, state, object_value(documents["processor-adapter"]["spec"]))
 
 
-def _deployment(current: JsonObject, original: JsonObject, expected: JsonObject) -> JsonObject:
+def deployment_identity(
+    current: JsonObject, original: JsonObject, expected: JsonObject, replicas: int = 1
+) -> JsonObject:
     """Exact UID/spec and observed current generation prevent stale controller readiness claims."""
     metadata = object_value(current["metadata"])
     prior = object_value(original["metadata"])
     status = object_value(current.get("status", {}))
     generation = metadata.get("generation")
     if (
-        metadata.get("namespace") != "payops-sandbox"
+        type(replicas) is not int
+        or replicas not in (1, 2)
+        or expected.get("replicas") != replicas
+        or metadata.get("namespace") != "payops-sandbox"
         or metadata.get("uid") != prior["uid"]
         or current.get("spec") != expected
         or type(generation) is not int
         or generation < int(str(prior["generation"]))
         or status.get("observedGeneration") != generation
         or any(
-            status.get(key) != 1
+            type(status.get(key)) is not int or status.get(key) != replicas
             for key in ("replicas", "updatedReplicas", "readyReplicas", "availableReplicas")
         )
     ):
@@ -122,8 +127,12 @@ def _status(pod: JsonObject) -> JsonObject:
     return rows[0]
 
 
-def _identity(
-    pod: JsonObject, replicas: list[JsonObject], deployment: JsonObject, expected: JsonObject
+def pod_identity(
+    pod: JsonObject,
+    replicas: list[JsonObject],
+    deployment: JsonObject,
+    expected: JsonObject,
+    expected_image: str | None = None,
 ) -> PodIdentity:
     """Resolve controller ownership and the exact reviewed container template."""
     metadata = object_value(pod["metadata"])
@@ -142,6 +151,8 @@ def _identity(
     if len(matches) != 1:
         raise ValueError("sampling pod owner chain does not match expected Deployment")
     status = _status(pod)
+    if expected_image is not None and status["imageID"] != expected_image:
+        raise ValueError("pod image differs from the captured runtime image")
     return PodIdentity.model_validate(
         {
             "pod_name": metadata.get("name"),
@@ -171,14 +182,14 @@ def runtime_identities(
         expected = (
             processor_spec if name == "processor-adapter" else object_value(prior[name]["spec"])
         )
-        metadata = _deployment(documents[name], prior[name], expected)
+        metadata = deployment_identity(documents[name], prior[name], expected)
         pod, previous = _pod(state, name), _pod(original, name)
         overrides = {"risk-sim": risk_image_id, "payments-api": payments_image_id}
         override = overrides.get(name)
         expected_image = _status(previous)["imageID"] if override is None else override
         if _status(pod)["imageID"] != expected_image:
             raise ValueError("sampling actual image identity changed")
-        identities[name] = _identity(pod, object_items(state["replicas"]), metadata, expected)
+        identities[name] = pod_identity(pod, object_items(state["replicas"]), metadata, expected)
     processor = identities["processor-adapter"]
     if requested_at is not None:
         _fresh_processor(

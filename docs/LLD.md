@@ -731,3 +731,18 @@ This verifies actual kubectl stdin/raw-DELETE behavior in addition to intercepte
 unit tests. The next lifecycle work must support two owned payments pods while
 preserving peer identities and separately accounting for the bounded load Job.
 Qualification remains17/24.
+
+SCHED-03 runtime validation now handles one or two real payments replicas. Shared
+deployment/pod identity checks were exposed for reuse; existing single-replica
+callers retain their defaults. Deployment convergence requires exact integer
+replica counts, the captured UID, expected full spec and observed generation.
+Every payments pod must have matching ReplicaSet/Deployment ownership, exact
+container template, captured image, no restart, and distinct pod/container IDs.
+All four peer service identities must remain unchanged.
+
+Nine scale-out tests and44related sampling/protocol/concurrency regressions passed
+(53total); new runtime coverage88%, strict typing and lint passed. The runtime
+validator intentionally rejects unaccounted pods. The lifecycle must separately
+verify the load Job's ownership before passing the service-only pod set; it cannot
+silently drop extra workload pods. This implements scale-out evidence checking,
+not live HPA qualification. Count remains17/24.
