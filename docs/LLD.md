@@ -303,3 +303,24 @@ with exact restoration. A fresh v3 run at `56e6337` then passed all five stages:
 restoration were reverified. Mean control/restricted/recovered work durations were
 0.289804/1.503687/0.274641 seconds. These qualify local CPU throttling, not model
 performance or investigation latency.
+
+### Insufficient-memory scheduler contract (SCHED-02, not yet qualified)
+
+The closed memory recipe requests and limits payments at 16Gi. Its node guard
+requires both reviewed healthy node identities and positive allocatable memory
+strictly below 16Gi; the journal identity includes capacity in bytes so a changed
+placement envelope invalidates later evidence. The current local nodes report
+16124080Ki each. No memory workload is needed: an admitted request larger than
+node capacity should remain unscheduled.
+
+Admission expansion changes only memory: ResourceQuota requests become 18Gi,
+limits become 20Gi, and the container LimitRange maximum becomes 16Gi. This leaves
+room for the pending pod, four peers and one replacement during restoration of
+the original RollingUpdate strategy. CPU allowances, container configuration and
+all unrelated fields remain unchanged. Injection uses Recreate. This follows
+[Kubernetes request-based placement](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+and [quota admission accounting](https://kubernetes.io/docs/concepts/policy/resource-quotas/).
+
+The recipe and capacity contract have fixture coverage; integration with the
+three-object journal, fresh `Insufficient memory` evidence and a live cleanup
+proof remain required. This contract does not increase the qualified case count.

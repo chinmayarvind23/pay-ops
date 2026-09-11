@@ -219,12 +219,12 @@ def quota_usage_restored(document: JsonObject) -> bool:
     """A pending pod counts against quota until controller deletion/accounting finishes."""
     used = object_value(object_value(document.get("status", {})).get("used", {}))
     return all(
-        _quantity(used.get(key)) <= _quantity(value)
+        resource_quantity(used.get(key)) <= resource_quantity(value)
         for key, value in object_value(QUOTA["hard"]).items()
     )
 
 
-def _quantity(value: object) -> Decimal:
+def resource_quantity(value: object) -> Decimal:
     """Parse only the finite CPU, memory and count forms emitted by this fixed local quota."""
     text = str(value)
     factors = {
