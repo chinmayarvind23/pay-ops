@@ -405,3 +405,17 @@ preserving baseline resources and configuration. Both keep50m/96Mi requests and
 PAYOPS_SYNTHETIC_LEAK mode. Changed entrypoints, roles, limits or duplicated env
 reject. Exact original restoration and image-runtime checks belong to the upcoming
 journaled harness; these adapters alone do not increase qualified scenario count.
+
+OOM-02 lifecycle integration now journals original state and both complete variants
+before CAS. A complete current-container release log, zero restarts, stable process
+identity and healthy payment are required before the retained transition. Fault
+capture preserves before/raw/after artifacts, then requires two distinct adjacent
+OOM lifetimes whose runtime image matches the control. Duplicate polls remain
+artifacts but do not count as new failures. Each stage has a bounded wait.
+
+Recovery recognizes only original/control/retained specs under the original risk
+UID. It restores before audit writes, checks all five exact specs and unchanged
+non-risk process identities, and requires accepted payment traffic. Unknown specs,
+failed restore or final receipt failure retain the shared latch. Interruptions still
+run recovery. This integration has fixture recovery and real-validator aggregation
+tests; final control-capture/persistence failure checks and live qualification remain.

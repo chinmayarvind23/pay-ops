@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "OOM-02": "risk retained allocations versus release control at fixed 256Mi; repeated OOM",
     "SCHED-02": "admitted 16Gi memory request exceeds both local node capacities",
     "OOM-03": "fixed CPU work at 100m versus 500m with kernel counters and recovery controls",
     "ROLLOUT-04": "risk v2 rejects a real v1 request; matching v2 caller restores compatibility",
@@ -42,7 +43,7 @@ def target(case_id: CaseId) -> DeploymentName:
     """Closed targets isolate faults to the synthetic dependency or explicit webhook probe."""
     if case_id == "PAY-04":
         return "webhook-sim"
-    if case_id == "ROLLOUT-04":
+    if case_id in {"ROLLOUT-04", "OOM-02"}:
         return "risk-sim"
     return (
         "processor-adapter"
@@ -91,7 +92,7 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
-    if case_id in {"SCHED-01", "SCHED-02", "TELEM-03", "ROLLOUT-04", "OOM-03"}:
+    if case_id in {"OOM-02", "SCHED-01", "SCHED-02", "TELEM-03", "ROLLOUT-04", "OOM-03"}:
         raise ValueError("case requires its specialized journaled harness")
     if case_id == "OOM-01":
         spec = memory_control_spec(original)
@@ -130,7 +131,7 @@ def activation(case_id: CaseId, observation: JsonObject) -> bool:
     if case_id in PACKAGE_A_CASES:
         return observation.get("package_a_verified") is True
     pods = object_items(observation.get("pods", []))
-    if case_id in {"OOM-01", "OOM-03", "TELEM-03", "ROLLOUT-04", "SCHED-01", "SCHED-02"}:
+    if case_id in {"OOM-01", "OOM-02", "OOM-03", "TELEM-03", "ROLLOUT-04", "SCHED-01", "SCHED-02"}:
         return False  # These cases require provenance available only to their specialized harness.
     if case_id == "DEP-01":
         return not pods and observation.get("sample_status") == 503
