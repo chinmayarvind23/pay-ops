@@ -10,6 +10,7 @@ from payops.contracts import EvidenceItem, Incident, IncidentReport, utc_now
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
 from payops.evidence.verification import verify_evidence
 from payops.orchestrator.baseline import rank_evidence
+from payops.orchestrator.graph_reasoning import ReasonerFactory, reason
 from payops.orchestrator.state import Envelope, InvestigationState, Phase, StepRecord, pack, unpack
 from payops.tools.collect import Collection, CollectionFailure
 from payops.tools.kubernetes import SERVICES
@@ -45,9 +46,12 @@ def reserve_attempt(root: Path, state: InvestigationState, node: str) -> Investi
 class InvestigationNodes:
     """Trusted construction binds readers and artifact storage; graph state contains no tools."""
 
-    def __init__(self, root: Path, collect: Collector) -> None:
+    def __init__(
+        self, root: Path, collect: Collector, reasoner_factory: ReasonerFactory | None = None
+    ) -> None:
         """Each worker receives an operator-owned read function, never a command string."""
         self.root, self.collector = root, collect
+        self.reasoner_factory = reasoner_factory
 
     def _step(
         self,
@@ -152,7 +156,7 @@ class InvestigationNodes:
         )
 
     def rank(self, state: Envelope) -> Envelope:
-        """Only verified observations reach deterministic ranking; no scenario labels enter."""
+        """Verified observations reach the configured ranker; scenario labels never enter."""
 
         def operation(state: InvestigationState) -> InvestigationState:
             """Reverify after restart so modified artifacts cannot inherit checkpoint trust."""
@@ -162,9 +166,15 @@ class InvestigationNodes:
             try:
                 for item in state.evidence:
                     verify_collected_item(item, store)
+                if self.reasoner_factory is not None:
+                    return reason(state, store, self.reasoner_factory)
                 hypotheses = rank_evidence(state.evidence, store)
             except EvidenceIntegrityError:
-                return updated(state, terminal="SECURITY_BLOCK")
+                return updated(
+                    state,
+                    terminal="SECURITY_BLOCK",
+                    reasoning_stop_reason="SECURITY_BLOCK" if self.reasoner_factory else None,
+                )
             terminal = "ESCALATED" if hypotheses else "EVIDENCE_INSUFFICIENT"
             return updated(state, phase="RANKED", hypotheses=hypotheses, terminal=terminal)
 
@@ -180,6 +190,9 @@ class InvestigationNodes:
             terminal_state=current.terminal or "UNRECOVERABLE",
             mode=current.mode,
             duration_seconds=sum(step.duration_seconds for step in current.steps),
+            ranking_method=current.ranking_method,
+            reasoning_stop_reason=current.reasoning_stop_reason,
+            reasoning_receipts=current.reasoning_receipts,
         )
         return pack(updated(current, phase="FINISHED", report=report))
 

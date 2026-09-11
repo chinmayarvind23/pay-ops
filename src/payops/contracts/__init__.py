@@ -22,6 +22,7 @@ TerminalState = Literal[
     "ACTION_FAILED",
     "UNRECOVERABLE",
 ]
+RankingMethod = Literal["deterministic", "model_fixture", "model_provider"]
 
 
 def utc_now() -> datetime:
@@ -84,6 +85,11 @@ class IncidentReport(Contract):
     terminal_state: TerminalState
     mode: Literal["mock", "fixture_replay", "local_kind", "cloud_gke"]
     duration_seconds: float = Field(ge=0, allow_inf_nan=False)
+    ranking_method: RankingMethod = "deterministic"
+    reasoning_stop_reason: Identifier | None = None
+    reasoning_receipts: tuple[Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")], ...] = (
+        Field(default=(), max_length=20)
+    )
     trace_id: str = Field(default_factory=new_id)
 
     @model_validator(mode="after")

@@ -11,7 +11,8 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph  # pyright: ignore[reportMissingTypeStubs]
 from langgraph.graph.state import CompiledStateGraph  # pyright: ignore[reportMissingTypeStubs]
 
-from payops.contracts import Incident
+from payops.contracts import Incident, RankingMethod
+from payops.orchestrator.graph_reasoning import ReasonerFactory
 from payops.orchestrator.nodes import Collector, InvestigationNodes, incident_directory, route
 from payops.orchestrator.state import (
     CollectionProfile,
@@ -58,15 +59,24 @@ class InvestigationWorker:
         pause_before_ranking: bool = False,
         mode: Literal["local_kind", "fixture_replay"] = "local_kind",
         collection_profile: CollectionProfile = "instant_v1",
+        reasoner_factory: ReasonerFactory | None = None,
+        ranking_profile: str = "deterministic-v1",
+        ranking_method: RankingMethod = "deterministic",
     ) -> None:
         """Only trusted code binds the database, readers and optional inspection breakpoint."""
         self.root = root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.database = self.root / "checkpoints.sqlite"
-        self.nodes = InvestigationNodes(self.root / "incidents", collect)
+        if (reasoner_factory is None) != (ranking_profile == "deterministic-v1"):
+            raise ValueError("model ranking requires its own stable host profile")
+        if (reasoner_factory is None) != (ranking_method == "deterministic"):
+            raise ValueError("ranking method must identify the selected model or baseline")
+        self.nodes = InvestigationNodes(self.root / "incidents", collect, reasoner_factory)
         self.pause = pause_before_ranking
         self.mode: Literal["local_kind", "fixture_replay"] = mode
         self.collection_profile: CollectionProfile = collection_profile
+        self.ranking_profile = ranking_profile
+        self.ranking_method: RankingMethod = ranking_method
 
     def start(
         self, incident: Incident, budget: InvestigationBudget | None = None
@@ -77,6 +87,8 @@ class InvestigationWorker:
             budget=budget or InvestigationBudget(),
             mode=self.mode,
             collection_profile=self.collection_profile,
+            ranking_profile=self.ranking_profile,
+            ranking_method=self.ranking_method,
         )
         return self._invoke(incident.incident_id, initial)
 
@@ -100,6 +112,10 @@ class InvestigationWorker:
                     raise ValueError("worker mode differs from saved investigation")
                 if existing.collection_profile != self.collection_profile:
                     raise ValueError("collection profile differs from saved investigation")
+                if existing.ranking_profile != self.ranking_profile:
+                    raise ValueError("ranking profile differs from saved investigation")
+                if existing.ranking_method != self.ranking_method:
+                    raise ValueError("ranking method differs from saved investigation")
                 if initial is not None:
                     if existing.incident != initial.incident:
                         raise ValueError("thread already belongs to a different incident")

@@ -8,8 +8,10 @@ from pydantic import AwareDatetime, Field
 from payops.contracts import (
     Contract,
     EvidenceItem,
+    Identifier,
     Incident,
     IncidentReport,
+    RankingMethod,
     RootCauseHypothesis,
     TerminalState,
     utc_now,
@@ -46,6 +48,10 @@ class InvestigationState(Contract):
     budget: InvestigationBudget
     mode: Literal["local_kind", "fixture_replay"] = "local_kind"
     collection_profile: CollectionProfile = "instant_v1"
+    ranking_profile: Identifier = "deterministic-v1"
+    ranking_method: RankingMethod = "deterministic"
+    reasoning_stop_reason: Identifier | None = None
+    reasoning_receipts: tuple[str, ...] = Field(default=(), max_length=20)
     phase: Phase = "RECEIVED"
     started_at: AwareDatetime = Field(default_factory=utc_now)
     steps_used: int = Field(default=0, ge=0, le=16)

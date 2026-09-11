@@ -134,6 +134,33 @@ class ModelRuntime:
             raise ValueError("prepared prompt exceeds model input allowance")
         return prepared
 
+    def authority(self) -> Literal["OK", "DENIED", "BUSY", "TIMEOUT", "ERROR"]:
+        """Replay publication refresh shares provider capacity and a bounded acceptance deadline."""
+        if self._closed or not self._slot.acquire(blocking=False):
+            return "BUSY"
+        try:
+            deadline = monotonic() + min(8, self.settings.timeout_seconds)
+            future = self._pool.submit(self._authority)
+        except BaseException:
+            self._slot.release()
+            raise
+        try:
+            allowed, completed = future.result(timeout=max(0, deadline - monotonic()))
+            if completed > deadline:
+                return "TIMEOUT"
+            return "OK" if allowed else "DENIED"
+        except TimeoutError:
+            return "TIMEOUT"
+        except Exception:
+            return "ERROR"
+
+    def _authority(self) -> tuple[bool, float]:
+        """Even timed-out authority refreshes retain capacity until their transport finishes."""
+        try:
+            return self.authorize(), monotonic()
+        finally:
+            self._slot.release()
+
     def observe(
         self, prompt: ModelPrompt, evidence_ids: frozenset[str], causes: frozenset[str]
     ) -> ModelObservation:

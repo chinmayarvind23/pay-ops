@@ -286,3 +286,91 @@ def test_interrupted_first_clock_does_not_leak_model_slot(
         observe(runtime)
     assert not adapter.calls
     assert observe(runtime).status == "OK" and len(adapter.calls) == 1
+
+
+def test_authority_timeout_holds_shared_slot_without_queue(
+    runtime_pair: tuple[ModelRuntime, Adapter],
+) -> None:
+    """A timed-out grant lookup blocks later grants and provider calls until completion."""
+    runtime, adapter = runtime_pair
+    release = Event()
+    calls: list[str] = []
+    runtime.settings = runtime.settings.model_copy(update={"timeout_seconds": 0.03})
+    adapter.settings = runtime.settings
+
+    def authorize() -> bool:
+        """Keep one real worker active while observing shared-capacity admission."""
+        calls.append("identity")
+        assert release.wait(3)
+        return True
+
+    runtime.authorize = authorize
+    try:
+        assert runtime.authority() == "TIMEOUT"
+        assert runtime.authority() == "BUSY"
+        assert observe(runtime).status == "BUSY"
+        assert calls == ["identity"] and not adapter.calls
+    finally:
+        release.set()
+    runtime._pool.submit(lambda: None).result(timeout=3)  # pyright: ignore[reportPrivateUsage]
+    assert runtime.authority() == "OK"
+
+
+@pytest.mark.parametrize("error", [RuntimeError, PermissionError])
+def test_authority_error_returns_capacity(
+    runtime_pair: tuple[ModelRuntime, Adapter],
+    error: type[Exception],
+) -> None:
+    """Authorization exceptions expose only ERROR and cannot consume permanent capacity."""
+    runtime, adapter = runtime_pair
+
+    def unavailable() -> bool:
+        """Simulate a provider failure whose raw message must never enter a result."""
+        raise error("private identity provider details")
+
+    runtime.authorize = unavailable
+    assert runtime.authority() == "ERROR" and not adapter.calls
+    runtime.authorize = lambda: True
+    assert runtime.authority() == "OK"
+
+
+def test_authority_late_completion_is_not_accepted(
+    runtime_pair: tuple[ModelRuntime, Adapter],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Worker finish time controls acceptance even if the future is already done."""
+    runtime, _ = runtime_pair
+    original = runtime._authority  # pyright: ignore[reportPrivateUsage]
+
+    def delayed_timestamp() -> tuple[bool, float]:
+        """Exercise real worker cleanup while recording a finish beyond this call's deadline."""
+        allowed, completed = original()
+        return allowed, completed + 60
+
+    monkeypatch.setattr(runtime, "_authority", delayed_timestamp)
+    assert runtime.authority() == "TIMEOUT"
+
+
+def test_authority_closed_gate_is_busy(runtime_pair: tuple[ModelRuntime, Adapter]) -> None:
+    """A closed runtime cannot restart a grant worker or provider pool."""
+    runtime, adapter = runtime_pair
+    runtime.close()
+    assert runtime.authority() == "BUSY" and not adapter.calls
+
+
+def test_authority_interrupted_clock_releases_slot(
+    runtime_pair: tuple[ModelRuntime, Adapter],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pre-submit interruption preserves capacity for the next current-grant check."""
+    runtime, _ = runtime_pair
+
+    def interrupt() -> float:
+        """Interrupt immediately after the authority gate owns its semaphore permit."""
+        raise KeyboardInterrupt
+
+    with monkeypatch.context() as patch:
+        patch.setattr("payops.orchestrator.model_runtime.monotonic", interrupt)
+        with pytest.raises(KeyboardInterrupt):
+            runtime.authority()
+    assert runtime.authority() == "OK"
