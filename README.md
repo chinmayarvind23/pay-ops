@@ -10,7 +10,7 @@ The local implementation runs against a five-service synthetic payment system in
 
 | Measurement | Verified result | Scope |
 | --- | --- | --- |
-| Local fault reproduction | 11 cases with activation and cleanup | Includes a kernel OOM termination and scheduler rejection of an oversized CPU request |
+| Local fault reproduction | 12 cases with activation and cleanup | Includes kernel OOM, scheduler rejection and a delay-preserving sampling experiment |
 | Diagnosis | 4/4 rank-1 and rank-3 hits | Frozen four-case development run using deterministic ranking |
 | Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
 | Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |
@@ -27,7 +27,7 @@ The local implementation runs against a five-service synthetic payment system in
 - Deterministic approval policy and an idempotent SQL action broker, with current identity and resource revalidation before execution. The operational mutation executor remains unfinished.
 - Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
 - PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
-- Fault injectors with original-state journals, bounded synthetic traffic and cleanup verification. A four-stage sampling experiment is implemented and awaiting live qualification.
+- Fault injectors with original-state journals, bounded synthetic traffic and cleanup verification. The four-stage sampling experiment verifies trace suppression and return while holding processor latency constant.
 
 ## Run locally
 

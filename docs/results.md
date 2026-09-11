@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Eleven local fault reproductions now have verified activation and
+each workload. Twelve local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of an oversized CPU request. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -27,6 +27,25 @@ separate 40-command reservation and generated no new traffic. This is a bounded
 observation sample, not proof of trace completeness or investigation accuracy.
 Evidence: `trace-reader/cb41de9-readonly-002`. The earlier empty quiet-window capture
 remains retained separately.
+
+The TELEM-03 run at `c9c426b` completed a four-stage sampling experiment with 32
+accepted requests. With processor sampling disabled, both bounded captures contained
+40 payments spans and zero processor spans. Restoring sampling with the same 600 ms
+processor delay returned eight processor spans in each capture. Processor A/B mean
+durations were 0.601314/0.601100 seconds while sampling was disabled and
+0.601442/0.601372 seconds after sampling returned. Final healthy means were
+0.000275/0.000419 seconds after exact original configuration restoration.
+
+Independent review verified 478 retained files, 88 source hashes, 29 operator receipt
+hashes, all four observation stages, metric/trace source lineage and the final owned
+five-service runtime. The earlier 64 KiB capture failed before injection and remains
+recorded; the successful run used a reviewed 128 KiB acquisition cap with unchanged
+traffic and acceptance thresholds. Evidence:
+`chunk-07-sampling/c1a066c96e9745b4ac759d7cd06dc78e`, run
+`b364e918b4944691946c7870f41ff86f`. This qualifies the local sampling scenario;
+it does not add a diagnosis score or establish global trace completeness. Its
+157.63-second lifecycle duration measures the operator experiment, including controls
+and cleanup, rather than agent investigation latency.
 
 ## Release targets still open
 
