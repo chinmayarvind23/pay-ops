@@ -180,11 +180,8 @@ function render(selected: ReplayCase): void {
 }
 
 /** Only recorded case identifiers are accepted from the address fragment. */
-function selectedCase(): ReplayCase {
-  return (
-    bundle.cases.find((item) => `#${item.case_id}` === location.hash) ??
-    bundle.cases[0]!
-  );
+function selectedCase(): ReplayCase | undefined {
+  return bundle.cases.find((item) => `#${item.case_id}` === location.hash);
 }
 
 for (const item of bundle.cases) {
@@ -202,5 +199,8 @@ for (const item of bundle.cases) {
   node("case-list").append(button);
 }
 node("case-title").setAttribute("aria-live", "polite");
-window.addEventListener("hashchange", () => render(selectedCase()));
-render(selectedCase());
+window.addEventListener("hashchange", () => {
+  const selected = selectedCase();
+  if (selected) render(selected);
+});
+render(selectedCase() ?? bundle.cases[0]!);

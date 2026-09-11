@@ -6,7 +6,7 @@
   "packageManager": "bun@1.4.2",
   "scripts": {
     "check": "tsc --noEmit",
-    "format:check": "prettier --check index.html src/main.ts src/style.css tests/replay.test.ts",
+    "format:check": "prettier --check index.html src/main.ts src/style.css tests/*.ts",
     "build": "bun build ./index.html --outdir ./dist --minify",
     "test": "bun test"
   },

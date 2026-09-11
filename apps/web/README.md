@@ -22,6 +22,11 @@ integrity. Raw logs, private incident IDs, local paths and operational credentia
 are absent. Confidence remains uncalibrated; timing covers collection and
 deterministic ranking only.
 
+The navigation regression runs the actual renderer against a small DOM-method
+fixture. It checks initial fallback, case selection, in-page skip fragments and
+later case routes. It does not verify browser layout, keyboard events or the
+accessibility tree.
+
 Type checking, bundle tests, production build and HTTP serving have passed locally.
 Browser visual/click testing is pending because no browser surface was connected
 in the build session. The UI is not yet hosted. Public authentication, operational
