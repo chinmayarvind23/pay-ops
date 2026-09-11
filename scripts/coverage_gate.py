@@ -24,6 +24,7 @@ CRITICAL_FILES = frozenset(
         "memory/data_clients.py",
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",
+        "orchestrator/model_runtime.py",
         "tools/registry.py",
         "tools/operational_reads.py",
     }

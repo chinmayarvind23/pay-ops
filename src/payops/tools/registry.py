@@ -141,8 +141,8 @@ class ReadRegistry:
 
     def _read(self, request: ReadRequest, parent: Context) -> ReadCompletion:
         """Refresh authority on both sides of I/O and verify complete output before publication."""
-        tracer = trace.get_tracer("payops.tools.registry")
         try:
+            tracer = trace.get_tracer("payops.tools.registry")
             with tracer.start_as_current_span("tool_call", context=parent) as span:
                 span.set_attribute("payops.tool", request.tool)
                 span.set_attribute("payops.service", request.service)
@@ -210,8 +210,8 @@ class ReadRegistry:
         with self._lock:
             if self._closed or not self._slots.acquire(blocking=False):
                 return "BUSY"
-            deadline = monotonic() + min(8, self._ceiling)
             try:
+                deadline = monotonic() + min(8, self._ceiling)
                 future = self._pool.submit(self._refresh)
             except BaseException:
                 self._slots.release()

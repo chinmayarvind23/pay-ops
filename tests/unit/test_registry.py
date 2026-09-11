@@ -389,3 +389,46 @@ def test_publication_timeout_discards_evidence_and_keeps_slot(harness: Harness) 
             registry._slots.release()  # pyright: ignore[reportPrivateUsage]
     finally:
         release.set()
+
+
+def test_interrupted_publication_clock_releases_acquired_slot(
+    harness: Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Publication admission also returns capacity if interrupted before worker submission."""
+    registry = harness.registry()
+
+    def clock() -> float:
+        """Simulate an interrupt after ownership transfers to the publication gate."""
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("payops.tools.registry.monotonic", clock)
+    with pytest.raises(KeyboardInterrupt):
+        registry._publication_status()  # pyright: ignore[reportPrivateUsage]
+    assert registry._slots.acquire(blocking=False)  # pyright: ignore[reportPrivateUsage]
+    assert registry._slots.acquire(blocking=False)  # pyright: ignore[reportPrivateUsage]
+    registry._slots.release()  # pyright: ignore[reportPrivateUsage]
+    registry._slots.release()  # pyright: ignore[reportPrivateUsage]
+
+
+def test_tracer_lookup_failure_releases_worker_slots(
+    harness: Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Tracing setup failures return both worker slots before a subsequent valid batch."""
+    registry = harness.registry()
+    requests = (request("recent_logs"), request("workload_status"))
+
+    def unavailable(name: str) -> Tracer:
+        """Fail before span creation, without exposing private backend details to results."""
+        raise RuntimeError("private tracing backend failure")
+
+    with monkeypatch.context() as scope:
+        scope.setattr("payops.tools.registry.trace.get_tracer", unavailable)
+        failed = registry.dispatch(requests)
+    assert [result.status for result in failed] == ["ERROR", "ERROR"]
+    assert all(not result.evidence for result in failed)
+    assert harness.events == ["reserve:2:3"]
+    assert registry._slots.acquire(blocking=False)  # pyright: ignore[reportPrivateUsage]
+    assert registry._slots.acquire(blocking=False)  # pyright: ignore[reportPrivateUsage]
+    registry._slots.release()  # pyright: ignore[reportPrivateUsage]
+    registry._slots.release()  # pyright: ignore[reportPrivateUsage]
+    assert [result.status for result in registry.dispatch(requests)] == ["OK", "OK"]

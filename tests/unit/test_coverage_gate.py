@@ -53,6 +53,7 @@ def test_coverage_thresholds_fail_closed(
         "memory/data_clients.py",
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",
+        "orchestrator/model_runtime.py",
         "tools/registry.py",
         "tools/operational_reads.py",
     ],
