@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from payops.contracts import Contract, Identifier
-from payops.orchestrator.reasoning import ReadRequest, TextPrice
+from payops.orchestrator.reasoning import ReadRequest, TextPrice, TokenAccounting
 from payops.tools.registry import CATALOG
 
 Amount = Annotated[int, Field(strict=True, ge=0, le=1_000_000_000_000)]
@@ -23,6 +23,7 @@ class ReasoningBudget(Contract):
     cost_nano_usd: Amount
     tool_calls: int = Field(strict=True, ge=0, le=40)
     backend_reads: int = Field(strict=True, ge=0, le=64)
+    provider_requests: int = Field(default=20, strict=True, ge=0, le=20)
 
 
 class ModelCharge(Contract):
@@ -34,6 +35,15 @@ class ModelCharge(Contract):
     input_tokens: int = Field(strict=True, ge=0, le=100000)
     output_token_limit: int = Field(strict=True, ge=1, le=16384)
     price: TextPrice
+    token_accounting: TokenAccounting = "fixture_exact"
+    provider_requests: int = Field(default=0, strict=True, ge=0, le=2)
+
+    @model_validator(mode="after")
+    def request_census(self) -> Self:
+        """Ceiling accounting reserves one count and one generation request before either starts."""
+        if self.provider_requests != (2 if self.token_accounting == "provider_ceiling" else 0):
+            raise ValueError("provider request reservation differs from accounting contract")
+        return self
 
     def tokens(self) -> int:
         """Uncertain calls retain both input and maximum output allowance after a crash."""
@@ -106,6 +116,7 @@ class BudgetRecord(Contract):
             len(model) > self.limits.model_calls
             or sum(charge.tokens() for charge in model) > self.limits.tokens
             or sum(charge.cost() for charge in model) > self.limits.cost_nano_usd
+            or sum(charge.provider_requests for charge in model) > self.limits.provider_requests
             or sum(len(charge.requests) for charge in reads) > self.limits.tool_calls
             or sum(charge.backend_reads() for charge in reads) > self.limits.backend_reads
         ):

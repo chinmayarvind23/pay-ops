@@ -213,6 +213,10 @@ class LoopSession:
                 input_tokens=prepared.prompt.input_tokens,
                 output_token_limit=owner.runtime.settings.output_token_limit,
                 price=owner.runtime.settings.price,
+                token_accounting=prepared.prompt.token_accounting,
+                provider_requests=2
+                if prepared.prompt.token_accounting == "provider_ceiling"
+                else 0,
             )
             if owner.ledger.reserve(record, charged) != "NEW":
                 raise LoopStopped("BUDGET_EXHAUSTED")

@@ -20,6 +20,7 @@ ToolName = Literal[
 ]
 Brief = Annotated[str, Field(min_length=1, max_length=600)]
 Count = Annotated[int, Field(strict=True, ge=0, le=10_000_000)]
+TokenAccounting = Literal["fixture_exact", "provider_ceiling"]
 
 
 class ReadRequest(Contract):
