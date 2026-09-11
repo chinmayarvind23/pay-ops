@@ -143,8 +143,8 @@ class LocalScenarioRunner:
     ) -> ScenarioReceipt:
         """Receipt failures are returned after cleanup; an unverified cleanup blocks later runs."""
         case_id = TypeAdapter[CaseId](CaseId).validate_python(case_id)
-        if case_id == "SCHED-01":
-            raise ValueError("scheduler case requires its three-resource harness")
+        if case_id in {"SCHED-01", "TELEM-03"}:
+            raise ValueError("case requires its specialized journaled harness")
         directory, receipt = self._start(case_id)
         original: JsonObject | None = None
         injected: JsonObject | None = None

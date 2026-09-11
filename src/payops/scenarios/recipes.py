@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "TELEM-03": "processor latency, actual sampler suppression and restored-sampling control",
     "SCHED-01": "local oversized CPU request cannot fit node; not CPU utilization saturation",
     "OOM-01": "same bounded payments working set survives 256Mi control and OOMKills at 128Mi",
     "ROLLOUT-01": "local fixed bad image exits during Python startup",
@@ -38,7 +39,11 @@ def target(case_id: CaseId) -> DeploymentName:
     """Closed targets isolate faults to the synthetic dependency or explicit webhook probe."""
     if case_id == "PAY-04":
         return "webhook-sim"
-    return "processor-adapter" if case_id in ("DEP-01", *PACKAGE_A_FAULTS) else "payments-api"
+    return (
+        "processor-adapter"
+        if case_id in ("DEP-01", "TELEM-03", *PACKAGE_A_FAULTS)
+        else "payments-api"
+    )
 
 
 def container(spec: JsonObject) -> JsonObject:
@@ -77,8 +82,8 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
-    if case_id == "SCHED-01":
-        raise ValueError("scheduler case requires its three-resource harness")
+    if case_id in {"SCHED-01", "TELEM-03"}:
+        raise ValueError("case requires its specialized journaled harness")
     if case_id == "OOM-01":
         spec = memory_control_spec(original)
         object_value(object_value(container(spec)["resources"])["limits"])["memory"] = "128Mi"
@@ -116,8 +121,8 @@ def activation(case_id: CaseId, observation: JsonObject) -> bool:
     if case_id in PACKAGE_A_CASES:
         return observation.get("package_a_verified") is True
     pods = object_items(observation.get("pods", []))
-    if case_id == "OOM-01":
-        return False  # OOM requires the runner's captured rollout provenance, absent here.
+    if case_id in {"OOM-01", "TELEM-03"}:
+        return False  # These cases require provenance available only to their specialized harness.
     if case_id == "DEP-01":
         return not pods and observation.get("sample_status") == 503
     if case_id == "ROLLOUT-03":
