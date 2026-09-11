@@ -35,11 +35,14 @@ REDACT = "src/payops/evidence/redact.py"
 METRIC = "src/payops/evaluation/metrics.py"
 GRAPH = "src/payops/orchestrator/graph.py"
 NODES = "src/payops/orchestrator/nodes.py"
+POLICY = "src/payops/policy/engine.py"
+POLICY_CONTRACT = "src/payops/policy/contracts.py"
 SCHEMA_TESTS = "tests/unit/test_contracts.py tests/unit/test_lineage.py"
 EVIDENCE_TESTS = "tests/unit/test_evidence.py"
 METRIC_TESTS = "tests/unit/test_metrics.py"
 GRAPH_TESTS = "tests/unit/test_graph.py"
-MUTATIONS = (
+POLICY_TESTS = "tests/unit/test_policy.py"
+CORE_MUTATIONS = (
     Mutation("schema_extra_fields", CONTRACT, 'extra="forbid"', 'extra="allow"', SCHEMA_TESTS),
     Mutation("schema_frozen", CONTRACT, "frozen=True", "frozen=False", SCHEMA_TESTS),
     Mutation(
@@ -188,9 +191,7 @@ MUTATIONS = (
         METRIC_TESTS,
     ),
     Mutation("percentile_negative", METRIC, "or sample < 0", "", METRIC_TESTS),
-    Mutation(
-        "graph_attempt_limit", NODES, "used >= state.budget.max_steps", "False", GRAPH_TESTS
-    ),
+    Mutation("graph_attempt_limit", NODES, "used >= state.budget.max_steps", "False", GRAPH_TESTS),
     Mutation(
         "graph_attempt_durability",
         NODES,
@@ -233,9 +234,9 @@ MUTATIONS = (
     Mutation(
         "graph_integrity_outcome",
         NODES,
-        '            except EvidenceIntegrityError:\n'
+        "            except EvidenceIntegrityError:\n"
         '                return updated(state, terminal="SECURITY_BLOCK")',
-        '            except EvidenceIntegrityError:\n'
+        "            except EvidenceIntegrityError:\n"
         '                return updated(state, terminal="EVIDENCE_INSUFFICIENT")',
         GRAPH_TESTS,
     ),
@@ -265,6 +266,138 @@ MUTATIONS = (
         GRAPH_TESTS,
     ),
 )
+
+
+POLICY_MUTATIONS = (
+    Mutation("policy_disabled_identity", POLICY, "and principal.enabled", "and True", POLICY_TESTS),
+    Mutation("policy_role", POLICY, "and role in principal.roles", "and True", POLICY_TESTS),
+    Mutation(
+        "policy_identity_scope",
+        POLICY,
+        "and namespace in principal.namespaces",
+        "and True",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_identity_expiry", POLICY, "and principal.expires_at > now", "and True", POLICY_TESTS
+    ),
+    Mutation(
+        "policy_identity_freshness",
+        POLICY,
+        "0 <= (now - principal.verified_at).total_seconds() <= 60",
+        "True",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_service_scope", POLICY, "proposal.service not in SERVICES", "False", POLICY_TESTS
+    ),
+    Mutation(
+        "policy_incident_identity",
+        POLICY,
+        "proposal.incident_id != incident.incident_id",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_resource_scope",
+        POLICY,
+        "(proposal.namespace, proposal.service) != (resource.namespace, resource.service)",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_proposal_mode", POLICY, "proposal.mode != resource.mode", "False", POLICY_TESTS
+    ),
+    Mutation("policy_synthetic", POLICY, "not resource.synthetic", "False", POLICY_TESTS),
+    Mutation(
+        "policy_resource_freshness",
+        POLICY,
+        "0 <= (now - resource.observed_at).total_seconds() <= 30",
+        "True",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_preconditions",
+        POLICY,
+        "(proposal.resource_uid, proposal.expected_version) != (resource.uid, resource.version)",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_resource_kind", POLICY, "resource.kind != expected_kind", "False", POLICY_TESTS
+    ),
+    Mutation(
+        "policy_revision_inventory",
+        POLICY,
+        "proposal.revision_sha256 not in resource.approved_revisions",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_evidence_mode",
+        POLICY,
+        "report.mode != context.resource.mode",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_observation_freshness",
+        POLICY,
+        "0 <= (now - item.observed_at).total_seconds() <= 300",
+        "True",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_collection_freshness",
+        POLICY,
+        "0 <= (now - item.collected_at).total_seconds() <= 300",
+        "True",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_artifact_integrity",
+        POLICY,
+        "            context.store.verify(item)",
+        "            pass",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_scale_ceiling",
+        POLICY_CONTRACT,
+        "Field(ge=1, le=3, strict=True)",
+        "Field(ge=1, le=4, strict=True)",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_scale_strict",
+        POLICY_CONTRACT,
+        "Field(ge=1, le=3, strict=True)",
+        "Field(ge=1, le=3, strict=False)",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_duplicate_citations",
+        POLICY_CONTRACT,
+        "len(self.evidence_ids) != len(set(self.evidence_ids))",
+        "False",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_digest_parameters",
+        POLICY,
+        "sha256(payload.encode()).hexdigest()",
+        "sha256(b'constant').hexdigest()",
+        POLICY_TESTS,
+    ),
+    Mutation(
+        "policy_positive_control",
+        POLICY,
+        'decision="APPROVAL_REQUIRED",',
+        'decision="DENY",',
+        POLICY_TESTS,
+    ),
+)
+MUTATIONS = CORE_MUTATIONS + POLICY_MUTATIONS
 
 
 def snapshot(repo: Path, destination: Path) -> dict[str, str]:
@@ -407,7 +540,7 @@ def main() -> int:
     output = Path(tempfile.mkdtemp(prefix="semantic-", dir=parent))
     baseline = output / "baseline"
     manifest = run_metadata(repo, baseline)
-    selection = f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} {GRAPH_TESTS}"
+    selection = f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} {GRAPH_TESTS} {POLICY_TESTS}"
     baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result
     if baseline_result["status"] != "survived":

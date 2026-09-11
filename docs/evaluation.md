@@ -16,11 +16,12 @@ produce model timings without real model-step records.
 
 Run `uv run python scripts/mutation_check.py --output ../resources/pay_ops/evidence/mutations`
 for the enumerated semantic mutation suite. It tests isolated source snapshots and records
-source, test, lock and runner hashes. The suite has 41 specific schema/evidence/metric/graph
+source, test, lock and runner hashes. The suite has 64 specific schema/evidence/metric/graph/policy
 mutations; passing it is not an exhaustive generated mutation score or a completed incident
 benchmark. Thirteen graph mutations cover crash-attempt accounting, scope, mode,
-read reservation, worker exclusion and retained collection behavior. Policy/executor
-mutations will be added with those modules.
+read reservation, worker exclusion and retained collection behavior. Twenty-three policy
+mutations cover identity, scope, preconditions, evidence, modes and backend risk assignment.
+Executor mutations will be added with its implementation.
 
 ## Two scorecards
 

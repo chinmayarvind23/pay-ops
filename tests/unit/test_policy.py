@@ -97,23 +97,36 @@ def test_unsafe_capability_cannot_be_downgraded_by_model(tmp_path: Path, action:
 
 
 @pytest.mark.parametrize(
-    "field,value",
+    "field,value,reason",
     [
-        ("namespace", "kube-system"),
-        ("service", "ledger-sim"),
-        ("resource_uid", "foreign"),
-        ("expected_version", "old"),
-        ("incident_id", "other"),
-        ("evidence_ids", ["invented"]),
+        ("namespace", "kube-system", "IDENTITY_DENIED"),
+        ("service", "ledger-sim", "SCOPE_DENIED"),
+        ("resource_uid", "foreign", "STALE_PRECONDITION"),
+        ("expected_version", "old", "STALE_PRECONDITION"),
+        ("incident_id", "other", "INCIDENT_SCOPE_MISMATCH"),
+        ("evidence_ids", ["invented"], "EVIDENCE_INVALID"),
     ],
 )
 def test_wrong_scope_or_precondition_is_denied(
-    tmp_path: Path, field: str, value: JsonValue
+    tmp_path: Path, field: str, value: JsonValue, reason: str
 ) -> None:
     """Approval cannot make a stale or cross-incident proposal reviewable."""
     trusted, proposal = context(tmp_path)
     proposal[field] = value
-    assert evaluate(proposal, trusted).decision == "DENY"
+    review = evaluate(proposal, trusted)
+    assert review.decision == "DENY" and review.reason == reason
+
+
+def test_matching_backend_resource_cannot_grant_forbidden_service(tmp_path: Path) -> None:
+    """Even an otherwise valid backend snapshot cannot make ledger remediation eligible."""
+    trusted, proposal = context(tmp_path)
+    ledger = ResourceSnapshot.model_validate(
+        {**trusted.resource.model_dump(), "service": "ledger-sim"}
+    )
+    proposal["service"] = "ledger-sim"
+    review = evaluate(proposal, replace(trusted, resource=ledger))
+    assert review.decision == "DENY" and review.reason == "SCOPE_DENIED"
+    assert review.proposal is None and review.action_digest is None
 
 
 def test_identity_and_evidence_failure_are_closed(tmp_path: Path) -> None:
