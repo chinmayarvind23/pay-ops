@@ -3,8 +3,8 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Fourteen local fault reproductions now have verified activation and
-cleanup, including a real kernel OOM termination and scheduler rejection of an oversized CPU request. These are separate results:
+each workload. Fifteen local fault reproductions now have verified activation and
+cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
 only the original four cases have been scored for diagnosis.
 
 The committed capability evaluation at `dca7806` denied all 120 manifest attempts
@@ -97,3 +97,14 @@ The remaining targets require the following evidence; they are not achieved resu
 | 11.8 -> 2.9 min            | paired timing records                     |
 | 4.6 s p95                  | raw model-step latency                    |
 | $0.07/incident             | token/pricing records                     |
+
+
+The SCHED-02 run at `e69b814` admitted a 16Gi memory request on nodes reporting
+16124080Ki allocatable each. The new owned pod remained Pending with an actual
+`Insufficient memory` scheduler event and no container process. All three modified
+resource specifications and identities were restored, a synthetic payment returned
+200, and all five services were healthy. Independent verification reopened 33
+artifact hashes and 104 source/dependency hashes. Evidence:
+`chunk-10-scheduler-memory/dbde043cbb0c40a5becafebbd61e01d8`, run
+`05baf15280ff466395e32655c94a54e9`. This establishes local reproduction and recovery;
+no diagnosis or model timing was measured in this run.

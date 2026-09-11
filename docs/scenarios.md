@@ -1,11 +1,10 @@
 # Failure Scenarios
 
-The planned suite contains six groups with four scenarios each. Four local variants are
-implemented and have live activation and restoration evidence: startup failure
-(ROLLOUT-01), invalid sandbox configuration (ROLLOUT-02), readiness path regression
-(ROLLOUT-03), and a local processor outage (DEP-01). The configuration variant does
-not claim a missing production environment variable; the processor variant does
-not claim an AWS outage. The remaining cases below are planned.
+The suite contains six groups with four scenarios each. Fifteen local variants now
+have activation and restoration evidence; see [results](results.md) for scope and
+provenance. The remaining nine are OOM-02/04, SCHED-03/04, DEP-03/04 and
+TELEM-01/02/04. Local processor variants do not establish an AWS outage, and local
+dependency behavior does not establish a deployed cloud integration.
 
 The operator harness only targets the dedicated `kind-payops-dev` cluster. It saves
 the original deployment, records activation, restores the exact specification and
@@ -40,7 +39,7 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 ## Scheduler
 
 - SCHED-01: unschedulable CPU requests
-- SCHED-02: insufficient node memory
+- SCHED-02: insufficient node memory (local 16Gi request qualified at `e69b814`)
 - SCHED-03: HPA maxed
 - SCHED-04: node pressure eviction
 

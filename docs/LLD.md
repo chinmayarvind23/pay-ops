@@ -304,7 +304,7 @@ restoration were reverified. Mean control/restricted/recovered work durations we
 0.289804/1.503687/0.274641 seconds. These qualify local CPU throttling, not model
 performance or investigation latency.
 
-### Insufficient-memory scheduler contract (SCHED-02, not yet qualified)
+### Insufficient-memory scheduler contract (SCHED-02, locally qualified)
 
 The closed memory recipe requests and limits payments at 16Gi. Its node guard
 requires both reviewed healthy node identities and positive allocatable memory
@@ -326,4 +326,6 @@ identity and capacity are checked before admission expansion, again immediately
 before workload injection, and during activation. Qualification requires a fresh
 `Insufficient memory` event naming the current owned Pending pod; CPU-only and
 admission-error events reject. Lost responses at every write boundary exercise
-independent restoration. Live activation and cleanup proof remain required. This contract does not increase the qualified case count.
+independent restoration. Live activation and cleanup were verified at `e69b814` (run
+`05baf15280ff466395e32655c94a54e9`). The actual event reported insufficient memory;
+all three resource specs and identities were restored and all five services healthy.
