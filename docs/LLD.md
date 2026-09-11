@@ -649,3 +649,20 @@ created in this increment and qualification remains 17/24.
 
 References: https://kubernetes.io/docs/reference/kubernetes-api/autoscaling/horizontal-pod-autoscaler-v2/
 and https://github.com/kubernetes/kubernetes/blob/v1.35.8/pkg/controller/podautoscaler/horizontal.go
+
+SCHED-03 raw CPU validation now parses bounded Metrics API nanocore, microcore,
+millicore and decimal values with Decimal arithmetic. It requires one or two
+unchanged, never-restarted payments identities bracketing acquisition. The expected
+pod set must match exactly, each pod has one sandbox container, and the full
+1-to-60-second averaging window must lie after the declared load start. Samples
+older than45seconds, duplicate/foreign pods, invalid quantities and capped byte
+responses reject. Utilization uses the frozen50m CPU request. Callers still own
+controller-chain/resource validation and must prove the load actually ran.
+
+Twenty tests passed with95%statement/branch coverage; all35HPA contract/metric
+tests pass, strict typing and lint pass. A real idle capture validated the unchanged
+payments process at0.003618311cores (7.236622%of50m), with a complete window from
+23:41:21.674 to23:41:33UTC and capture23:41:45UTC. Raw before/metrics/after sources
+and SHA-256 records are in audit/evidence/hpa-idle-metrics. This verifies parsing
+and acquisition against real resource metrics; it is not an HPA load result.
+Qualification remains17/24.
