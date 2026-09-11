@@ -53,6 +53,10 @@ class FrozenLabels(Contract):
             raise ValueError("an observation condition cannot substitute for an incident cause")
         return self
 
+    def cause_vocabulary(self) -> frozenset[str]:
+        """Hosts supply the whole release vocabulary, never a case-specific accepted answer."""
+        return frozenset(value for values in self.primary_causes.values() for value in values)
+
 
 def load_labels(content: bytes) -> FrozenLabels:
     """Duplicate keys and oversized input fail before any live scenario or scorer dispatch."""

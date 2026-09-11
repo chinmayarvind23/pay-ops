@@ -28,6 +28,9 @@ def test_cause_and_observation_metrics_have_separate_denominators() -> None:
     assert score_conditions(labels, {}, 1).total == 4
     assert labels.primary_causes["TELEM-03"] == ("PROCESSOR_LATENCY",)
     assert labels.observation_conditions["TELEM-03"] == ("TRACE_SAMPLING_GAP",)
+    vocabulary = labels.cause_vocabulary()
+    assert {"PROCESSOR_LATENCY", "MEMORY_LEAK", "STARTUP_FAILURE"} <= vocabulary
+    assert "TRACE_SAMPLING_GAP" not in vocabulary
 
 
 def test_initial_four_case_gold_is_unchanged() -> None:

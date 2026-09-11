@@ -7,3 +7,5 @@
 The label contract rejects missing cases, duplicate alternatives, substituted conditions and duplicate JSON keys. Primary Recall always retains 24 cases; observation-condition Recall retains four. Missing predictions are misses. The catalog and these labels describe the intended release suite; they do not establish that every scenario has been reproduced or scored. Eleven local scenarios are qualified and four have a frozen diagnosis score at this revision.
 
 Scoring loads retained labels after predictions are frozen. Scenario IDs, accepted answers, traffic receipts and qualification flags must not enter model context. Freeze the label-file digest with each evaluation; changed labels require a new declared evaluation version. No 24-case or observation-condition model score has been measured yet.
+
+Host model configuration uses `FrozenLabels.cause_vocabulary()` from the entire release catalog. Constructing a vocabulary from the current case's accepted answer would leak gold even if its scenario ID were hidden.

@@ -250,10 +250,10 @@ CORE_MUTATIONS = (
     Mutation(
         "graph_integrity_outcome",
         NODES,
-        "            except EvidenceIntegrityError:\n"
-        '                return updated(state, terminal="SECURITY_BLOCK")',
-        "            except EvidenceIntegrityError:\n"
-        '                return updated(state, terminal="EVIDENCE_INSUFFICIENT")',
+        '                    terminal="SECURITY_BLOCK",\n'
+        '                    reasoning_stop_reason="SECURITY_BLOCK" if self.reasoner_factory else None,',
+        '                    terminal="EVIDENCE_INSUFFICIENT",\n'
+        '                    reasoning_stop_reason="SECURITY_BLOCK" if self.reasoner_factory else None,',
         GRAPH_TESTS,
     ),
     Mutation(
