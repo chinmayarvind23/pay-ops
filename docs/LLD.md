@@ -514,3 +514,15 @@ Eighteen adversarial tests achieved100%statement/branch coverage. Replaying actu
 Docker-timestamped calibration logs passed unchanged: controls8completed each;
 parallel7admitted/6allocated concurrently before OOM. This validates the parser
 against retained sources and does not create Kubernetes qualification.
+
+OOM-04 reuses TrafficDriver for eight payments with fixed slice A/us/credit,
+5-second request timeouts and a 45-second batch deadline. Serial controls use
+concurrency 1; treatment uses 8. Persisted plans must exactly match receipt
+identities and settings. Validation rejects incomplete or unstarted requests,
+invalid timing, repeated traces, mismatched responses and idempotency conflicts.
+Controls require eight accepted responses; treatment requires an availability
+failure. Transport failures cannot claim an HTTP response. Independent memory
+records and owned Kubernetes OOM termination are still required for qualification.
+The driver drains all tasks before closing its client and port-forward. Seventeen
+fixture-transport tests passed with 100% statement/branch validator coverage and
+strict typing. They verify transport orchestration, not live Kubernetes effects.
