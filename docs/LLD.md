@@ -539,3 +539,22 @@ generic runner and generic recipe. Twelve focused tests cover unchanged original
 invalid baselines and rejection before writes; 54 tests including generic scenario
 regressions pass. Strict typing and lint pass; spec coverage is 100% statement and
 branch. Kubernetes lifecycle and live qualification remain pending (16/24).
+
+OOM-04 image import is verified on both kind nodes: runtime manifest
+sha256:5cc92f97bc22d16d26ce5882569aa92f421e30eb6237d5d602669ed2146734c4
+resolves to calibrated config
+sha256:b9a090e9060793f1a85ed7371aab0141577df837bced9b5c11ffd13bf5d67ad4.
+Raw CRI records and hashes are in audit/evidence/concurrency-kind-import.
+Importing the image did not change a running Deployment.
+
+The concurrency lifetime validator brackets previous-container logs with matching
+owned Pod/ReplicaSet/Deployment observations. The terminated container must equal
+the process identity captured for traffic, use the pinned image, and advance its
+restart count exactly once. Its OOMKilled/137 timestamp must overlap the failed
+traffic batch, allowing one second for Kubernetes timestamp precision. Memory
+records must fit both that process lifetime and the traffic window; existing
+validators require six allocated blocks and 128Mi kernel growth. The result keeps
+the raw-log SHA-256 and derived occupancy. Callers must supply previously validated
+traffic and runtime identity. Nine join tests reached 100% statement/branch
+coverage; 67 related regressions, strict typing and lint passed. The full lifecycle
+collector and live recovery experiment are still pending; qualification is 16/24.

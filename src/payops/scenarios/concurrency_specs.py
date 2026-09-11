@@ -8,6 +8,8 @@ from payops.scenarios.contracts import JsonObject, object_items, object_value
 from payops.scenarios.recipes import container, validate_baseline
 
 IMAGE = "payops-sandbox:concurrency-ab9a869"
+# Both kind nodes resolve this manifest to the independently calibrated image config.
+RUNTIME_IMAGE_DIGEST = "sha256:5cc92f97bc22d16d26ce5882569aa92f421e30eb6237d5d602669ed2146734c4"
 
 
 def concurrency_spec(document: JsonObject) -> JsonObject:
