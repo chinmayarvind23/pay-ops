@@ -18,6 +18,7 @@ INTEGRATION_ONLY = frozenset(
     }
 )
 REQUIRED = frozenset({"contracts/__init__.py", "evaluation/metrics.py"})
+CRITICAL_FILES = frozenset({"protected_api.py", "memory/data_clients.py"})
 CRITICAL = (
     "contracts/",
     "evidence/",
@@ -40,7 +41,7 @@ def evaluate(document: dict[str, Any]) -> dict[str, Any]:
         module = normalized.split("src/payops/", 1)[1]
         seen.add(module)
         summary = detail["summary"]
-        threshold = 95 if module.startswith(CRITICAL) else 85
+        threshold = 95 if module.startswith(CRITICAL) or module in CRITICAL_FILES else 85
         excluded = module in INTEGRATION_ONLY
         measured = float(summary["percent_covered"])
         rows.append(

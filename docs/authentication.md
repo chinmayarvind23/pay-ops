@@ -54,7 +54,15 @@ credentials or contacting a cloud identity project. Unit tests cover tenant
 binding, stale token roles, malformed input, account mismatch, emulator settings
 and expiration during a provider lookup.
 
-This is backend authentication code, not a claim of a configured cloud tenant,
-SAML provider or deployed login flow. The existing mock API has not yet been
-wired to this adapter. Operational API and frontend integration remain separate
-release gates.
+`create_protected_app` accepts a configured verifier, incident store and trusted
+investigator. It validates the runtime mode at startup. Every incident read
+checks current namespace and service scope; creation and investigation require
+the responder role. After an investigation, it authenticates again before
+publishing the first canonical report. Concurrent investigations return that
+stored report, and a report from a different runtime mode is rejected.
+
+The protected factory has no default credentials or operational server wiring.
+Its HTTP tests use fixture identities, while the separate SDK tests verify real
+signatures against intercepted provider responses. A cloud tenant, SAML provider
+and deployed login flow remain unconfigured. The original mock API remains a
+separate development entry point.

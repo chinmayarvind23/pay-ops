@@ -44,3 +44,28 @@ def test_coverage_thresholds_fail_closed(
     )
     assert result.returncode == expected, result.stdout + result.stderr
     assert json.loads(output.read_text())["passed"] is (expected == 0)
+
+
+@pytest.mark.parametrize("module", ["protected_api.py", "memory/data_clients.py"])
+@pytest.mark.parametrize("coverage_value,expected", [(94.999, 1), (95.0, 0)])
+def test_authority_boundaries_require_critical_coverage(
+    tmp_path: Path, module: str, coverage_value: float, expected: int
+) -> None:
+    """Authentication routes and data trust boundaries cannot pass the ordinary module floor."""
+    files = {
+        "src/payops/contracts/__init__.py": {"summary": {"percent_covered": 100}},
+        "src/payops/evaluation/metrics.py": {"summary": {"percent_covered": 100}},
+        f"src/payops/{module}": {"summary": {"percent_covered": coverage_value}},
+    }
+    coverage, output = tmp_path / "coverage.json", tmp_path / "gate.json"
+    coverage.write_text(json.dumps({"meta": {"branch_coverage": True}, "files": files}))
+    script = Path(__file__).resolve().parents[2] / "scripts" / "coverage_gate.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(coverage), "--output", str(output)],
+        check=False, capture_output=True, text=True, timeout=10,
+    )
+    document = json.loads(output.read_text())
+    assert result.returncode == expected, result.stdout + result.stderr
+    assert document["passed"] is (expected == 0)
+    reviewed = next(row for row in document["modules"] if row["module"] == module)
+    assert reviewed["threshold"] == 95 and reviewed["integration_only"] is False
