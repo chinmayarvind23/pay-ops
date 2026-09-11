@@ -1,5 +1,6 @@
 """Evidence must survive source tampering, wrong windows and hostile context."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
@@ -46,6 +47,20 @@ def test_modified_artifact_fails(tmp_path: Path) -> None:
     )
     store.path_for(item.artifact_sha256).write_text('{"changed":true}')
     with pytest.raises(EvidenceIntegrityError):
+        store.verify(item)
+
+
+def test_only_raw_payload_tampering_is_detected(tmp_path: Path) -> None:
+    """Unchanged metadata must not hide changed signal content inside a valid JSON envelope."""
+    store = ArtifactStore(tmp_path)
+    now = utc_now()
+    item = normalize(
+        observation(), "incident-1", now - timedelta(minutes=1), now + timedelta(minutes=1), store
+    )
+    payload = store.verify(item)
+    payload["payload"] = {"status": 200}
+    store.path_for(item.artifact_sha256).write_text(json.dumps(payload))
+    with pytest.raises(EvidenceIntegrityError, match="digest"):
         store.verify(item)
 
 

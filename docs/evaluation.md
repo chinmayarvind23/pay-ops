@@ -3,6 +3,23 @@
 All numerical values below are acceptance targets. No release benchmark has measured
 them yet. The mock walking skeleton does not supply diagnosis, human timing or LLM cost evidence.
 
+## Implemented metric verification
+
+`payops.evaluation.metrics` computes Recall with all scheduled gold cases in the
+denominator, exact fraction thresholds, unique rankings and explicit missing predictions.
+Attribution scoring deduplicates cause/evidence/relation links, validates artifact identity
+and integrity, and leaves incorrect or invalid links in the denominator. Empty attribution
+is undefined; the release runner must separately require citation coverage and frozen labels.
+
+The p95 helper uses the nearest-rank estimator on finite nonnegative samples. It does not
+produce model timings without real model-step records.
+
+Run `uv run python scripts/mutation_check.py --output ../resources/pay_ops/evidence/mutations`
+for the enumerated semantic mutation suite. It tests isolated source snapshots and records
+source, test, lock and runner hashes. The initial suite has 28 specific schema/evidence/metric
+mutations; passing it is not an exhaustive generated mutation score or a completed incident
+benchmark. Policy/executor mutations will be added with those modules.
+
 ## Two scorecards
 
 Outcome quality and execution-path correctness are graded separately. A hard path violation fails a run even if the final root cause is correct.

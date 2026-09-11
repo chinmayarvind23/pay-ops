@@ -5,13 +5,27 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from payops.contracts import EvidenceItem, IncidentCreate, IncidentReport
+from payops.contracts import EvidenceItem, IncidentCreate, IncidentReport, RootCauseHypothesis
 
 
 def test_incident_forbids_unrecognized_fields() -> None:
     """Extra fields must not become an accidental command channel."""
     with pytest.raises(ValidationError):
         IncidentCreate.model_validate({"title": "Outage", "command": "delete"})
+
+
+def test_contract_freeze_prevents_in_place_authority_changes() -> None:
+    """Validated identity/scope must not be edited through ordinary attribute assignment."""
+    request = IncidentCreate(title="Outage")
+    with pytest.raises(ValidationError):
+        request.namespace = "production"
+
+
+@pytest.mark.parametrize("confidence", [-0.1, 1.1, float("nan"), float("inf")])
+def test_confidence_requires_finite_unit_interval(confidence: float) -> None:
+    """Confidence is bounded even before calibration; NaN cannot bypass comparisons."""
+    with pytest.raises(ValidationError):
+        RootCauseHypothesis(cause_code="cause", confidence=confidence)
 
 
 def test_incident_rejects_empty_title() -> None:
