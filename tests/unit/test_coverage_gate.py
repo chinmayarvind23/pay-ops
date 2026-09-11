@@ -47,7 +47,13 @@ def test_coverage_thresholds_fail_closed(
 
 
 @pytest.mark.parametrize(
-    "module", ["protected_api.py", "memory/data_clients.py", "orchestrator/reasoning.py"]
+    "module",
+    [
+        "protected_api.py",
+        "memory/data_clients.py",
+        "orchestrator/reasoning.py",
+        "tools/registry.py",
+    ],
 )
 @pytest.mark.parametrize("coverage_value,expected", [(94.999, 1), (95.0, 0)])
 def test_authority_boundaries_require_critical_coverage(
@@ -64,7 +70,10 @@ def test_authority_boundaries_require_critical_coverage(
     script = Path(__file__).resolve().parents[2] / "scripts" / "coverage_gate.py"
     result = subprocess.run(
         [sys.executable, str(script), str(coverage), "--output", str(output)],
-        check=False, capture_output=True, text=True, timeout=10,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
     document = json.loads(output.read_text())
     assert result.returncode == expected, result.stdout + result.stderr

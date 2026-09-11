@@ -19,7 +19,7 @@ INTEGRATION_ONLY = frozenset(
 )
 REQUIRED = frozenset({"contracts/__init__.py", "evaluation/metrics.py"})
 CRITICAL_FILES = frozenset(
-    {"protected_api.py", "memory/data_clients.py", "orchestrator/reasoning.py"}
+    {"protected_api.py", "memory/data_clients.py", "orchestrator/reasoning.py", "tools/registry.py"}
 )
 CRITICAL = (
     "contracts/",
