@@ -54,6 +54,7 @@ def test_coverage_thresholds_fail_closed(
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",
         "tools/registry.py",
+        "tools/operational_reads.py",
     ],
 )
 @pytest.mark.parametrize("coverage_value,expected", [(94.999, 1), (95.0, 0)])
