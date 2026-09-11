@@ -391,3 +391,17 @@ counts, nonoverlapping lifetimes and different log digests from the same pod/ima
 Duplicate polling cannot increase the count. Collector integration must preserve
 both snapshots and raw logs, including rejected reads; this component does not by
 itself qualify a Kubernetes case. Existing payments provenance defaults remain.
+
+OOM-02 now has a risk-only gateway with bounded JSON responses and current/previous
+container log reads. It retains raw text for storage before semantic validation;
+reaching a byte cap rejects rather than treating truncation as a complete capture.
+The API cap is512KiB, log cap256KiB/2000lines, and log window3minutes with12second
+read deadlines. Pod names/namespace/UID are checked before requesting logs; the
+lifecycle caller remains responsible for before/after ownership validation.
+
+The two generated risk specs use the verified leak-9d4efd5 image and Recreate while
+preserving baseline resources and configuration. Both keep50m/96Mi requests and
+500m/256Mi limits. Release control and retained fault differ only in the explicit
+PAYOPS_SYNTHETIC_LEAK mode. Changed entrypoints, roles, limits or duplicated env
+reject. Exact original restoration and image-runtime checks belong to the upcoming
+journaled harness; these adapters alone do not increase qualified scenario count.
