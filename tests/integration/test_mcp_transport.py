@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
@@ -188,6 +189,21 @@ def assert_reaped(tmp_path: Path, suffix: str = ".pid") -> None:
     else:
         with pytest.raises(ProcessLookupError):
             os.kill(pid, 0)
+
+
+async def await_owner_ready(task: asyncio.Task[None], ready: asyncio.Event) -> None:
+    """Surface startup failure immediately instead of waiting forever for an unset test event."""
+    signal = asyncio.create_task(ready.wait())
+    try:
+        async with asyncio.timeout(7):
+            done, _ = await asyncio.wait((task, signal), return_when=asyncio.FIRST_COMPLETED)
+            if task in done:
+                await task
+                pytest.fail("session owner exited before the cancellation check")
+    finally:
+        signal.cancel()
+        with suppress(asyncio.CancelledError):
+            await signal
 
 
 def test_real_stdio_handshake_pages_and_aliases(tmp_path: Path) -> None:
@@ -410,18 +426,42 @@ def test_owner_cancellation_reaps_server(tmp_path: Path) -> None:
 
         async def owner() -> None:
             """Keep the structured SDK session and its close operation in the same task."""
-            async with connect_mcp(fixture_config(tmp_path, "timeout")) as transport:
+            config = replace(fixture_config(tmp_path, "timeout"), timeout_seconds=5)
+            async with connect_mcp(config) as transport:
                 ready.set()
                 await transport.call_tool("get_k8s_logs", {})
 
         task = asyncio.create_task(owner())
-        await ready.wait()
+        await await_owner_ready(task, ready)
         await asyncio.sleep(0.05)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
 
     asyncio.run(run())
+    assert_reaped(tmp_path)
+
+
+def test_owner_startup_failure_does_not_hang_ready_wait(tmp_path: Path) -> None:
+    """Reproduce the reviewer finding by making initialization fail before readiness is signaled."""
+
+    async def run() -> None:
+        """A failed owner is awaited and its TimeoutError escapes the readiness helper promptly."""
+        ready = asyncio.Event()
+
+        async def owner() -> None:
+            """The fixture intentionally never completes the MCP initialization handshake."""
+            async with connect_mcp(fixture_config(tmp_path, "init_timeout")):
+                ready.set()
+
+        task = asyncio.create_task(owner())
+        with pytest.raises(TimeoutError):
+            await await_owner_ready(task, ready)
+        assert task.done() and not ready.is_set()
+
+    start = time.monotonic()
+    asyncio.run(run())
+    assert time.monotonic() - start < 5
     assert_reaped(tmp_path)
 
 
