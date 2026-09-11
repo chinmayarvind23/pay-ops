@@ -7,7 +7,6 @@ import time
 from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
-from typing import get_args
 
 from pydantic import JsonValue, TypeAdapter
 
@@ -20,6 +19,8 @@ from payops.scenarios.runner import LocalScenarioRunner
 from payops.tools.collect import collect_local
 from payops.tools.kubernetes import KubernetesRead
 from payops.tools.prometheus import PrometheusRead
+
+INITIAL_CASES: frozenset[CaseId] = frozenset({"ROLLOUT-01", "ROLLOUT-02", "ROLLOUT-03", "DEP-01"})
 
 
 def write_once(path: Path, content: str) -> str:
@@ -92,7 +93,7 @@ def load_gold(content: bytes) -> dict[CaseId, tuple[str, ...]]:
     """Reject missing, repeated, or ambiguous labels before any infrastructure mutation."""
     raw = json.loads(content, object_pairs_hook=unique_object)
     gold = TypeAdapter(dict[CaseId, tuple[str, ...]]).validate_python(raw)
-    if set(gold) != set(get_args(CaseId)) or any(not causes for causes in gold.values()):
+    if frozenset(gold) != INITIAL_CASES or any(not causes for causes in gold.values()):
         raise ValueError("initial suite requires all four declared cases")
     recall_at_k({str(case): causes for case, causes in gold.items()}, {}, 1)
     return gold

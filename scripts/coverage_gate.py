@@ -11,6 +11,7 @@ INTEGRATION_ONLY = frozenset(
     {
         "cli.py",
         "evaluation/run.py",
+        "orchestrator/run.py",
         "scenarios/run.py",
         "scenarios/startup_failure.py",
         "scenarios/kubectl.py",

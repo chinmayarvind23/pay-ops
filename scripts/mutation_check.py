@@ -33,9 +33,12 @@ ARTIFACT = "src/payops/evidence/artifacts.py"
 NORMALIZE = "src/payops/evidence/normalize.py"
 REDACT = "src/payops/evidence/redact.py"
 METRIC = "src/payops/evaluation/metrics.py"
+GRAPH = "src/payops/orchestrator/graph.py"
+NODES = "src/payops/orchestrator/nodes.py"
 SCHEMA_TESTS = "tests/unit/test_contracts.py tests/unit/test_lineage.py"
 EVIDENCE_TESTS = "tests/unit/test_evidence.py"
 METRIC_TESTS = "tests/unit/test_metrics.py"
+GRAPH_TESTS = "tests/unit/test_graph.py"
 MUTATIONS = (
     Mutation("schema_extra_fields", CONTRACT, 'extra="forbid"', 'extra="allow"', SCHEMA_TESTS),
     Mutation("schema_frozen", CONTRACT, "frozen=True", "frozen=False", SCHEMA_TESTS),
@@ -185,6 +188,82 @@ MUTATIONS = (
         METRIC_TESTS,
     ),
     Mutation("percentile_negative", METRIC, "or sample < 0", "", METRIC_TESTS),
+    Mutation(
+        "graph_attempt_limit", NODES, "used >= state.budget.max_steps", "False", GRAPH_TESTS
+    ),
+    Mutation(
+        "graph_attempt_durability",
+        NODES,
+        '    with (directory / f"attempt-{used + 1:02d}.json").open("xb") as stream:\n'
+        "        stream.write(record.model_dump_json().encode())\n"
+        "        stream.flush()\n"
+        "        os.fsync(stream.fileno())",
+        "    # Mutation: lose reservation before a possible operation crash.\n    del record",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_node_start_deadline",
+        NODES,
+        "or utc_now() >= state.budget.node_start_deadline",
+        "",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_read_budget",
+        NODES,
+        "if reserved > state.budget.max_tool_calls:",
+        "if False:",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_dispatch_exclusive",
+        NODES,
+        'with (output / "collection-dispatched").open("xb") as marker:',
+        'with (output / "collection-dispatched").open("wb") as marker:',
+        GRAPH_TESTS,
+    ),
+    Mutation("graph_retained_batch", NODES, "if result_path.exists():", "if False:", GRAPH_TESTS),
+    Mutation(
+        "graph_batch_owner",
+        NODES,
+        "if result.incident_id != state.incident.incident_id:",
+        "if False:",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_integrity_outcome",
+        NODES,
+        '            except EvidenceIntegrityError:\n'
+        '                return updated(state, terminal="SECURITY_BLOCK")',
+        '            except EvidenceIntegrityError:\n'
+        '                return updated(state, terminal="EVIDENCE_INSUFFICIENT")',
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_namespace_scope",
+        NODES,
+        'request.namespace == "payops-sandbox" and request.service in SERVICES',
+        "request.service in SERVICES",
+        GRAPH_TESTS,
+    ),
+    Mutation("graph_report_mode", NODES, "mode=current.mode", 'mode="local_kind"', GRAPH_TESTS),
+    Mutation(
+        "graph_resume_mode", GRAPH, "if existing.mode != self.mode:", "if False:", GRAPH_TESTS
+    ),
+    Mutation(
+        "graph_thread_identity",
+        GRAPH,
+        "if existing.incident != initial.incident:",
+        "if False:",
+        GRAPH_TESTS,
+    ),
+    Mutation(
+        "graph_worker_lock",
+        GRAPH,
+        "FileLock(lock_path, timeout=0)",
+        '__import__("contextlib").nullcontext()',
+        GRAPH_TESTS,
+    ),
 )
 
 
@@ -328,7 +407,8 @@ def main() -> int:
     output = Path(tempfile.mkdtemp(prefix="semantic-", dir=parent))
     baseline = output / "baseline"
     manifest = run_metadata(repo, baseline)
-    baseline_result = run_tests(baseline, f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS}")
+    selection = f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} {GRAPH_TESTS}"
+    baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result
     if baseline_result["status"] != "survived":
         manifest["gate"] = "baseline_failed"
