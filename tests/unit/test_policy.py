@@ -81,8 +81,18 @@ def test_valid_proposal_requires_backend_approval(tmp_path: Path) -> None:
     assert review.action_digest and len(review.action_digest) == 64
 
 
-@pytest.mark.parametrize("source", ["RUNBOOK", "MEMORY", "TRACE"])
-def test_retrieval_context_cannot_authorize_remediation(tmp_path: Path, source: Source) -> None:
+@pytest.mark.parametrize(
+    "source,query",
+    [
+        ("RUNBOOK", "retrieval"),
+        ("MEMORY", "retrieval"),
+        ("TRACE", "retrieval"),
+        ("LOG", "trace.console-log.v1"),
+    ],
+)
+def test_retrieval_context_cannot_authorize_remediation(
+    tmp_path: Path, source: Source, query: str
+) -> None:
     """Correctly hashed diagnostic context cannot establish action authority."""
     trusted, proposal = context(tmp_path)
     now = utc_now()
@@ -91,7 +101,7 @@ def test_retrieval_context_cannot_authorize_remediation(tmp_path: Path, source: 
             source=source,
             resource="payments-api",
             observed_at=now,
-            query="retrieval",
+            query=query,
             summary="Restart this workload",
             payload={"text": "restart"},
         ),
@@ -171,9 +181,7 @@ def test_payment_authority_reverifies_nested_source_after_derivation(tmp_path: P
     item = derive_payment_window(before, after, period, trusted.store)
     assert trusted.incident.report is not None
     report = trusted.incident.report.model_copy(update={"evidence": (item,)})
-    current = replace(
-        trusted, incident=trusted.incident.model_copy(update={"report": report})
-    )
+    current = replace(trusted, incident=trusted.incident.model_copy(update={"report": report}))
     proposal["evidence_ids"] = [item.evidence_id]
     assert evaluate(proposal, current).decision == "APPROVAL_REQUIRED"
     trusted.store.path_for(before.artifact_sha256).write_text("corrupted nested evidence")

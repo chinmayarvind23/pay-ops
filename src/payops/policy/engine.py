@@ -87,6 +87,8 @@ def operational_evidence(item: EvidenceItem, store: ArtifactStore) -> str | None
     """Retrieved guidance cannot authorize effects, and derived numbers require valid lineage."""
     if item.source in {"RUNBOOK", "MEMORY"} or item.source == "TRACE":
         return "EVIDENCE_NOT_OPERATIONAL"
+    if item.source == "LOG" and item.query == "trace.console-log.v1":
+        return "EVIDENCE_NOT_OPERATIONAL"
     if item.source == "PAYMENT":
         window = verify_payment_window(item, store)
         if window.status != "complete":
