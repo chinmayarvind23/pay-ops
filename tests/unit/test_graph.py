@@ -7,11 +7,14 @@ from pathlib import Path
 import pytest
 from filelock import FileLock, Timeout
 from test_payment_window import interval, raw_snapshot, source
+from test_retrieval_lineage import original, retrieved
+from test_trace_span import source as trace_source
 
 from payops.contracts import Incident, IncidentCreate, RootCauseHypothesis, utc_now
 from payops.evidence.artifacts import ArtifactStore
 from payops.evidence.normalize import Observation, normalize
 from payops.evidence.payment_window import derive_payment_window
+from payops.evidence.trace_span import derive_trace_span
 from payops.orchestrator import nodes
 from payops.orchestrator.graph import InvestigationWorker
 from payops.orchestrator.nodes import incident_directory, route
@@ -227,6 +230,37 @@ def test_nested_payment_artifact_changed_after_pause_is_blocked(tmp_path: Path) 
     paths[0].write_text("tampered")
     result = InvestigationWorker(tmp_path, collect).resume(incident.incident_id)
     assert result.report is not None and result.report.terminal_state == "SECURITY_BLOCK"
+
+
+@pytest.mark.parametrize("kind", ["trace", "retrieval"])
+def test_nested_diagnostic_source_corruption_blocks_resumed_graph(
+    tmp_path: Path, kind: str
+) -> None:
+    """Native checkpoint resume rechecks nested source bytes before deterministic ranking."""
+    paths: list[Path] = []
+    calls: list[str] = []
+
+    def collect(incident: Incident, output: Path) -> Collection:
+        """Keep raw source envelopes outside the graph's list of derived evidence."""
+        calls.append(incident.incident_id)
+        store = ArtifactStore(output / "artifacts")
+        if kind == "trace":
+            raw = trace_source(store)
+            item = derive_trace_span(raw, 0, store)
+        else:
+            raw = original(store)
+            item = retrieved(store, raw)
+        paths.append(store.path_for(raw.artifact_sha256))
+        return Collection(incident_id=incident.incident_id, evidence=(item,), failures=())
+
+    identity = "incident" if kind == "trace" else "current"
+    incident = Incident(incident_id=identity, request=IncidentCreate(title="Source corruption"))
+    worker = InvestigationWorker(tmp_path, collect, pause_before_ranking=True)
+    assert worker.start(incident).phase == "EVIDENCE_COLLECTED"
+    paths[0].write_bytes(b"corrupt nested source")
+    result = InvestigationWorker(tmp_path, collect).resume(identity)
+    assert result.report is not None and result.report.terminal_state == "SECURITY_BLOCK"
+    assert calls == [identity]
 
 
 def test_cross_incident_batch_never_enters_checkpoint(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from payops.contracts import EvidenceItem, Incident, IncidentReport, utc_now
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
-from payops.evidence.payment_window import verify_payment_window
+from payops.evidence.verification import verify_evidence
 from payops.orchestrator.baseline import rank_evidence
 from payops.orchestrator.state import Envelope, InvestigationState, Phase, StepRecord, pack, unpack
 from payops.tools.collect import Collection, CollectionFailure
@@ -187,9 +187,7 @@ class InvestigationNodes:
 def verify_collected_item(item: EvidenceItem, store: ArtifactStore) -> None:
     """Retained derived evidence is revalidated after restart as well as before checkpointing."""
     try:
-        store.verify(item)
-        if item.source == "PAYMENT":
-            verify_payment_window(item, store)
+        verify_evidence(item, store)
     except ValueError:
         raise EvidenceIntegrityError("collected evidence failed verification") from None
 

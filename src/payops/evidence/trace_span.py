@@ -360,6 +360,11 @@ def _source(item: EvidenceItem, store: ArtifactStore) -> TraceLog:
     return capture
 
 
+def verify_trace_log(item: EvidenceItem, store: ArtifactStore) -> TraceLog:
+    """Expose diagnostic source validation to context and checkpoint consumers."""
+    return _source(item, store)
+
+
 def _derive(source: EvidenceItem, ordinal: int, store: ArtifactStore) -> TraceSpan:
     """The selected source ordinal determines every derived field independently of outer bytes."""
     capture = _source(source, store)
