@@ -5,11 +5,16 @@ from fractions import Fraction
 from pathlib import Path
 
 import pytest
+from test_payment_window import interval, raw_snapshot, source
+from test_retrieval_lineage import original, retrieved
+from test_trace_span import source as trace_source
 
 from payops.contracts import utc_now
 from payops.evaluation.metrics import Attribution, attribution_accuracy, percentile, recall_at_k
 from payops.evidence.artifacts import ArtifactStore
 from payops.evidence.normalize import Observation, normalize
+from payops.evidence.payment_window import derive_payment_window
+from payops.evidence.trace_span import derive_trace_span
 
 
 def test_recall_includes_missing_cases_and_exact_gate() -> None:
@@ -126,3 +131,37 @@ def test_latency_quantile_requires_real_finite_samples() -> None:
     for values, quantile in [((), 0.95), ((float("nan"),), 0.95), ((-1.0,), 0.95), ((1.0,), 0)]:
         with pytest.raises(ValueError):
             percentile(values, quantile)
+
+
+@pytest.mark.parametrize("kind", ["payment", "trace", "retrieval"])
+def test_attribution_rejects_corrupt_nested_source(tmp_path: Path, kind: str) -> None:
+    """A valid outer digest cannot earn attribution credit after its source lineage is broken."""
+    store = ArtifactStore(tmp_path)
+    if kind == "payment":
+        window = interval()
+        parent = source(store, window, raw_snapshot(window))
+        after = source(store, window, raw_snapshot(window, True))
+        derived = derive_payment_window(parent, after, window, store)
+    elif kind == "trace":
+        parent = trace_source(store)
+        derived = derive_trace_span(parent, 0, store)
+    else:
+        parent = original(store)
+        derived = retrieved(store, parent)
+    link = Attribution(
+        incident_id=derived.incident_id,
+        cause_code="cause",
+        evidence_id=derived.evidence_id,
+        relation="supports",
+    )
+    before = attribution_accuracy((link,), frozenset({link}), {derived.evidence_id: derived}, store)
+    assert (before.correct, before.total, before.invalid) == (1, 1, 0)
+    store.path_for(parent.artifact_sha256).write_bytes(b"corrupt")
+    store.verify(derived)
+    after_score = attribution_accuracy(
+        (link,),
+        frozenset({link}),
+        {derived.evidence_id: derived},
+        store,
+    )
+    assert (after_score.correct, after_score.total, after_score.invalid) == (0, 1, 1)

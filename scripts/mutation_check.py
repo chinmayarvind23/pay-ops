@@ -188,8 +188,15 @@ CORE_MUTATIONS = (
     Mutation(
         "attribution_artifact",
         METRIC,
-        "            store.verify(item)",
+        "            verify_evidence(item, store)",
         "            pass",
+        METRIC_TESTS,
+    ),
+    Mutation(
+        "attribution_nested_lineage",
+        METRIC,
+        "            verify_evidence(item, store)",
+        "            store.verify(item)",
         METRIC_TESTS,
     ),
     Mutation(

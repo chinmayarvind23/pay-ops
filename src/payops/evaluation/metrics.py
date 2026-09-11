@@ -8,6 +8,7 @@ from typing import Literal
 
 from payops.contracts import Contract, EvidenceItem, Identifier
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
+from payops.evidence.verification import verify_evidence
 
 
 @dataclass(frozen=True)
@@ -92,7 +93,7 @@ def attribution_accuracy(
             invalid += 1
             continue
         try:
-            store.verify(item)
+            verify_evidence(item, store)
         except (EvidenceIntegrityError, ValueError):
             invalid += 1
             continue
