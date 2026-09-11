@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Thirteen local fault reproductions now have verified activation and
+each workload. Fourteen local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of an oversized CPU request. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -61,6 +61,28 @@ absent. Evidence: `chunk-08-protocol/db7bf3b7ef444bb5949554da578a333c`, run
 `e0129da4358b4180b651a2298212cac4`. The root performed this review without additional
 agents. This is local fault qualification, not a new diagnosis score, live-model
 measurement or human timing result.
+
+The OOM-03 CPU quota experiment at `56e6337` passed all five stages in the local
+Kubernetes cluster. Fifteen fresh payments succeeded, each with a complete nine-span
+path. Three equal-work requests per treatment produced these means:
+
+| Treatment | CPU limit | Work duration (s) | Kernel throttled time (s) |
+| --- | --- | ---: | ---: |
+| Control | 500m | 0.289804 | 0.067121 |
+| Restricted | 100m | 1.503687 | 1.126025 |
+| Recovered | 500m | 0.274641 | 0.077747 |
+
+The experiment restored the captured disabled-work configuration, verified three
+final payments and released its latch. Independent verification reopened 335 files
+and 103 source/dependency hashes, checked each stage against its owned runtime,
+recomputed the comparisons and matched all 101 Python files in the built image and
+installed package to the frozen checkout. Three earlier unqualified attempts remain
+recorded; they exposed clock-validation defects and each verified cleanup.
+
+Evidence: `chunk-09-cpu/950b1dbfd70c4615b1f9ec6a2a9078b1`, run
+`84e657eadd244cbea21ba5f0ab8c3be3`. These are synthetic Kubernetes workload timings,
+not agent latency, diagnosis accuracy or human investigation time. No model diagnosis
+callback ran for this qualification.
 
 ## Release targets still open
 

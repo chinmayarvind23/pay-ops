@@ -273,7 +273,8 @@ Deployment UID. A foreign identity or spec is never overwritten. Restoration run
 before final evidence persistence; a failed write, failed final observation or
 failed receipt/latch operation leaves the experiment blocked for inspection.
 Fixture tests exercise normal execution, rejected and ambiguous writes, cancelled
-observations, foreign states and failed restoration. Live qualification is pending.
+observations, foreign states and failed restoration. Plan v3 subsequently passed
+live qualification at `56e6337`; see the measured result below.
 
 Trace acquisition rechecks actual wall time after waiting for the twelve-second
 export offset. The first live CPU attempt found two intervals slightly short of
@@ -297,4 +298,8 @@ them as interchangeable durations was invalid. UTC still locates the request and
 its container-local spans; monotonic time validates elapsed work and acquisition
 bounds. Negative or stale monotonic intervals fail validation. Three real container
 captures verify the new fields; the third Kubernetes attempt remains unqualified
-with exact restoration, and v3 still requires a fresh complete qualification run.
+with exact restoration. A fresh v3 run at `56e6337` then passed all five stages:
+335 retained files, 15 successful nine-span payment paths and exact original-spec
+restoration were reverified. Mean control/restricted/recovered work durations were
+0.289804/1.503687/0.274641 seconds. These qualify local CPU throttling, not model
+performance or investigation latency.

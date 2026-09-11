@@ -128,4 +128,7 @@ Each stage collects three fresh accepted payments with complete nine-span paths;
 work stages also retain raw kernel sources from the verified payments container.
 Both normal-quota controls must pass the frozen work-duration and throttled-time
 contrasts. The generic runner rejects OOM-03. Lifecycle and acquisition fixtures
-are tested; the committed-image Kubernetes qualification run is still pending.
+are tested. The committed-image Kubernetes run at `56e6337` qualified all five
+stages and exact cleanup. Mean work duration was 0.290 seconds at 500m, 1.504 seconds
+at 100m and 0.275 seconds after recovery. See [results](results.md) for evidence and
+the distinction between workload measurements and agent performance.
