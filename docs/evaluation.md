@@ -1,5 +1,8 @@
 # Evaluation
 
+All numerical values below are acceptance targets. No release benchmark has measured
+them yet. The mock walking skeleton does not supply diagnosis, human timing or LLM cost evidence.
+
 ## Two scorecards
 
 Outcome quality and execution-path correctness are graded separately. A hard path violation fails a run even if the final root cause is correct.
@@ -40,7 +43,7 @@ Start and completion definitions must be identical.
 
 ## Agent reasoning-step latency
 
-Measure validated model request to valid structured model output. p95 is `4.6 s`.
+Measure validated model request to valid structured model output. Target p95 is `4.6 s`.
 
 ## LLM cost
 

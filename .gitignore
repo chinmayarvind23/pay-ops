@@ -13,3 +13,6 @@ artifacts/local/
 terraform.tfstate
 terraform.tfstate.*
 .kube/
+*.db
+.coverage*
+htmlcov/

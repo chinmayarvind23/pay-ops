@@ -1,5 +1,21 @@
 # Commands
 
+## Verified local walking skeleton
+
+```bash
+uv sync --frozen
+uv run payops serve
+curl http://127.0.0.1:8000/api/health
+uv run pytest
+uv run ruff check .
+uv run pyright
+```
+
+Create an incident with `POST /api/incidents`, JSON `{"title":"Payment failures"}`,
+then `POST /api/incidents/{incident_id}/investigate`. The current result is explicitly mock.
+
+## Planned commands (not implemented yet)
+
 ```bash
 uv sync
 uv run ruff check .

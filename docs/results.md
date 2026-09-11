@@ -1,5 +1,8 @@
 # Results
 
+**Unmeasured targets.** No executable benchmark or raw run artifacts existed at initial
+inspection on 2026-09-11. This table defines the required evidence, not achieved results.
+
 | Metric                     | Evidence                                  |
 | -------------------------- | ----------------------------------------- |
 | 24 scenarios               | manifests + runs                          |

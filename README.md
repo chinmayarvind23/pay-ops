@@ -6,7 +6,10 @@ PayOps investigates payment-service incidents by correlating Kubernetes health, 
 
 PayOps never moves money, edits payment ledgers, exposes secrets, or gives an LLM unrestricted shell or Kubernetes mutation access.
 
-## Performance
+## Performance targets (not yet measured)
+
+The repository starts as a design scaffold. The following values are acceptance targets;
+no benchmark run currently establishes them. Implementation and raw evidence are in progress.
 
 | Metric                                     |                               Value |
 | ------------------------------------------ | ----------------------------------: |
@@ -19,7 +22,7 @@ PayOps never moves money, edits payment ledgers, exposes secrets, or gives an LL
 | p95 agent reasoning-step latency           |                               4.6 s |
 | Average LLM provider cost                  |                    $0.07 / incident |
 
-Stored in `docs/results.md`.
+Claim status is tracked in `docs/results.md`.
 
 ## Core product loop
 
@@ -293,10 +296,14 @@ The distributed cloud system is added after this loop is correct.
 ## Local setup
 
 ```bash
-uv sync
-bun install
-docker compose up -d
-kind create cluster --name payops
+uv sync --frozen
+uv run payops serve
+uv run pytest
 ```
+
+The current runnable path is a loopback-only mock API at `http://127.0.0.1:8000/docs`.
+It persists incidents locally and returns `EVIDENCE_INSUFFICIENT` with explicitly marked
+mock evidence. Operational collectors, authentication and cloud deployment are planned;
+the architecture above describes the target system. Do not expose this development API publicly.
 
 Exact working commands are maintained in `docs/commands.md`.
