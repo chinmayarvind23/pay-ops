@@ -621,3 +621,10 @@ pinned to the inspected OCI digest. Server-side dry run accepted all nine upstre
 objects on Kubernetes v1.35.8. Kubelet certificate verification is initially kept
 enabled; actual scrape/API readiness must be established before HPA experiments.
 This prerequisite does not add scenario qualification or model metrics.
+
+Metrics Server readiness was verified after applying the kind overlay: the
+aggregated API is Available and returns CPU/memory samples less than 60 seconds
+old for all five payment services. The deployment rollout completed successfully.
+Raw API, deployment and PodMetrics records plus hashes are retained under
+resources/pay_ops/audit/evidence/metrics-server. This is an autoscaling prerequisite;
+SCHED-03 still needs its capped-HPA load experiment and recovery checks.
