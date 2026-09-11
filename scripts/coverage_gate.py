@@ -25,6 +25,8 @@ CRITICAL_FILES = frozenset(
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",
         "orchestrator/model_runtime.py",
+        "orchestrator/openai_adapter.py",
+        "orchestrator/openai_wire.py",
         "orchestrator/loop.py",
         "orchestrator/loop_records.py",
         "orchestrator/graph_reasoning.py",
