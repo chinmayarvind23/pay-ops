@@ -29,6 +29,25 @@ Index = Literal["payops-runbooks-v1", "payops-memory-v1"]
 INDEXES: dict[Kind, Index] = {"RUNBOOK": "payops-runbooks-v1", "MEMORY": "payops-memory-v1"}
 
 
+class ElasticsearchConfig(Contract):
+    """A retrieval-only host needs no PostgreSQL or Redis credential to read Elasticsearch."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, hide_input_in_errors=True)
+    ca_file: Path
+    elastic_password: SecretStr = Field(repr=False)
+    elastic_host: Literal["localhost", "elasticsearch.payops-data.svc.cluster.local"] = "localhost"
+    elastic_port: Port = 29200
+
+    @model_validator(mode="after")
+    def valid_credentials(self) -> Self:
+        """Keep the existing explicit CA and bounded secret requirements on the smaller config."""
+        if not self.ca_file.is_absolute() or not self.ca_file.is_file():
+            raise ValueError("explicit CA file required")
+        if not 16 <= len(self.elastic_password.get_secret_value()) <= 256:
+            raise ValueError("credential length outside bounds")
+        return self
+
+
 class LocalDataConfig(Contract):
     """Only the trusted host constructs this object; credentials never come from model arguments."""
 
@@ -308,7 +327,7 @@ class ElasticsearchRetrieval:
 
     def __init__(
         self,
-        config: LocalDataConfig,
+        config: LocalDataConfig | ElasticsearchConfig,
         artifacts: ArtifactStore,
         *,
         transport: httpx.BaseTransport | None = None,

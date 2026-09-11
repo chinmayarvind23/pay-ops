@@ -50,6 +50,8 @@ def test_coverage_thresholds_fail_closed(
     "module",
     [
         "protected_api.py",
+        "operator_config.py",
+        "operator_host.py",
         "memory/data_clients.py",
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",

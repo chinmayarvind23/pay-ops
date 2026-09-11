@@ -21,6 +21,8 @@ REQUIRED = frozenset({"contracts/__init__.py", "evaluation/metrics.py"})
 CRITICAL_FILES = frozenset(
     {
         "protected_api.py",
+        "operator_config.py",
+        "operator_host.py",
         "memory/data_clients.py",
         "orchestrator/reasoning.py",
         "orchestrator/budget.py",

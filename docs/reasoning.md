@@ -8,11 +8,11 @@ LangChain may coerce provider metadata before constructing an AIMessage. The Ope
 
 The read dispatcher exposes six fixed tools with a shared argument schema. It revalidates complete batches before a trusted callback reserves their command/query cost. Two worker slots bound concurrency and queue growth. Timed-out operations retain their slots until their underlying I/O finishes; no late result can enter the returned batch. Result deadlines are separate from transport cancellation. A final identity check covers time spent waiting for sibling reads, with an additional eight-second maximum wait and the same slot bound. Identity lookups are excluded from the command/query census. [Python documents that running futures cannot be cancelled](https://docs.python.org/3.12/library/concurrent.futures.html).
 
-The host must bind current identity, durable reservations, scoped readers and source verification. Returned evidence must belong to the requested service and incident. Exact pod names remain in source payloads when the adapter normalizes their service scope. Errors contain typed statuses without raw provider exception text. Tool spans carry the investigation's trace context, bounded tool/service names, query digests and evidence IDs.
+The local operator host binds current identity, durable reservations, scoped readers and source verification. Returned evidence must belong to the requested service and incident. Exact pod names remain in source payloads when the adapter normalizes their service scope. Errors contain typed statuses without raw provider exception text. Tool spans carry the investigation's trace context, bounded tool/service names, query digests and evidence IDs.
 
 Model context includes verified payload facts and marks omitted payloads explicitly. It admits at most 256 input artifacts, selects at most 64 and limits the serialized bundle to 24,000 characters. All input artifacts, including dropped entries, undergo source verification. Payment windows include actual arithmetic and their input IDs; trace facts include duration and original span time; retrieval retains original summary and time as guidance. These character limits do not replace tokenizing the full provider prompt. No model-level prompt-injection resistance has been measured yet.
 
-The existing investigation graph now rechecks nested trace and retrieval source artifacts when collecting or resuming, in addition to payment lineage. Default investigations continue deterministic ranking. A host can configure a reasoner factory with an explicit model method and stable ranking profile. Both are recorded before collection and checked on restart, so failed model attempts remain identifiable in evaluation denominators.
+The investigation graph rechecks nested trace and retrieval source artifacts when collecting or resuming, in addition to payment lineage. The deterministic investigation command retains deterministic ranking. The separate operator host configures a reasoner factory with an explicit model method and stable ranking profile. Both are recorded before collection and checked on restart, so failed model attempts remain identifiable in evaluation denominators.
 
 
 ## Durable execution
@@ -26,6 +26,35 @@ Finish and refusal are explicit stops. One invalid response gets schema feedback
 The graph validates the reasoner's artifact root and remaining logical/backend read allowances after initial collection. Reports retain deterministic/model_fixture/model_provider method, stop reason and receipt digests. Failed model work does not silently become a baseline answer. Fixture costs and timing never qualify as live-provider cost or latency. Provider usage, configured prices and measured invocation time remain in individual receipts for evaluation; absent usage is unknown.
 
 Operational bindings cover fixed Kubernetes reads, payment snapshots and scoped runbook/incident searches. Host code supplies endpoints, credentials and the bound responder identity. The model cannot select namespaces, URLs, SQL, Elasticsearch DSL, actions or approvals. Traces collected separately remain available through verified context; there is no hidden trace-read command in the six-tool catalog.
+
+## Trusted local operator host
+
+`payops.operator_host` connects the concrete provider and read adapters to ModelRuntime,
+ReasoningLoop and the native InvestigationWorker. Its authority is the initiating OS account
+and an explicit local grant with fixed responder role, sandbox namespace and expiry. Each
+check rereads the bounded grant; account changes, revocation, expiry and slow or reversed-clock
+verification fail closed. This is local OS/file authority, not Firebase or public HTTP
+authentication. Configuration names credentials explicitly, and plan mode does not load them.
+
+The host uses local SQLite for the reasoning journal and native graph checkpoints. Its profile
+binds the account, configuration, budgets, knowledge bundle and whole release cause vocabulary.
+No selected case's gold assignment enters the model prompt. Original runbook/memory artifacts
+are verified and copied into the incident store before retrieval can use their direct lineage.
+Default allowances include the initial 20/30 logical/backend reads plus six/nine selected reads.
+
+Finished publication verifies matching report/checkpoint fields, nested sources and a complete
+SQL receipt census. It reconstructs the actual loop with a read-only ledger that refuses new
+reservations, an inert provider and inert read handlers. Reconstructed evidence, hypotheses,
+stop condition and receipts must match the report. A safely empty unreasoned stop requires no
+hidden reasoning journal. An incomplete journal fails publication rather than authorizing a
+retry. Current authority is required again before the verified summary is returned.
+
+Host shutdown stops admission immediately and defers owned client/engine cleanup until active
+provider or retrieval methods return. A result timeout does not cancel remote work, and a Python
+worker may keep the process alive until its concrete transport finishes. Synthetic end-to-end
+tests exercise all six tools, durable reservations, native completed restart with zero repeated
+requests, staged revocation and held-provider cleanup. They do not establish live provider
+quality, latency or billing. Setup and invocation are in [Commands](commands.md#trusted-local-operator-investigation).
 
 
 ## Provider ceiling and stage accounting

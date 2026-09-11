@@ -27,6 +27,65 @@ Add `--payment-windows` for paired payment snapshots or `--pause-before-ranking`
 to persist collection before ranking. Resume with the same runtime, collection profile
 and `--resume INCIDENT_ID`. These commands use deterministic ranking.
 
+## Trusted local operator investigation
+
+The operator host connects the native investigation graph, durable reasoning loop,
+OpenAI adapter and all six read tools. It uses local SQLite and the current OS account
+plus an expiring local grant file. This is a local operator command, not public API
+authentication. The cluster, Prometheus and Elasticsearch must already be available;
+the host does not start infrastructure.
+
+Read the native account and prepare an operator-controlled config outside the repository:
+
+```bash
+uv run python -m payops.operator_host identity
+```
+
+All paths must be absolute and resolve locally. This example names credentials explicitly;
+replace the paths and credential reference names with your own. No default environment
+variable, dotenv file or keychain is searched.
+
+```json
+{
+  "runtime": "C:/payops-operator/runtime",
+  "kubeconfig": "C:/payops-operator/kubeconfig",
+  "grant_file": "C:/payops-operator/grant.json",
+  "release_labels": "C:/path/to/pay_ops/evals/golden/release-v2.json",
+  "knowledge_bundle": "C:/payops-operator/knowledge.json",
+  "elastic_ca": "C:/payops-operator/ca.crt",
+  "provider_key": {"environment": "EXPLICIT_PROVIDER_KEY"},
+  "elastic_key": {"file": "C:/payops-operator/elastic-password"},
+  "prometheus_port": 19090,
+  "elastic_port": 29200
+}
+```
+
+The grant JSON requires `account` equal to the identity command output, boolean `enabled`,
+and timezone-aware `issued_at`/`expires_at` timestamps no more than eight hours apart.
+Its namespace and role are fixed to `payops-sandbox` and `responder`. The knowledge bundle
+contains `artifacts_root` and an `items` array of original RUNBOOK/MEMORY EvidenceItems.
+It may be empty; each Elasticsearch hit still needs its original artifact for verification.
+The host accepts at most 16 originals and 1 MiB combined source bytes.
+
+```bash
+uv run python -m payops.operator_host plan --config C:/payops-operator/config.json
+uv run python -m payops.operator_host start --config C:/payops-operator/config.json --incident C:/payops-operator/incident.json
+uv run python -m payops.operator_host resume --config C:/payops-operator/config.json --incident-id operator-demo
+```
+
+An incident file can contain
+`{"incident_id":"operator-demo","request":{"title":"Investigate payment failures"}}`.
+`plan` validates configuration and prints allowances without loading credentials or sending
+requests. `start` and an unfinished `resume` can issue paid provider requests and operational
+reads. Defaults reserve four model turns, eight count/generation requests and 26/39 total
+logical/backend reads. The generation-token reservation is $0.084864; count-endpoint fees
+remain unestablished, so it is not an all-fees spend cap.
+
+Completed resume rechecks current authority, source artifacts and the complete SQL journal
+without new provider/backend requests. The CLI prints a verified summary; full reports remain
+in native graph checkpoints. Runnable integration is fixture-tested; live provider diagnosis,
+latency and billing remain unmeasured.
+
 ## Local fault and development evaluation
 
 These operator commands inject faults into the synthetic cluster and verify cleanup.
@@ -40,7 +99,8 @@ uv run python -m payops.evaluation.run --kubeconfig ../resources/pay_ops/runtime
 
 The evaluation entry point runs the initial four-case deterministic suite. SCHED-01
 and TELEM-03 require their specialized lifecycle classes and reject the generic fault
-runner. The full 24-case provider benchmark and provider operator command remain open.
+runner. The full 24-case provider benchmark remains open; the operator command above is
+implemented and validated with synthetic transport fixtures.
 
 ## Planned commands (not implemented yet)
 

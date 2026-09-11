@@ -24,6 +24,7 @@ The local implementation runs against a five-service synthetic payment system in
 - Immutable evidence artifacts with SHA-256 verification, payment-window arithmetic and nested trace/retrieval source checks.
 - Durable investigations that reserve model/read budgets before dispatch and recover completed work without dispatching it again. Uncertain completion stops the run.
 - A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and price profile and validates raw provider usage.
+- A local operator CLI connects the model and all six read tools with an expiring OS-account grant. Completed restart verifies the journal without issuing new requests; live provider measurements remain pending.
 - Deterministic approval policy and an idempotent SQL action broker, with current identity and resource revalidation before execution. The operational mutation executor remains unfinished.
 - Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
 - PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
@@ -48,7 +49,9 @@ uv run pyright
 uv run pytest
 ```
 
-The operational deterministic CLI requires an explicit kubeconfig and external runtime directory. [Commands](docs/commands.md) and [local cluster setup](infra/kubernetes/local/README.md) describe that path. Run scenario commands separately from other measurements.
+The operational deterministic CLI requires an explicit kubeconfig and external runtime directory. [Commands](docs/commands.md) also documents the model operator host's explicit configuration and read-only plan command. [Local cluster setup](infra/kubernetes/local/README.md) describes the sandbox. Run scenario commands separately from other measurements.
+
+The [static replay app](apps/web/README.md) presents four verified development incidents with clickable citations. It builds locally with Bun and TypeScript; browser verification and public hosting remain pending.
 
 ## How an investigation runs
 
@@ -74,7 +77,7 @@ The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell c
 
 The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
 
-The target deployment adds GKE/Cloud SQL/Memorystore, Pub/Sub, cloud evidence storage, AWS processor hosting and a Hugging Face read-only replay demo. Those services are described in the design documents and are not current deployment claims. Public UI, GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
+The target deployment adds GKE/Cloud SQL/Memorystore, Pub/Sub, cloud evidence storage, AWS processor hosting and a Hugging Face read-only replay demo. Those services are described in the design documents and are not current deployment claims. Public hosting, GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
 
 ## Documentation
 
