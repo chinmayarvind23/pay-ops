@@ -1,5 +1,6 @@
 """Durable approvals must survive restarts without becoming reusable execution authority."""
 
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
@@ -7,7 +8,7 @@ from threading import Barrier
 
 import pytest
 from pydantic import JsonValue
-from sqlalchemy import update
+from sqlalchemy import Engine, update
 from sqlalchemy.orm import Session
 
 from payops.contracts import Incident, IncidentCreate, IncidentReport, utc_now
@@ -18,6 +19,25 @@ from payops.policy.engine import PolicyContext
 from payops.remediation.broker import RemediationBroker
 from payops.remediation.contracts import ActionRecord, ActionState, Approval, EffectReceipt
 from payops.remediation.store import ActionRow, ActionStore, AuditRow, TransitionConflict
+
+
+@pytest.fixture(autouse=True)
+def action_store_lifetimes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Dispose test-owned stores before tmp_path cleanup even when an assertion fails."""
+    stores: list[ActionStore] = []
+    original = ActionStore.__init__
+
+    def tracked(store: ActionStore, database_url: str | Engine) -> None:
+        """Track reopened stores too, not just the initial fixture database connection."""
+        original(store, database_url)
+        stores.append(store)
+
+    monkeypatch.setattr(ActionStore, "__init__", tracked)
+    try:
+        yield
+    finally:
+        for store in reversed(stores):
+            store.close()
 
 
 class Backend:
@@ -124,7 +144,8 @@ def test_approval_persists_and_executes_once(tmp_path: Path) -> None:
     reopened = ActionStore(f"sqlite:///{tmp_path / 'actions.db'}")
     broker = RemediationBroker(reopened, backend, mode="local_kind")
     result = broker.execute(proposed.action_id, "worker")
-    assert result.state == "SUCCEEDED" and len(backend.effects) == 1
+    assert result.state == "SUCCEEDED"
+    assert backend.effects == [proposed.action_id]
     assert broker.execute(proposed.action_id, "worker") == result
     assert [event.state for event in reopened.audit(proposed.action_id)] == [
         "PROPOSED",
@@ -305,6 +326,17 @@ def test_persisted_invariants_reject_corruption(tmp_path: Path, corruption: str)
     store.close()
 
 
+def test_unapproved_record_digest_is_independently_bound(tmp_path: Path) -> None:
+    """A proposed record has no approval checksum to mask its own broken digest check."""
+    backend, store, broker = setup(tmp_path)
+    proposed = broker.propose(backend.proposal, "alice")
+    assert proposed.approval is None
+    payload = {**proposed.model_dump(), "action_id": "0" * 64}
+    with pytest.raises(ValueError, match="action digest mismatch"):
+        ActionRecord.model_validate(payload)
+    store.close()
+
+
 def test_receipt_mismatch_stays_unknown(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A response naming a different target is not successful verification of this action."""
     backend, store, broker = setup(tmp_path)
@@ -480,7 +512,8 @@ def test_broker_race_dispatches_one_effect(tmp_path: Path, monkeypatch: pytest.M
         """The loser reports conflict and cannot invoke the executor."""
         try:
             return broker.execute(action.action_id, "worker").state
-        except TransitionConflict:
+        except Exception as error:
+            assert isinstance(error, TransitionConflict)
             return "CONFLICT"
 
     monkeypatch.setattr(store, "transition", synchronized)
@@ -656,7 +689,8 @@ def test_concurrent_claim_has_one_winner(tmp_path: Path) -> None:
         try:
             store.transition(approved, state="EXECUTING", actor="worker", reason="DISPATCH")
             return True
-        except TransitionConflict:
+        except Exception as error:
+            assert isinstance(error, TransitionConflict)
             return False
 
     with ThreadPoolExecutor(max_workers=2) as pool:

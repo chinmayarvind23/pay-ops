@@ -37,11 +37,15 @@ GRAPH = "src/payops/orchestrator/graph.py"
 NODES = "src/payops/orchestrator/nodes.py"
 POLICY = "src/payops/policy/engine.py"
 POLICY_CONTRACT = "src/payops/policy/contracts.py"
+RECORD = "src/payops/remediation/contracts.py"
+STORE = "src/payops/remediation/store.py"
+BROKER = "src/payops/remediation/broker.py"
 SCHEMA_TESTS = "tests/unit/test_contracts.py tests/unit/test_lineage.py"
 EVIDENCE_TESTS = "tests/unit/test_evidence.py"
 METRIC_TESTS = "tests/unit/test_metrics.py"
 GRAPH_TESTS = "tests/unit/test_graph.py"
 POLICY_TESTS = "tests/unit/test_policy.py"
+BROKER_TESTS = "tests/unit/test_remediation.py"
 CORE_MUTATIONS = (
     Mutation("schema_extra_fields", CONTRACT, 'extra="forbid"', 'extra="allow"', SCHEMA_TESTS),
     Mutation("schema_frozen", CONTRACT, "frozen=True", "frozen=False", SCHEMA_TESTS),
@@ -397,7 +401,140 @@ POLICY_MUTATIONS = (
         POLICY_TESTS,
     ),
 )
-MUTATIONS = CORE_MUTATIONS + POLICY_MUTATIONS
+BROKER_MUTATIONS = (
+    Mutation(
+        "record_digest",
+        RECORD,
+        "self.action_id != action_digest(self.proposal)",
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "record_approval_state",
+        RECORD,
+        '(self.state == "PROPOSED") != (self.approval is None)',
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "record_two_person", RECORD, "approval.subject == self.proposer", "False", BROKER_TESTS
+    ),
+    Mutation(
+        "record_approval_digest",
+        RECORD,
+        "approval.action_digest != self.action_id",
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "record_approval_lifetime",
+        RECORD,
+        "0 < lifetime <= 300",
+        "0 < lifetime <= 301",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "record_effect_identity",
+        RECORD,
+        "(self.result.resource_uid, self.result.previous_version) != (\n"
+        "                self.proposal.resource_uid,\n"
+        "                self.proposal.expected_version,\n            )",
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "store_action_row_identity",
+        STORE,
+        "record.action_id != row.action_id",
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "store_audit_row_identity",
+        STORE,
+        "(event.action_id, event.revision) != (row.action_id, row.revision)",
+        "False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "store_claim_cas",
+        STORE,
+        "ActionRow.payload == before.model_dump_json(),",
+        "True,",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "store_claim_audit",
+        STORE,
+        "            self._audit(session, after, actor, reason)",
+        "            pass",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_identity_subject",
+        BROKER,
+        "or principal.subject != subject",
+        "or False",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_worker_mode", BROKER, "record.proposal.mode != self.mode", "False", BROKER_TESTS
+    ),
+    Mutation(
+        "broker_final_authority",
+        BROKER,
+        "            self._dispatch_authority(record, subject, policy_deadline)",
+        "            pass",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_resource_deadline",
+        BROKER,
+        "context.resource.observed_at + timedelta(seconds=30)",
+        "context.resource.observed_at + timedelta(seconds=300)",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_evidence_deadline",
+        BROKER,
+        "item.observed_at + timedelta(seconds=300)",
+        "item.observed_at + timedelta(seconds=3600)",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_dispatch_deadline",
+        BROKER,
+        "if self.clock() > policy_deadline:",
+        "if False:",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_approval_deadline", BROKER, "if now > policy_deadline:", "if False:", BROKER_TESTS
+    ),
+    Mutation(
+        "broker_approval_time",
+        BROKER,
+        "if not approval.approved_at <= self.clock() < approval.expires_at:",
+        "if False:",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_idempotency_key",
+        BROKER,
+        "self.backend.execute(record.proposal, record.action_id)",
+        "self.backend.execute(record.proposal, record.proposer)",
+        BROKER_TESTS,
+    ),
+    Mutation(
+        "broker_duplicate_dispatch",
+        BROKER,
+        "            result = self.backend.execute(record.proposal, record.action_id)",
+        "            self.backend.execute(record.proposal, record.action_id)\n"
+        "            result = self.backend.execute(record.proposal, record.action_id)",
+        BROKER_TESTS,
+    ),
+)
+MUTATIONS = CORE_MUTATIONS + POLICY_MUTATIONS + BROKER_MUTATIONS
 
 
 def snapshot(repo: Path, destination: Path) -> dict[str, str]:
@@ -540,7 +677,10 @@ def main() -> int:
     output = Path(tempfile.mkdtemp(prefix="semantic-", dir=parent))
     baseline = output / "baseline"
     manifest = run_metadata(repo, baseline)
-    selection = f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} {GRAPH_TESTS} {POLICY_TESTS}"
+    selection = (
+        f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} "
+        f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS}"
+    )
     baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result
     if baseline_result["status"] != "survived":
