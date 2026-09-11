@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payops-data
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - redis.yaml
+  - elasticsearch.yaml
+configMapGenerator:
+  - name: payops-postgres-config
+    files: [postgresql.conf, pg_hba.conf]
+  - name: payops-redis-config
+    files: [redis.conf]
+  - name: payops-elasticsearch-config
+    files: [elasticsearch.yml]
+generatorOptions:
+  disableNameSuffixHash: true

@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres
+  namespace: payops-data
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: payops-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: payops-data
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  progressDeadlineSeconds: 300
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: &id001
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/part-of: payops
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      serviceAccountName: postgres
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgres
+        image: docker.io/library/postgres:18.6-bookworm@sha256:1c59e2c3c818eaa0f0628f695b36e7c9e362d6b219b36a54a32df645cbd7e1af
+        ports:
+        - name: client
+          containerPort: 5432
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 64Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+            ephemeral-storage: 256Mi
+        startupProbe:
+          tcpSocket:
+            port: client
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 90
+        livenessProbe:
+          tcpSocket:
+            port: client
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          exec:
+            command:
+            - pg_isready
+            - -h
+            - 127.0.0.1
+            - -p
+            - '5432'
+            - -U
+            - postgres
+            - -d
+            - payops
+            - -t
+            - '2'
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+          readOnly: false
+        - name: config
+          mountPath: /etc/payops-postgres
+          readOnly: true
+        - name: credentials
+          mountPath: /run/payops
+          readOnly: true
+        - name: socket
+          mountPath: /var/run/postgresql
+          readOnly: false
+        - name: temporary
+          mountPath: /tmp
+          readOnly: false
+        - name: shared-memory
+          mountPath: /dev/shm
+          readOnly: false
+        args:
+        - postgres
+        - -c
+        - config_file=/etc/payops-postgres/postgresql.conf
+        env:
+        - name: POSTGRES_DB
+          value: payops
+        - name: POSTGRES_PASSWORD_FILE
+          value: /run/payops/postgres-password
+        - name: POSTGRES_INITDB_ARGS
+          value: --auth-host=scram-sha-256 --auth-local=peer
+        - name: PGDATA
+          value: /var/lib/postgresql/18/docker
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: postgres-data
+      - name: config
+        configMap:
+          name: payops-postgres-config
+      - name: credentials
+        secret:
+          secretName: payops-postgres-credentials
+          defaultMode: 288
+      - name: socket
+        emptyDir:
+          sizeLimit: 16Mi
+      - name: temporary
+        emptyDir:
+          sizeLimit: 32Mi
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: payops-data
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: payops
+  ports:
+  - name: client
+    port: 5432
+    targetPort: client

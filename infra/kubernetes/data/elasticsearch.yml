@@ -1,0 +1,33 @@
+# Local single-node retrieval only: no operator, ML workload, or host sysctl changes.
+cluster.name: payops-local
+node.name: payops-elasticsearch
+network.host: 0.0.0.0
+http.port: 9200
+transport.host: 127.0.0.1
+discovery.type: single-node
+node.store.allow_mmap: false
+xpack.security.enabled: true
+xpack.security.autoconfiguration.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/credentials/tls.crt
+xpack.security.http.ssl.key: /usr/share/elasticsearch/config/credentials/tls.key
+xpack.security.http.ssl.supported_protocols: [TLSv1.2, TLSv1.3]
+xpack.security.transport.ssl.enabled: false
+xpack.ml.enabled: false
+xpack.watcher.enabled: false
+# Pinned 9.5.3 test setting: this local fixture never needs EIS authorization.
+xpack.inference.elastic.authorization.enabled: false
+ingest.geoip.downloader.enabled: false
+http.max_content_length: 1mb
+cluster.max_shards_per_node: 10
+search.default_search_timeout: 5s
+search.max_buckets: 1000
+search.max_open_scroll_context: 8
+search.default_keep_alive: 30s
+search.max_keep_alive: 1m
+thread_pool.search.size: 2
+thread_pool.search.queue_size: 20
+indices.breaker.total.limit: 80%
+indices.breaker.request.limit: 20%
+script.allowed_types: none

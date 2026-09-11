@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: elasticsearch
+  namespace: payops-data
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: payops-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: payops-data
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  progressDeadlineSeconds: 600
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: &id001
+      app.kubernetes.io/name: elasticsearch
+      app.kubernetes.io/part-of: payops
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      serviceAccountName: elasticsearch
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.5.3@sha256:f456578fc2a620a8a4f4c21d070fff1f6070345adb2be5e5626b65be72aea350
+        ports:
+        - name: client
+          containerPort: 9200
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+            ephemeral-storage: 64Mi
+          limits:
+            cpu: '1'
+            memory: 1536Mi
+            ephemeral-storage: 256Mi
+        startupProbe:
+          tcpSocket:
+            port: client
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 90
+        livenessProbe:
+          tcpSocket:
+            port: client
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          exec:
+            command:
+            - curl
+            - --fail
+            - --silent
+            - --max-time
+            - '2'
+            - --output
+            - /dev/null
+            - --config
+            - /usr/share/elasticsearch/config/credentials/health.curl
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+          readOnly: false
+        - name: config
+          mountPath: /usr/share/elasticsearch/config
+          readOnly: false
+        - name: settings
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+          readOnly: true
+        - name: credentials
+          mountPath: /usr/share/elasticsearch/config/credentials
+          readOnly: true
+        - name: temporary
+          mountPath: /tmp
+          readOnly: false
+        - name: logs
+          mountPath: /usr/share/elasticsearch/logs
+          readOnly: false
+        env:
+        - name: ES_JAVA_OPTS
+          value: -Xms768m -Xmx768m -XX:ActiveProcessorCount=2
+        - name: ELASTIC_PASSWORD_FILE
+          value: /usr/share/elasticsearch/config/credentials/elastic-password
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: elasticsearch-data
+      - name: config
+        emptyDir:
+          sizeLimit: 16Mi
+      - name: settings
+        configMap:
+          name: payops-elasticsearch-config
+      - name: credentials
+        secret:
+          secretName: payops-elasticsearch-credentials
+          defaultMode: 288
+      - name: temporary
+        emptyDir:
+          sizeLimit: 128Mi
+      - name: logs
+        emptyDir:
+          sizeLimit: 32Mi
+      initContainers:
+      - name: copy-image-config
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.5.3@sha256:f456578fc2a620a8a4f4c21d070fff1f6070345adb2be5e5626b65be72aea350
+        command:
+        - cp
+        - -R
+        - /usr/share/elasticsearch/config/.
+        - /writable-config/
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+            ephemeral-storage: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+            ephemeral-storage: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /writable-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: payops-data
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/part-of: payops
+  ports:
+  - name: client
+    port: 9200
+    targetPort: client
