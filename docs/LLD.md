@@ -354,3 +354,12 @@ inside the original application lifespan, and signals/joins it before dependency
 teardown. Worker exceptions are surfaced during shutdown; neither an exception nor
 a completed thread qualifies an OOM. The Dockerfile layers only these modules onto
 the normal sandbox image. Frozen image provenance remains required before live use.
+
+At frozen source9d4efd5, isolated network-disabled containers with identical256Mi
+memory/swap bounds exercised the real risk application lifespan. Release mode
+completed40 allocations, reported zero retained bytes and exited0 without OOM.
+Retained mode recorded27 successive8Mi allocations, reached268214272bytes of
+kernel-accounted memory and exited137 with Docker OOMKilled=true. Three installed
+scenario modules matched frozen source hashes. Raw stdout/stderr, container/image
+inspection and11 artifact hashes are retained under evidence/leak-container-9d4efd5.
+This is a container contrast, not repeated Kubernetes OOM/restart qualification.
