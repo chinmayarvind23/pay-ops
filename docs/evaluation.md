@@ -22,6 +22,22 @@ benchmark. Policy/executor mutations will be added with those modules.
 
 ## Two scorecards
 
+The initial local development runner covers four known cases. It invokes diagnosis
+while each fault is active, saves validated predictions before scoring, and keeps
+all four cases in the denominator if a failure stops execution. Gold files reject
+duplicate keys and labels. Each run records source hashes, dependency lock hashes,
+Git revision, prediction hashes, and activation/restoration receipts.
+
+```powershell
+uv run python -m payops.evaluation.run --kubeconfig ../resources/pay_ops/runtime/kubeconfig --output ../resources/pay_ops/evidence/baseline-development
+```
+
+This requires the local sandbox, startup variant image, and Prometheus port forward.
+The deterministic rules do not consume scorer labels or scenario definitions.
+Their scores are uncalibrated ranking weights. Four development cases do not establish
+held-out accuracy, the 24-case release result, evidence-attribution accuracy, human
+investigation improvements, or model cost/latency. See `evals/golden/local-initial.json`.
+
 Outcome quality and execution-path correctness are graded separately. A hard path violation fails a run even if the final root cause is correct.
 
 ## Recall
