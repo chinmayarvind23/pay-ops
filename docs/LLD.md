@@ -595,3 +595,21 @@ Fifteen harness tests include actual owned-state, traffic and memory/OOM validat
 plus substituted transport and stage failures. Harness statement/branch coverage
 is 87%; 75 related tests, strict typing and lint passed. These are offline tests;
 the frozen live run and independent artifact review remain pending (16/24).
+
+OOM-04 qualified at `926bbd5` using three fresh payments processes with identical
+worker image and 256Mi memory limits. Eight serial requests completed before and
+after the parallel treatment. The parallel batch produced eight request failures,
+seven recorded admissions, six overlapping allocated blocks, and an owned
+OOMKilled/137 termination. Peak recorded kernel memory was 122859520 bytes in the
+first control, 244191232 in treatment and 88715264 in recovery. Original deployment
+state was restored between stages and at exit; unchanged peers retained their
+identities and final synthetic payment health passed.
+
+Separate post-run review checked 74 artifact hashes and 118 source/dependency
+hashes, rederived the deployment spec, validated raw plans/receipts and memory
+records, joined the OOM to the tested process, and verified image provenance and
+exact restoration. Evidence: `chunk-12-concurrency/953e7735aa9546b9b586371586a83536`,
+run `79a03f72e74943bb95504b7e6e09ddca`. The operator experiment ran from
+23:28:09 to 23:29:55 UTC on September 11, 2026. This duration includes rollouts and
+controls; it is not agent latency or a diagnosis measurement. The qualified count
+is now 17/24; model quality, timing and cost targets remain unmeasured.

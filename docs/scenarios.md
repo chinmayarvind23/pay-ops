@@ -1,8 +1,8 @@
-# Failure Scenarios
+﻿# Failure Scenarios
 
-The suite contains six groups with four scenarios each. Sixteen local variants now
+The suite contains six groups with four scenarios each. Seventeen local variants now
 have activation and restoration evidence; see [results](results.md) for scope and
-provenance. The remaining eight are OOM-04, SCHED-03/04, DEP-03/04 and
+provenance. The remaining seven are SCHED-03/04, DEP-03/04 and
 TELEM-01/02/04. Local processor variants do not establish an AWS outage, and local
 dependency behavior does not establish a deployed cloud integration.
 
@@ -27,7 +27,7 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 - OOM-01: payments-api OOMKilled
 - OOM-02: risk-sim memory leak (bounded retention with two OOM lifetimes qualified at `7d3e204`)
 - OOM-03: CPU throttling
-- OOM-04: excessive synthetic concurrency pressure
+- OOM-04: concurrent request allocations cause an owned OOM at fixed 256Mi; serial controls and recovery qualified at `926bbd5`
 
 ## Rollout
 
@@ -131,3 +131,4 @@ are tested. The committed-image Kubernetes run at `56e6337` qualified all five
 stages and exact cleanup. Mean work duration was 0.290 seconds at 500m, 1.504 seconds
 at 100m and 0.275 seconds after recovery. See [results](results.md) for evidence and
 the distinction between workload measurements and agent performance.
+

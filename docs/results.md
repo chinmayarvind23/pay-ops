@@ -1,9 +1,9 @@
-# Results
+﻿# Results
 
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Sixteen local fault reproductions now have verified activation and
+each workload. Seventeen local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -121,3 +121,22 @@ hashes, raw allocation progression, image provenance and exact restoration.
 Evidence: `chunk-11-leak/2ba6ab40c6eb415a9034155ecfdaa52e`, run
 `d2a14f09ce8349be8fd2c86fab89f44a`. The two failed earlier attempts remain
 unqualified. This experiment does not measure model diagnosis or latency.
+
+
+OOM-04 qualified at `926bbd5` using three fresh payments processes with identical
+worker image and 256Mi memory limits. Eight serial requests completed before and
+after the parallel treatment. The parallel batch produced eight request failures,
+seven recorded admissions, six overlapping allocated blocks, and an owned
+OOMKilled/137 termination. Peak recorded kernel memory was 122859520 bytes in the
+first control, 244191232 in treatment and 88715264 in recovery. Original deployment
+state was restored between stages and at exit; unchanged peers retained their
+identities and final synthetic payment health passed.
+
+Separate post-run review checked 74 artifact hashes and 118 source/dependency
+hashes, rederived the deployment spec, validated raw plans/receipts and memory
+records, joined the OOM to the tested process, and verified image provenance and
+exact restoration. Evidence: `chunk-12-concurrency/953e7735aa9546b9b586371586a83536`,
+run `79a03f72e74943bb95504b7e6e09ddca`. The operator experiment ran from
+23:28:09 to 23:29:55 UTC on September 11, 2026. This duration includes rollouts and
+controls; it is not agent latency or a diagnosis measurement. The qualified count
+is now 17/24; model quality, timing and cost targets remain unmeasured.

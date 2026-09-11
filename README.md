@@ -10,7 +10,7 @@ The local implementation runs against a five-service synthetic payment system in
 
 | Measurement | Verified result | Scope |
 | --- | --- | --- |
-| Local fault reproduction | 16 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, trace sampling and a real request-protocol mismatch |
+| Local fault reproduction | 17 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, trace sampling and a real request-protocol mismatch |
 | Diagnosis | 4/4 rank-1 and rank-3 hits | Frozen four-case development run using deterministic ranking |
 | Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
 | Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |
@@ -91,3 +91,4 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 ## Work still required
 
 Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. Deployment and the recorded demo follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
+
