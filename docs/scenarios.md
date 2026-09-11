@@ -121,3 +121,11 @@ matched workload and quota controls, not require an unrealistically zero baselin
 These nine tasks are calibration, not a qualified Kubernetes scenario or agent
 latency measurement. Source, image, raw counters and successful container exits are
 retained outside the repository under `audit/evidence/cpu-calibration-*`.
+
+The specialized `CpuHarness` now implements the five-stage experiment with a
+persisted original/control/restricted journal and exact conditional restoration.
+Each stage collects three fresh accepted payments with complete nine-span paths;
+work stages also retain raw kernel sources from the verified payments container.
+Both normal-quota controls must pass the frozen work-duration and throttled-time
+contrasts. The generic runner rejects OOM-03. Lifecycle and acquisition fixtures
+are tested; the committed-image Kubernetes qualification run is still pending.

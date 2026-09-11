@@ -256,4 +256,20 @@ must be at most one second. Restricted mean time must be 1–4.5 seconds and at 
 twice each control; mean throttled time must exceed 0.5 seconds and three times
 each control. These thresholds come from the retained prequalification calibration
 and must not be tuned against a qualification run. They measure work duration,
-not end-to-end investigation latency. The journaled lifecycle remains to be wired.
+not end-to-end investigation latency.
+
+`CpuHarness` now executes that lifecycle using the shared cross-process latch.
+Before mutation it saves the five-service original runtime and both complete work
+specs. Each transition saves the current expected deployment and next spec before
+CAS; readiness checks pin unaffected peers and require a fresh payments process.
+`RuntimeCpuObserver` retains three independently traced accepted payment paths per
+stage and the matching raw CPU logs for work stages. Sample and trace IDs cannot
+repeat, and request windows must be sequential. Both comparisons must pass; final
+cleanup restores the original disabled configuration and verifies three new paths.
+
+Cleanup recognizes only the original/control/restricted specs on the original
+Deployment UID. A foreign identity or spec is never overwritten. Restoration runs
+before final evidence persistence; a failed write, failed final observation or
+failed receipt/latch operation leaves the experiment blocked for inspection.
+Fixture tests exercise normal execution, rejected and ambiguous writes, cancelled
+observations, foreign states and failed restoration. Live qualification is pending.
