@@ -1,18 +1,21 @@
 """Actual SQL reservations survive reopen, reject stale workers and retain uncertain-call costs."""
 
+import json
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
+from typing import Any
 
 import pytest
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine, event, update
 
 from payops.orchestrator.budget import (
     BudgetConflict,
     BudgetLedger,
     BudgetRecord,
     BudgetRow,
+    Completion,
     ModelCharge,
     ReadCharge,
     ReasoningBudget,
@@ -112,16 +115,25 @@ def test_racing_workers_cannot_both_spend_same_remaining_allowance(ledger: Budge
     record = ledger.open("run", "a" * 64, limits(model_calls=1))
     barrier = Barrier(2)
 
+    def before_update(*args: Any) -> None:
+        """Force both workers past their reads before either executes its conditional update."""
+        if str(args[2]).startswith("UPDATE reasoning_budgets"):
+            barrier.wait(timeout=3)
+
+    event.listen(ledger.engine, "before_cursor_execute", before_update)
+
     def reserve(operation: str) -> str:
         """Synchronize two distinct operations before the SQL compare-and-set."""
-        barrier.wait(timeout=2)
         try:
             return ledger.reserve(record, model(operation))
         except BudgetConflict:
             return "CONFLICT"
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(reserve, ["model-1", "model-2"]))
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(reserve, ["model-1", "model-2"]))
+    finally:
+        event.remove(ledger.engine, "before_cursor_execute", before_update)
     assert sorted(results) == ["CONFLICT", "NEW"]
     assert len(ledger.get("run").charges) == 1
 
@@ -207,3 +219,57 @@ def test_same_model_operation_cannot_change_prompt_or_price(
     }
     with pytest.raises(BudgetConflict, match="different work"):
         ledger.reserve(ledger.get("run"), model().model_copy(update={field: values[field]}))
+
+
+def test_completed_digest_is_durable_immutable_and_does_not_refund(ledger: BudgetLedger) -> None:
+    """Response publication enables exact replay while its full reservation remains consumed."""
+    record = ledger.open("run", "a" * 64, limits(model_calls=1))
+    assert ledger.reserve(record, model()) == "NEW"
+    assert ledger.complete(ledger.get("run"), "model-1", "d" * 64) == "NEW"
+    reopened = BudgetLedger(ledger.engine).get("run")
+    assert reopened.completions == (Completion(operation_id="model-1", artifact_sha256="d" * 64),)
+    assert ledger.complete(reopened, "model-1", "d" * 64) == "EXISTING"
+    assert ledger.reserve(reopened, model("model-2")) == "DENIED"
+    with pytest.raises(BudgetConflict, match="completion differs"):
+        ledger.complete(reopened, "model-1", "e" * 64)
+
+
+def test_completion_requires_reserved_unique_identity(ledger: BudgetLedger) -> None:
+    """Neither an uncharged operation nor duplicate result records can enter the ledger."""
+    record = ledger.open("run", "a" * 64, limits())
+    with pytest.raises(ValueError, match="reserved operation"):
+        ledger.complete(record, "model-1", "d" * 64)
+    assert ledger.reserve(record, model()) == "NEW"
+    current = ledger.get("run")
+    receipt = Completion(operation_id="model-1", artifact_sha256="d" * 64)
+    with pytest.raises(ValueError):
+        BudgetRecord.model_validate({**current.model_dump(), "completions": (receipt, receipt)})
+
+
+def test_stale_worker_cannot_overwrite_completion(ledger: BudgetLedger) -> None:
+    """Only one digest wins publication; a second worker must reread the committed receipt."""
+    record = ledger.open("run", "a" * 64, limits())
+    assert ledger.reserve(record, model()) == "NEW"
+    current = ledger.get("run")
+    assert ledger.complete(current, "model-1", "d" * 64) == "NEW"
+    with pytest.raises(BudgetConflict):
+        ledger.complete(current, "model-1", "e" * 64)
+
+
+def test_legacy_ledger_shape_keeps_charges_during_completion_upgrade(ledger: BudgetLedger) -> None:
+    """Legacy rows normalize without resetting consumed allowance."""
+    record = ledger.open("run", "a" * 64, limits())
+    assert ledger.reserve(record, model()) == "NEW"
+    legacy = ledger.get("run").model_dump(mode="json")
+    legacy.pop("completions")
+    with ledger.engine.begin() as connection:
+        connection.execute(
+            update(BudgetRow)
+            .where(BudgetRow.run_id == "run")
+            .values(payload=json.dumps(legacy, separators=(",", ":")))
+        )
+    reopened = BudgetLedger(ledger.engine).open("run", "a" * 64, limits())
+    assert reopened.charges == (model(),) and reopened.completions == ()
+    assert ledger.complete(reopened, "model-1", "d" * 64) == "NEW"
+    assert ledger.reserve(ledger.get("run"), model("model-2")) == "NEW"
+    assert len(ledger.get("run").charges) == 2

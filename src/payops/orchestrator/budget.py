@@ -74,6 +74,13 @@ Charge = Annotated[ModelCharge | ReadCharge, Field(discriminator="kind")]
 CHARGE = TypeAdapter[Charge](Charge)
 
 
+class Completion(Contract):
+    """A separately fsynced result becomes replayable only after its digest is anchored in SQL."""
+
+    operation_id: Identifier
+    artifact_sha256: Digest
+
+
 class BudgetRecord(Contract):
     """Binding covers incident, provider configuration and initial evidence in the owning loop."""
 
@@ -81,12 +88,18 @@ class BudgetRecord(Contract):
     binding_sha256: Digest
     limits: ReasoningBudget
     charges: tuple[Charge, ...] = Field(default=(), max_length=50)
+    completions: tuple[Completion, ...] = Field(default=(), max_length=50)
 
     @model_validator(mode="after")
     def within_limits(self) -> Self:
         """Derive every total from immutable charges rather than trusting mutable counters."""
         if len({charge.operation_id for charge in self.charges}) != len(self.charges):
             raise ValueError("duplicate budget operation")
+        completed = {item.operation_id for item in self.completions}
+        if len(completed) != len(self.completions) or not completed <= {
+            charge.operation_id for charge in self.charges
+        }:
+            raise ValueError("completion lacks one unique reserved operation")
         model = [charge for charge in self.charges if isinstance(charge, ModelCharge)]
         reads = [charge for charge in self.charges if isinstance(charge, ReadCharge)]
         if (
@@ -172,12 +185,41 @@ class BudgetLedger:
             )
         except ValueError:
             return "DENIED"
+        self._replace(expected, updated)
+        return "NEW"
+
+    def complete(
+        self, expected: BudgetRecord, operation_id: str, artifact_sha256: str
+    ) -> Literal["NEW", "EXISTING"]:
+        """The first completion digest is immutable; a conflicting response cannot replace it."""
+        expected = BudgetRecord.model_validate_json(expected.model_dump_json())
+        receipt = Completion(operation_id=operation_id, artifact_sha256=artifact_sha256)
+        existing = next(
+            (item for item in expected.completions if item.operation_id == operation_id), None
+        )
+        if existing is not None:
+            if existing != receipt or self.get(expected.run_id) != expected:
+                raise BudgetConflict("completion differs or budget changed")
+            return "EXISTING"
+        updated = BudgetRecord.model_validate(
+            {**expected.model_dump(), "completions": (*expected.completions, receipt)}
+        )
+        self._replace(expected, updated)
+        return "NEW"
+
+    def _replace(self, expected: BudgetRecord, updated: BudgetRecord) -> None:
+        """Budget and response publications share one atomic compare-and-set implementation."""
         with Session(self.engine) as session:
+            row = session.get(BudgetRow, expected.run_id)
+            if row is None or BudgetRecord.model_validate_json(row.payload) != expected:
+                raise BudgetConflict("budget changed before reservation")
+            # Preserve CAS against old serialized shapes while writing the current validated schema.
+            raw_payload = row.payload
             winner = session.execute(
                 update(BudgetRow)
                 .where(
                     BudgetRow.run_id == expected.run_id,
-                    BudgetRow.payload == expected.model_dump_json(),
+                    BudgetRow.payload == raw_payload,
                 )
                 .values(payload=updated.model_dump_json())
                 .returning(BudgetRow.run_id)
@@ -185,4 +227,3 @@ class BudgetLedger:
             session.commit()
         if winner is None:
             raise BudgetConflict("budget changed before reservation")
-        return "NEW"
