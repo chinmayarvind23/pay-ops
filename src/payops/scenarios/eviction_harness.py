@@ -53,6 +53,23 @@ class EvictionHarness(ConcurrencyHarness):
                 raise CleanupUnverified("isolated kubelet configuration changed outside journal")
             self.access.replace_config(current, original, str(context.original["container_id"]))
 
+    def _cleanup_namespace(self, run_id: str) -> JsonObject | None:
+        """Reconcile a lost create response without adopting another run's namespace."""
+        if self.namespace_document is not None:
+            return self.namespace_document
+        observed = self.access.namespace_absence()
+        for document in object_items(observed["items"]):
+            metadata = object_value(document["metadata"])
+            if metadata.get("name") != NAMESPACE:
+                continue
+            if (
+                not metadata.get("uid")
+                or object_value(metadata.get("labels", {})).get("payops.dev/eviction-run") != run_id
+            ):
+                raise CleanupUnverified("uncertain namespace creation has foreign ownership")
+            return document
+        return None
+
     def _restore_original(
         self, context: ConcurrencyRun, directory: Path, receipt: ScenarioReceipt
     ) -> None:
@@ -66,8 +83,9 @@ class EvictionHarness(ConcurrencyHarness):
         except Exception as error:
             errors.append(str(error))
         try:
-            if self.namespace_document is not None:
-                self.access.remove_namespace(self.namespace_document, receipt.run_id)
+            namespace = self._cleanup_namespace(receipt.run_id)
+            if namespace is not None:
+                self.access.remove_namespace(namespace, receipt.run_id)
                 self._wait(
                     directory,
                     receipt,
