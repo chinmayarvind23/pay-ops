@@ -90,6 +90,7 @@ The public replay runs on a free Hugging Face Static Space. An optional [GCP Ter
 - [Evidence model](docs/evidence-model.md), [reasoning](docs/reasoning.md) and [security](docs/security.md)
 - [Scenario catalog](docs/scenarios.md), [frozen release labels](evals/golden/README.md) and [benchmark methodology](docs/benchmark-methodology.md)
 - [Results](docs/results.md), [commands](docs/commands.md) and [deployment plan](docs/deployment.md)
+- [Project article](docs/blog.md), [résumé bullets](docs/resume.md) and [GraphQL/Slack setup](docs/graphql-and-slack.md)
 
 Operator journals, failed runs, source hashes, review notes, interview material and the blog draft live outside the code repository in `../resources/pay_ops`. They preserve private runtime evidence separately from source and the published sanitized public demo.
 
