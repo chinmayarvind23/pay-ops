@@ -1,0 +1,11 @@
+# Source and frontend builds use identical newlines on Windows and Unix.
+* text=auto eol=lf
+
+# Frozen evidence and result hashes bind exact bytes, including existing newlines.
+evals/replay-v1/** -text
+evals/results/** -text
+apps/web/src/replay.json -text
+
+*.png binary
+*.gif binary
+*.mp4 binary
