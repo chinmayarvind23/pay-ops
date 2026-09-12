@@ -24,7 +24,7 @@ See [GCP setup](../infra/terraform/gcp/README.md), [AWS setup](../infra/terrafor
 
 ## Source map for the full resource-plan stack
 
-The technology list in `resources/pay_ops/PROJECT_PLAN.md` is broader than the r?sum? heading. This map separates executable local integrations, tested optional adapters, and unimplemented cloud extensions. The free release does not require paid cloud infrastructure.
+The technology list in `resources/pay_ops/PROJECT_PLAN.md` is broader than the resume heading. This map separates executable local integrations, tested optional adapters, and unimplemented cloud extensions. The free release does not require paid cloud infrastructure.
 
 | Technology | Correct responsibility and current implementation |
 | --- | --- |
@@ -51,4 +51,4 @@ The technology list in `resources/pay_ops/PROJECT_PLAN.md` is broader than the r
 | GraphQL | [Authenticated nested incident/report/evidence reads](../src/payops/graphql_api.py), bounded AST and pagination; API integration tested |
 | Slack | [Opt-in incident-reference notifications](../src/payops/slack_notifications.py), scoped responder authorization, fixed webhook, no automatic retry; fixture delivery tested, no live workspace message sent |
 
-See [GraphQL and Slack setup](graphql-and-slack.md). Managed cloud extensions remain explicitly scoped above; current r?sum? bullets describe the measured local system and tested adapters.
+See [GraphQL and Slack setup](graphql-and-slack.md). Managed cloud extensions remain explicitly scoped above; current resume bullets describe the measured local system and tested adapters.
