@@ -2,12 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
       content="Inspect recorded PayOps incident diagnoses and their verified evidence."
     />
-    <title>PayOps · Incident replay</title>
+    <title>PayOps - Incident replay</title>
     <link rel="stylesheet" href="./src/style.css" />
     <script type="module" src="./src/main.ts"></script>
   </head>

@@ -91,3 +91,20 @@ The autoscaling experiment separates synthetic load ownership from payment-servi
 replica health. A load Job is accounted for through its controller and process
 identity before service validation; its mere presence does not prove successful
 traffic or autoscaling. Live qualification remains pending.
+
+
+## Free public deployment and revised AWS scope
+
+The owner requested free Hugging Face hosting and optional AWS instructions only.
+The four-case replay now runs as SDK `static` with no paid compute or database.
+Space: https://huggingface.co/spaces/chinmayarvind/payops-incident-replay
+HF revision: ccdbfdbc1e3473cbbeb1ab2acafecfc1a0b2c23d.
+The static host is returned by the API and ends in `.static.hf.space`; the Docker
+hostname is not valid for this SDK. Served JS/CSS match release bytes exactly.
+Served HTML matches after removing HF's metadata script and normalizing line ends.
+All four repository files match the release. Application CSP resides in HTML;
+Nginx-specific headers and health routes are not claimed on Static hosting.
+Evidence: audit/evidence/hf-static-deployment-v2/verification.json.
+Browser inventory is empty, so layout/click verification and recording remain open.
+AWS was not provisioned; infra/terraform/aws-lightsail/README.md provides optional
+setup and explicitly identifies the unfinished cloud processor adapter.

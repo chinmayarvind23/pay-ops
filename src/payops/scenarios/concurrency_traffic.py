@@ -31,7 +31,7 @@ def concurrency_workload(*, parallel: bool) -> Workload:
     )
 
 
-def _outcome(attempt: AttemptRecord) -> bool:
+def payment_outcome(attempt: AttemptRecord) -> bool:
     """A success needs its matching synthetic response; transport failure has no invented status."""
     if attempt.outcome == "accepted":
         result = attempt.result
@@ -56,7 +56,7 @@ def _outcome(attempt: AttemptRecord) -> bool:
     raise ValueError("cancelled, declined or malformed outcomes cannot qualify memory pressure")
 
 
-def _attempt_time(attempt: AttemptRecord, receipt: TrafficReceipt) -> datetime:
+def started_request_time(attempt: AttemptRecord, receipt: TrafficReceipt) -> datetime:
     """Reject unstarted requests, naive clocks and nonfinite durations."""
     started, ended, duration = attempt.started_at, attempt.completed_at, attempt.latency_seconds
     if (
@@ -113,8 +113,8 @@ def validate_traffic(receipt: TrafficReceipt, plan: JsonObject, *, parallel: boo
             raise ValueError("invalid planned concurrency attempt")
         samples.append(planned.sample.sample_id)
         traces.add(planned.traceparent.split("-")[1])
-        starts.append(_attempt_time(attempt, receipt))
-        failures += not _outcome(attempt)
+        starts.append(started_request_time(attempt, receipt))
+        failures += not payment_outcome(attempt)
     if len(set(samples)) != 8 or len(traces) != 8 or bool(failures) is not parallel:
         raise ValueError("sample uniqueness or control/fault outcomes do not match the experiment")
     return TrafficWindow(tuple(samples), min(starts), receipt.completed_at, failures)

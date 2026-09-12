@@ -4,7 +4,7 @@ PayOps investigates Kubernetes payment incidents by correlating health, logs, tr
 
 Payment failures can look alike at the API boundary. A processor timeout, a bad rollout and a missing trace need different responses. PayOps preserves the observations behind a diagnosis so an operator can inspect its reasoning and decline an unsupported action.
 
-The local implementation runs against a five-service synthetic payment system in `kind`. Cloud deployment, the public replay demo and the full model benchmark are still in progress. No real payments or ledger writes occur.
+The local implementation runs against a five-service synthetic payment system in `kind`. The [public replay demo](https://huggingface.co/spaces/chinmayarvind/payops-incident-replay) is hosted on a free Hugging Face Static Space. The full model benchmark is still in progress. No real payments or ledger writes occur.
 
 ## Measured so far
 
@@ -51,7 +51,7 @@ uv run pytest
 
 The operational deterministic CLI requires an explicit kubeconfig and external runtime directory. [Commands](docs/commands.md) also documents the model operator host's explicit configuration and read-only plan command. [Local cluster setup](infra/kubernetes/local/README.md) describes the sandbox. Run scenario commands separately from other measurements.
 
-The [static replay app](apps/web/README.md) presents four verified development incidents with clickable citations. It builds locally with Bun and TypeScript; browser verification and public hosting remain pending.
+The [static replay app](apps/web/README.md) presents four verified development incidents with clickable citations. It builds locally with Bun and TypeScript; public hosting is verified; browser visual verification remains pending.
 
 ## How an investigation runs
 
@@ -77,7 +77,7 @@ The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell c
 
 The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
 
-The target deployment adds GKE/Cloud SQL/Memorystore, Pub/Sub, cloud evidence storage, AWS processor hosting and a Hugging Face read-only replay demo. Those services are described in the design documents and are not current deployment claims. Public hosting, GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
+The public replay runs on a free Hugging Face Static Space. GKE/Cloud SQL/Memorystore, Pub/Sub and cloud evidence storage remain design targets. AWS is optional and has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
 
 ## Documentation
 
@@ -90,4 +90,4 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 
 ## Work still required
 
-Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. Deployment and the recorded demo follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
+Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. The recorded demo and remaining integration validation follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
