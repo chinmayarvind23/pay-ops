@@ -37,18 +37,26 @@ The payment environment is synthetic. Its services exercise payment request flow
 5. The host persists the report. Proposed actions pass through a separate policy, approval and execution path.
 
 ```mermaid
+---
+config:
+  htmlLabels: false
+  flowchart:
+    padding: 32
+    nodeSpacing: 60
+    rankSpacing: 65
+---
 flowchart TD
-    A[Incident and responder identity] --> B[Scoped operational reads]
+    A["Incident and<br/>responder identity"] --> B["Scoped operational<br/>reads"]
     B --> C[Verified evidence store]
-    C --> D[Durable LangGraph investigation]
-    D --> E[Bounded reasoning loop]
+    C --> D["Durable LangGraph<br/>investigation"]
+    D --> E["Bounded reasoning<br/>loop"]
     E -->|Request evidence| B
-    E -->|Diagnosis or insufficient evidence| F[Incident report]
+    E -->|Diagnosis or<br/>insufficient evidence| F[Incident report]
     F --> G[REST and GraphQL]
     F --> H[Action proposal]
-    H --> I[Policy and human approval]
+    H --> I["Policy and<br/>human approval"]
     I --> J[Resource revalidation]
-    J --> K[Conditional executor and health checks]
+    J --> K["Conditional executor<br/>and health checks"]
 ```
 
 Backend code owns identity checks, budgets, approvals and execution. Stored observations can be reused after a restart, while uncertain operations require explicit reconciliation.
