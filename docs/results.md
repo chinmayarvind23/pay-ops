@@ -4,6 +4,9 @@ The [completed 24-case model replay study](model-replay-results.md) measured
 37.5% Recall@1 and 66.7% Recall@3 for its stronger completed treatment. Those values
 are below the original targets and are not promoted as résumé achievements.
 The historical scenario notes below concern fault reproduction, not model diagnosis.
+The separate [post-hoc attribution review](attribution-review.md) awards 15/72 and
+9/55 support links against an explicit excerpt-level reference. It is not independent
+human adjudication or the original 96.4% target.
 
 ## Measured development and component results
 

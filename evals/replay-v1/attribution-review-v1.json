@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "reviewer": "Codex development review",
+  "timing": "post-hoc; predictions were already visible",
+  "scope": "conservative support-link reference review of the exact curated excerpts, not independent human adjudication",
+  "rubric": "Award direct, current evidence for the named mechanism or slice contrast. Mere compatibility, stale distractors and missing localization receive no credit. A supported link need not prove a unique cause; unlisted claims are not awarded. Refuting links are outside this supports-only reference.",
+  "reviews": [
+    {
+      "case_id": "DEP-01",
+      "evidence_id": "e1",
+      "sha256": "887a23d7d1f2a1d51ffda9a017f2f50d7f69891304e22678142336fadc9d371e",
+      "supported_causes": [
+        "PROCESSOR_UNAVAILABLE"
+      ],
+      "rationale": "Processor Deployment has zero replicas and no pods; no scheduler rejection or memory-pressure event is present."
+    },
+    {
+      "case_id": "DEP-02",
+      "evidence_id": "e1",
+      "sha256": "3f5dfed52c11252505cfb5ed340067d157ae4ba0f7b3756ba20cd5ac86e6a900",
+      "supported_causes": [],
+      "rationale": "The excerpt has processor-labelled end-to-end latency and errors, but no explicit rate-limit status and no processor-span timing to isolate latency inside that dependency. The specific combined cause is underdetermined."
+    },
+    {
+      "case_id": "DEP-03",
+      "evidence_id": "e1",
+      "sha256": "4a7ee947306da13b8d919b008c2675936662dfeab8334fe4cf3199aa668c4466",
+      "supported_causes": [
+        "DATABASE_CONNECTION_EXHAUSTION"
+      ],
+      "rationale": "Current PostgreSQL operations change from ok to connection_exhausted with SQLSTATE 53300 and HTTP 503."
+    },
+    {
+      "case_id": "DEP-04",
+      "evidence_id": "e1",
+      "sha256": "04ae02ace191fd83c6a143508d521bf341bf404e8af580a67b5138f24daa0e51",
+      "supported_causes": [
+        "CACHE_UNAVAILABLE"
+      ],
+      "rationale": "Current Redis operations change from ok to unavailable alongside HTTP 503 responses."
+    },
+    {
+      "case_id": "OOM-01",
+      "evidence_id": "e1",
+      "sha256": "f70321f334b6e37c6bbe963fdd4afd5ac5e97ea99610ca7b19bd643036362b67",
+      "supported_causes": [
+        "MEMORY_LIMIT_BELOW_WORKING_SET"
+      ],
+      "rationale": "The container is OOMKilled at a declared 128 MiB limit. This supports a limit/working-set conflict but does not isolate why memory exceeded the limit."
+    },
+    {
+      "case_id": "OOM-02",
+      "evidence_id": "e1",
+      "sha256": "2023aa73fffe89b95454204354df2b28cef3fc443d41ea1d9906c6a2483ec709",
+      "supported_causes": [
+        "MEMORY_LEAK"
+      ],
+      "rationale": "Retained bytes rise from zero to 218103808 while cgroup usage approaches the fixed 268435456-byte limit; this directly supports persistent retention growth."
+    },
+    {
+      "case_id": "OOM-02",
+      "evidence_id": "e2",
+      "sha256": "bd1299e7cd7e5b7ee44e8b0f57c1731d16162f02ab7f68116150489c2cd374c7",
+      "supported_causes": [],
+      "rationale": "The second source corroborates an OOM termination but cannot independently distinguish persistent retention, a lower memory limit or concurrent allocation. Generic startup symptoms are secondary."
+    },
+    {
+      "case_id": "OOM-03",
+      "evidence_id": "e1",
+      "sha256": "6b70bf492cc2c2ae4b699f03ee44a79625cbec28eeadc56679e08e8bf540904e",
+      "supported_causes": [
+        "CPU_THROTTLING"
+      ],
+      "rationale": "Repeated before/after cpu.stat pairs show nr_throttled and throttled_usec increasing under cpu.max 10000/100000; wall time greatly exceeds thread CPU time."
+    },
+    {
+      "case_id": "OOM-04",
+      "evidence_id": "e1",
+      "sha256": "e48de06e57cdab92100a391bc153fe475ec2e27f9e01d62495064cd170e5f10b",
+      "supported_causes": [
+        "CONCURRENCY_MEMORY_PRESSURE"
+      ],
+      "rationale": "Concurrent active allocations rise to seven at 33554432 bytes per request while cgroup usage reaches 244191232 of 268435456 bytes."
+    },
+    {
+      "case_id": "OOM-04",
+      "evidence_id": "e2",
+      "sha256": "6da8950d7a5b2e19e0f286bc1ab74c31760b68895f0b29f540cbf6f701bbb459",
+      "supported_causes": [],
+      "rationale": "The second source corroborates OOM termination but does not identify concurrent allocation by itself; that mechanism is directly visible in the separate allocation log."
+    },
+    {
+      "case_id": "PAY-01",
+      "evidence_id": "e1",
+      "sha256": "2c5df090b4713f9ef1ac8a4ddc19a493e9143667781af69f7e65c1691d57dadf",
+      "supported_causes": [
+        "PROCESSOR_SPECIFIC_DECLINES"
+      ],
+      "rationale": "For the same method and region, processor A has 16 accepted requests and B has 16 declined requests. End-to-end latency alone does not isolate processor latency."
+    },
+    {
+      "case_id": "PAY-02",
+      "evidence_id": "e1",
+      "sha256": "f272bc003a9746451314bf797f61d913b96e4ba9da3c01a801bbe6b187964715",
+      "supported_causes": [
+        "REGION_SPECIFIC_LATENCY"
+      ],
+      "rationale": "For processor A, equal counts of accepted requests have about 0.517 seconds mean in us versus 1.102 seconds in eu, directly supporting a regional latency contrast."
+    },
+    {
+      "case_id": "PAY-03",
+      "evidence_id": "e1",
+      "sha256": "de50e8df3ed1dc4843e33fbe8059a087d0debfa5975d6f9bd99fe2556caa70b9",
+      "supported_causes": [
+        "METHOD_SPECIFIC_DECLINES"
+      ],
+      "rationale": "Holding processor and region fixed, credit has 16 accepted requests and debit has 16 declined requests; this supports method-specific declines."
+    },
+    {
+      "case_id": "PAY-04",
+      "evidence_id": "e1",
+      "sha256": "e76854b6d7573c86682afd36da372ac54bfc0baa94ad69fa33a7b9913776138a",
+      "supported_causes": [],
+      "rationale": "The excerpt shows an idempotency conflict and a processor error, but no webhook event or request linkage. It does not by itself localize the conflict to webhook processing."
+    },
+    {
+      "case_id": "ROLLOUT-01",
+      "evidence_id": "e1",
+      "sha256": "0d028ddb9fdf9d5d1f73502842a3c007c220c97763e0b396d2d94faa4ed6d76f",
+      "supported_causes": [
+        "STARTUP_FAILURE"
+      ],
+      "rationale": "Container exit code 1 occurs in the same second as start, followed by CrashLoopBackOff and restart backoff events."
+    },
+    {
+      "case_id": "ROLLOUT-02",
+      "evidence_id": "e1",
+      "sha256": "086955f8102ffdc2eff1f011a87e2ead978c756388c45f962d2a054044b25175",
+      "supported_causes": [
+        "STARTUP_FAILURE"
+      ],
+      "rationale": "The process exits with code 1 three seconds after starting and startup probes fail. This supports startup failure, but no configuration validation message identifies invalid configuration."
+    },
+    {
+      "case_id": "ROLLOUT-03",
+      "evidence_id": "e1",
+      "sha256": "276993708ce6ec823bd250744f8cf30cf8d0fc3a49ad57ec2fe44d191e61cff6",
+      "supported_causes": [
+        "READINESS_PROBE_FAILURE"
+      ],
+      "rationale": "A running container with zero restarts has a current readiness-probe HTTP 404 and unready status; the earlier startup refusal is not the current failure mechanism."
+    },
+    {
+      "case_id": "ROLLOUT-04",
+      "evidence_id": "e1",
+      "sha256": "71056702f758c7dd34397a6f0d9c06ce966d27447e0d9989fadc0cd403011648",
+      "supported_causes": [],
+      "rationale": "A risk HTTP 422 translated to gateway 502 establishes request rejection, but without the request schema or contrasting version controls it does not distinguish protocol incompatibility from other validation errors."
+    },
+    {
+      "case_id": "SCHED-01",
+      "evidence_id": "e1",
+      "sha256": "eba17994505092662b80efef57b8b92ad3dfec58aabc1f9d7337b0e8e7473191",
+      "supported_causes": [
+        "INSUFFICIENT_CPU_REQUEST_CAPACITY"
+      ],
+      "rationale": "FailedScheduling and PodScheduled=False explicitly cite Insufficient cpu; this is admission capacity rather than runtime CPU throttling or eviction."
+    },
+    {
+      "case_id": "SCHED-02",
+      "evidence_id": "e1",
+      "sha256": "d1a0a7f0efecb7908ab41010d4754069506b4bc114fe8644845a0283ecd8612f",
+      "supported_causes": [
+        "INSUFFICIENT_MEMORY_REQUEST_CAPACITY"
+      ],
+      "rationale": "FailedScheduling and a Pending pod explicitly cite Insufficient memory; no kubelet eviction is shown."
+    },
+    {
+      "case_id": "SCHED-03",
+      "evidence_id": "e1",
+      "sha256": "6db3007d1661ff249cc8851cae4ba40b532cd1c0c07a8d021d702cc0fdc37c76",
+      "supported_causes": [
+        "AUTOSCALING_MAX_REPLICAS"
+      ],
+      "rationale": "The HPA has maxReplicas=1, utilization 958 versus target 50, and ScalingLimited=True with TooManyReplicas."
+    },
+    {
+      "case_id": "SCHED-04",
+      "evidence_id": "e1",
+      "sha256": "46a7f0dfe88728fa87ff27db1e0a7fe8460a2c1884131fe5b51ad1f327440415",
+      "supported_causes": [
+        "NODE_PRESSURE_EVICTION"
+      ],
+      "rationale": "An Evicted event explicitly reports node memory below the configured threshold, and MemoryPressure=True corroborates it. Scheduler-request insufficiency is a different mechanism."
+    },
+    {
+      "case_id": "TELEM-01",
+      "evidence_id": "e1",
+      "sha256": "1ee178b900c3fab4ddaf56d577928b5c530a83d72a2f19579935f87c352adb4f",
+      "supported_causes": [
+        "PROCESSOR_UNAVAILABLE"
+      ],
+      "rationale": "Processor replicas are zero while peer services remain ready. The separate CPU worker records consumption, not quota-throttle counters or causal payment impact."
+    },
+    {
+      "case_id": "TELEM-01",
+      "evidence_id": "e2",
+      "sha256": "20ae8ae17a38135086c2a04f6fe94c1978f4fbd7a3de446bc7349e2a3508295d",
+      "supported_causes": [],
+      "rationale": "CPU-time growth on the independent worker establishes activity, not CPU quota throttling, scheduler failure or a current payment root cause."
+    },
+    {
+      "case_id": "TELEM-02",
+      "evidence_id": "e1",
+      "sha256": "fe67da3f865122ff4e414b5b2e0802f3f8311182b11d8878d7a14db72913021d",
+      "supported_causes": [
+        "CACHE_UNAVAILABLE"
+      ],
+      "rationale": "Current Redis attempts report unavailable. The PostgreSQL error is explicitly archived with an older event time, so it does not support a current database outage."
+    },
+    {
+      "case_id": "TELEM-03",
+      "evidence_id": "e1",
+      "sha256": "0ea3b9a7db71c68a8ee4355885401a4af3c42ed8d5528bc3db1f2bf4388674d1",
+      "supported_causes": [
+        "PROCESSOR_LATENCY"
+      ],
+      "rationale": "Caller-side processor spans take roughly 647-699 ms, versus roughly 42-96 ms for shown peer calls. Missing downstream spans do not establish processor unavailability or rate limiting."
+    },
+    {
+      "case_id": "TELEM-04",
+      "evidence_id": "e1",
+      "sha256": "ffbe92988f838d69d98abd5c14f4ec9858a217854cbe2e1bec18e4ca3e7a45d9",
+      "supported_causes": [
+        "DATABASE_CONNECTION_EXHAUSTION"
+      ],
+      "rationale": "Current PostgreSQL attempts report connection_exhausted and SQLSTATE 53300; the separate metrics snapshot predates those failures."
+    },
+    {
+      "case_id": "TELEM-04",
+      "evidence_id": "e2",
+      "sha256": "6c80ae118a739ad5451485fd29f721d01720d287f7a7ccd8195349eee761e4eb",
+      "supported_causes": [],
+      "rationale": "The metrics capture predates current database failures and contains creation timestamps rather than current failure counters; it cannot support a current dependency diagnosis."
+    }
+  ]
+}
