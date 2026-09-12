@@ -55,7 +55,8 @@ def exporter_workload() -> tuple[bytes, TraceScope]:
                         pass
     finally:
         provider.shutdown()
-    end = datetime.now(UTC)
+    # Exporter nanoseconds round to microseconds; the synthetic emission prefix must be later.
+    end = datetime.now(UTC) + timedelta(milliseconds=1)
     prefix = end.isoformat(timespec="microseconds").replace("+00:00", "123Z")
     raw = "".join(f"{prefix} {line}\n" for line in output.getvalue().splitlines()).encode()
     return raw, TraceScope(
