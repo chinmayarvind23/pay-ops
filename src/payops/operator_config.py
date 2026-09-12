@@ -13,8 +13,7 @@ from pydantic import AwareDatetime, ConfigDict, Field, SecretStr, model_validato
 
 from payops.contracts import Contract, utc_now
 from payops.orchestrator.budget import ReasoningBudget
-from payops.orchestrator.local_llama import MODEL as LOCAL_MODEL
-from payops.orchestrator.local_llama import ZERO_PRICE
+from payops.orchestrator.local_llama import LOCAL_MODELS, ZERO_PRICE
 from payops.orchestrator.model_runtime import ModelSettings
 from payops.orchestrator.openai_adapter import STANDARD_PRICE
 from payops.orchestrator.openai_wire import MODEL, decode
@@ -195,7 +194,7 @@ def reviewed_model(model: ModelSettings, key: SecretReference | None) -> bool:
         return False
     if model.provider == "local_llama":
         return (
-            model.model == LOCAL_MODEL
+            model.model in LOCAL_MODELS
             and model.price == ZERO_PRICE
             and key is None
             and model.input_token_limit <= 4096

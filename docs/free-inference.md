@@ -1,5 +1,17 @@
 # Free local inference
 
+The adapter also supports `payops-qwen2.5-3b-instruct-q4-k-m`, using Qwen2.5's
+non-thinking chat template. Its benchmark comparison uses the same observation
+corpus as Qwen3; diagnosis-only replay timings are not live agent latency.
+
+Pinned model: `Qwen/Qwen2.5-3B-Instruct-GGUF`, revision
+`7dabda4d13d513e3e842b20f0d435c732f172cbe`, file
+`qwen2.5-3b-instruct-q4_k_m.gguf`, SHA256
+`626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d`.
+Download with `hf download` as below, launch the same loopback server with this file
+and matching alias, and set the operator model name to that alias. Review the
+[model license](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) for your use.
+
 PayOps can use a local Qwen model through llama.cpp. This path makes no paid provider calls
 and requires no inference API key. It measures actual tokenizer and generation counts;
 zero-priced accounting covers provider charges only, not electricity or existing hardware.

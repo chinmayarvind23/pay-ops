@@ -11,6 +11,7 @@ from pydantic import JsonValue
 from payops.orchestrator.local_llama import (
     MODEL,
     ORIGIN,
+    QWEN25_MODEL,
     ZERO_PRICE,
     LocalLlamaAdapter,
     framed_prompt,
@@ -67,7 +68,7 @@ class Wire:
                         "hypotheses": [],
                     }
                 ),
-                "model": MODEL,
+                "model": json.loads(request.content)["model"],
                 "stop": True,
                 "truncated": False,
                 "stop_type": "eos",
@@ -109,6 +110,25 @@ def test_local_model_runtime_uses_measured_zero_price_usage() -> None:
             result.provider_details is not None and result.provider_details.provider_requests == 2
         )
         assert [request.url.path for request in wire.calls] == ["/tokenize", "/completion"]
+    finally:
+        runtime.close()
+        adapter.close()
+
+
+def test_instruction_model_uses_its_own_template_and_identity() -> None:
+    """Qwen2.5 must never receive Qwen3 thinking markers or be reported as the other model."""
+    wire = Wire()
+    adapter = LocalLlamaAdapter(
+        settings(model=QWEN25_MODEL), test_transport=httpx.MockTransport(wire)
+    )
+    runtime = ModelRuntime(adapter, lambda: True)
+    try:
+        result = runtime.observe(runtime.prepare("Host", "Facts"), frozenset(), frozenset())
+        assert result.status == "REFUSED"
+        token_request = json.loads(wire.calls[0].content)
+        assert token_request["content"].endswith("<|im_start|>assistant\n")
+        assert "<think>" not in token_request["content"]
+        assert json.loads(wire.calls[1].content)["model"] == QWEN25_MODEL
     finally:
         runtime.close()
         adapter.close()

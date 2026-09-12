@@ -17,13 +17,16 @@ from payops.orchestrator.reasoning import ProviderUsage, ReasoningDecision, Text
 
 ORIGIN = "http://127.0.0.1:18089"
 MODEL = "payops-qwen3-1.7b-q4-k-m"
+QWEN25_MODEL = "payops-qwen2.5-3b-instruct-q4-k-m"
+LOCAL_MODELS = frozenset({MODEL, QWEN25_MODEL})
 ZERO_PRICE = TextPrice(input_nano_usd=0, cached_input_nano_usd=0, output_nano_usd=0)
 
 
-def framed_prompt(messages: tuple[BaseMessage, BaseMessage]) -> str:
+def framed_prompt(messages: tuple[BaseMessage, BaseMessage], *, model: str = MODEL) -> str:
     """Pin Qwen's observed non-thinking template and reject injected special-token delimiters."""
     if (
-        len(messages) != 2
+        model not in LOCAL_MODELS
+        or len(messages) != 2
         or type(messages[0]) is not SystemMessage
         or type(messages[1]) is not HumanMessage
     ):
@@ -44,7 +47,8 @@ def framed_prompt(messages: tuple[BaseMessage, BaseMessage]) -> str:
         + parts[0]
         + "<|im_end|>\n<|im_start|>user\n"
         + parts[1]
-        + "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        + "<|im_end|>\n<|im_start|>assistant\n"
+        + ("<think>\n\n</think>\n\n" if model == MODEL else "")
     )
 
 
@@ -58,7 +62,7 @@ class LocalLlamaAdapter:
         self.settings = ModelSettings.model_validate_json(settings.model_dump_json())
         if (
             settings.provider != "local_llama"
-            or settings.model != MODEL
+            or settings.model not in LOCAL_MODELS
             or settings.mode != "provider"
             or settings.token_accounting != "provider_ceiling"
             or settings.price != ZERO_PRICE
@@ -80,7 +84,7 @@ class LocalLlamaAdapter:
 
     def count_tokens(self, messages: tuple[BaseMessage, BaseMessage]) -> int:
         """Prepare reserves a ceiling locally; exact server tokenization follows the SQL claim."""
-        framed_prompt(messages)
+        framed_prompt(messages, model=self.settings.model)
         return self.settings.input_token_limit
 
     def invoke(self, messages: tuple[BaseMessage, BaseMessage], output_limit: int) -> AIMessage:
@@ -125,7 +129,7 @@ class LocalLlamaAdapter:
             deadline = monotonic() + self.settings.timeout_seconds
             if type(output_limit) is not int or output_limit != self.settings.output_token_limit:
                 raise ValueError("local output cap differs from configured bound")
-            prompt = framed_prompt(messages)
+            prompt = framed_prompt(messages, model=self.settings.model)
             started = monotonic()
             raw = self._post(
                 "/tokenize",
@@ -148,7 +152,7 @@ class LocalLlamaAdapter:
                 "/completion",
                 {
                     "prompt": tokens,
-                    "model": MODEL,
+                    "model": self.settings.model,
                     "n_predict": output_limit,
                     "temperature": 0,
                     "seed": 0,
@@ -166,7 +170,7 @@ class LocalLlamaAdapter:
                 request_shape_sha256=sha256(prompt.encode()).hexdigest(),
                 normalized_refusal=False,
             )
-            return validated_message(result, details, output_limit)
+            return validated_message(result, details, output_limit, model=self.settings.model)
         finally:
             self._slot.release()
 
@@ -185,12 +189,15 @@ class LocalLlamaAdapter:
         return message.provider_details()
 
 
-def validated_message(raw: dict[str, JsonValue], details: ProviderDetails, limit: int) -> AIMessage:
+def validated_message(
+    raw: dict[str, JsonValue], details: ProviderDetails, limit: int, *, model: str = MODEL
+) -> AIMessage:
     """Truncated, wrong-model and inconsistent usage cannot count as a completed model result."""
     value = decode(json.dumps(raw).encode(), 131072)
     content = value.get("content")
     if (
-        value.get("model") != MODEL
+        model not in LOCAL_MODELS
+        or value.get("model") != model
         or value.get("stop") is not True
         or value.get("truncated") is not False
         or value.get("stop_type") != "eos"
