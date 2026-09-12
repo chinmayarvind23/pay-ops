@@ -23,6 +23,8 @@ The local implementation runs against a five-service synthetic payment system in
 
 [Results and evidence scope](docs/results.md) distinguish those measurements from the release targets: 24 cases, 83.3% Recall@1, 91.7% Recall@3, 96.4% attribution accuracy, 2.9-minute median investigation, 4.6-second p95 model-step latency and $0.07 average provider cost. The 11.8-minute human baseline also requires measurement. No paid-provider quality, latency or cost result is claimed yet.
 
+Final local verification: **2,465 tests passed**, with every configured module coverage floor passing (85% generally; 95% for critical modules). GraphQL and Slack are included in this full run. This is local verification, not a claim about hosted CI.
+
 ## What works
 
 - Fixed Kubernetes, Prometheus, payment and Elasticsearch reads with bounded output, current authorization and incident/service scope checks.
@@ -90,7 +92,7 @@ The public replay runs on a free Hugging Face Static Space. An optional [GCP Ter
 - [Evidence model](docs/evidence-model.md), [reasoning](docs/reasoning.md) and [security](docs/security.md)
 - [Scenario catalog](docs/scenarios.md), [frozen release labels](evals/golden/README.md) and [benchmark methodology](docs/benchmark-methodology.md)
 - [Results](docs/results.md), [commands](docs/commands.md) and [deployment plan](docs/deployment.md)
-- [Project article](docs/blog.md), [résumé bullets](docs/resume.md) and [GraphQL/Slack setup](docs/graphql-and-slack.md)
+- [Project article](docs/blog.md), [rÃ©sumÃ© bullets](docs/resume.md) and [GraphQL/Slack setup](docs/graphql-and-slack.md)
 
 Operator journals, failed runs, source hashes, review notes, interview material and the blog draft live outside the code repository in `../resources/pay_ops`. They preserve private runtime evidence separately from source and the published sanitized public demo.
 
