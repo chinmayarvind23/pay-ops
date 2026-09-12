@@ -14,4 +14,8 @@ The default development API and public static replay have no operational broker.
 `FAILED` with a resulting version can mean the patch was applied but readiness timed out.
 `UNKNOWN` means a transport/postcheck outcome was ambiguous. Neither state permits automatic
 redispatch or rollback. Controller readiness does not establish payment-level recovery.
-Synthetic traffic pause is schema-defined but not enabled by this Deployment executor.
+`TrafficControl` and `ManagedTrafficDriver` implement the separate synthetic pause path.
+The host registers a source UID and binds its service and mode to the driver. Each attempt
+atomically checks the SQL admission gate after acquiring a concurrency slot. Pause closes
+future admissions across workers; already admitted requests may drain. The original scenario
+drivers remain unmanaged unless explicitly wired to this gate.

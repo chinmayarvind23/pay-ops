@@ -6,7 +6,7 @@ import random
 import shutil
 import socket
 import subprocess
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import asynccontextmanager, contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -38,6 +38,7 @@ Outcome = Literal[
     "timed_out",
     "cancelled",
     "failed",
+    "paused",
 ]
 
 
@@ -266,6 +267,7 @@ async def record_attempt(
     workload: Workload,
     semaphore: asyncio.Semaphore,
     records: dict[int, AttemptRecord],
+    admission: Callable[[TrafficRole], bool] | None = None,
 ) -> None:
     """A cancelled queued attempt retains no invented start time, HTTP status or latency."""
     started: datetime | None = None
@@ -277,6 +279,9 @@ async def record_attempt(
     error: str | None = None
     try:
         async with semaphore:
+            if admission is not None and not await asyncio.to_thread(admission, workload.role):
+                outcome = "paused"
+                return
             started, clock = _now(), perf_counter()
             async with asyncio.timeout(workload.request_timeout_seconds):
                 outcome, status, result, conflict = await _response(client, planned, workload.role)
@@ -317,12 +322,18 @@ class TrafficDriver:
     """An operator harness owns the forward; injected transports are explicitly fixture replay."""
 
     def __init__(
-        self, kubeconfig: Path, output: Path, transport: httpx.AsyncBaseTransport | None = None
+        self,
+        kubeconfig: Path,
+        output: Path,
+        transport: httpx.AsyncBaseTransport | None = None,
+        *,
+        admission: Callable[[TrafficRole], bool] | None = None,
     ) -> None:
         """Paths identify trusted operator resources, not model-selected network destinations."""
         self._kubeconfig = kubeconfig.resolve()
         self._output = output.resolve()
         self._transport = transport
+        self._admission = admission
 
     @asynccontextmanager
     async def _client(self, workload: Workload) -> AsyncGenerator[httpx.AsyncClient]:
@@ -389,12 +400,16 @@ class TrafficDriver:
         async with self._client(workload) as client:
             if probe:
                 for item in plan:
-                    await record_attempt(client, item, workload, semaphore, records)
+                    await record_attempt(
+                        client, item, workload, semaphore, records, self._admission
+                    )
             else:
                 async with asyncio.TaskGroup() as tasks:
                     for item in plan:
                         tasks.create_task(
-                            record_attempt(client, item, workload, semaphore, records)
+                            record_attempt(
+                                client, item, workload, semaphore, records, self._admission
+                            )
                         )
 
     async def _execute(

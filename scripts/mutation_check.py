@@ -809,6 +809,24 @@ EXECUTOR_MUTATIONS = (
         EXECUTOR_TESTS,
     ),
 )
+TRAFFIC_TESTS = "tests/unit/test_traffic_control.py"
+TRAFFIC_CONTROL = "src/payops/remediation/traffic_control.py"
+TRAFFIC_MUTATIONS = (
+    Mutation(
+        "traffic_pause_effect",
+        TRAFFIC_CONTROL,
+        ".values(paused=True, version=TrafficRow.version + 1)",
+        ".values(paused=False, version=TrafficRow.version + 1)",
+        TRAFFIC_TESTS,
+    ),
+    Mutation(
+        "traffic_pause_version",
+        TRAFFIC_CONTROL,
+        "TrafficRow.version.cast(String) == action.expected_version,",
+        "True,",
+        TRAFFIC_TESTS,
+    ),
+)
 MUTATIONS = (
     CORE_MUTATIONS
     + POLICY_MUTATIONS
@@ -818,6 +836,7 @@ MUTATIONS = (
     + REGISTRY_MUTATIONS
     + GRAPH_BOUNDARY_MUTATIONS
     + EXECUTOR_MUTATIONS
+    + TRAFFIC_MUTATIONS
 )
 
 
@@ -971,7 +990,7 @@ def main() -> int:
     selection = (
         f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} "
         f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS} {BUDGET_TESTS} "
-        f"{REGISTRY_TESTS} {EXECUTOR_TESTS}"
+        f"{REGISTRY_TESTS} {EXECUTOR_TESTS} {TRAFFIC_TESTS}"
     )
     baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result

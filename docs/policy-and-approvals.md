@@ -55,7 +55,7 @@ and namespace `payops-sandbox`; ledger is excluded.
 Restart adds a canonical action-digest annotation. Scale accepts 1–3 replicas. Image rollback
 changes only the single `sandbox` container image to the operator-approved `@sha256` reference.
 It does not restore prior environment variables or an arbitrary prior manifest. Traffic pause
-requires a separate admission-control backend and is rejected by this executor.
+uses a separate SQL admission-control backend and is rejected by the Deployment executor.
 
 One JSON Patch tests UID, resourceVersion and the entire prior spec before changing it.
 The executor never refreshes a stale approved precondition or retries a write. A bounded
@@ -66,3 +66,17 @@ An applied patch whose rollout misses the deadline returns `FAILED` with a resul
 Ambiguous transport or unexpected state retains `UNKNOWN` in the broker. Both are terminal
 and require operator investigation; neither automatically rolls back or dispatches again.
 The public replay remains disconnected from this operational host.
+
+## Synthetic traffic pause
+
+The host registers a source in `TrafficControl` and supplies its UID, service and mode to
+`ManagedTrafficDriver`. Its immutable workload plan records the control UID. The broker sees
+a `Traffic` resource whose version changes on pause. Admission increments a counter with an
+atomic conditional SQL update; pause sets the closed state and increments its version in the
+same table. Independent workers observe the committed state, without a cached enabled flag.
+
+Each attempt checks admission after acquiring its concurrency slot. A rejected admission is
+recorded as `paused` with no start time, latency or HTTP status. Requests admitted before the
+pause may complete or be cancelled. A database failure stops dispatch. There is no model-facing
+resume action. This gate controls only explicitly managed synthetic sources; it cannot stop
+arbitrary external clients or historical unmanaged scenario drivers.

@@ -12,13 +12,14 @@ from payops.contracts import IncidentCreate, IncidentReport, utc_now
 from payops.evidence.artifacts import JSON_OBJECT, ArtifactStore
 from payops.evidence.normalize import Observation, normalize
 from payops.memory.store import IncidentStore
-from payops.policy.contracts import ACTION, Action, Principal, Role
+from payops.policy.contracts import ACTION, Action, PauseAction, Principal, Role
 from payops.policy.engine import action_digest
 from payops.remediation.backend import OperationalBackend
 from payops.remediation.broker import RemediationBroker
 from payops.remediation.deployment import plan_deployment, rollout_ready
 from payops.remediation.local_executor import LocalDeploymentExecutor
 from payops.remediation.store import ActionStore
+from payops.remediation.traffic_control import TrafficControl
 from payops.scenarios.contracts import JsonObject, object_items, object_value
 
 
@@ -373,3 +374,37 @@ def test_rollback_rejects_extra_containers() -> None:
     proposal = action("rollback_deployment", revision_sha256="a" * 64)
     with pytest.raises(PermissionError, match="CONTAINER_DENIED"):
         plan_deployment(proposal, current, action_digest(proposal), {"payments-api": "uid-1"}, {})
+
+
+def test_operational_backend_routes_pause_without_kubernetes(tmp_path: Path) -> None:
+    """Pause uses its own SQL resource authority and never enters the Deployment executor."""
+    command = Command()
+    runtime = executor(tmp_path, command)
+    artifacts = ArtifactStore(tmp_path / "artifacts")
+    incidents = IncidentStore(f"sqlite:///{tmp_path / 'incidents.db'}")
+    control = TrafficControl(f"sqlite:///{tmp_path / 'traffic.db'}")
+    try:
+        incident = incidents.create(IncidentCreate(title="Traffic control"), None)
+        uid = control.register("payments-api", "local_kind")
+        pause = PauseAction(
+            action_type="pause_synthetic_traffic",
+            incident_id=incident.incident_id,
+            namespace="payops-sandbox",
+            service="payments-api",
+            resource_uid=uid,
+            expected_version="0",
+            evidence_ids=("evidence",),
+        )
+        backend = OperationalBackend(lambda _: None, incidents, artifacts, runtime, control)
+        assert backend.context(pause, "unknown").resource.kind == "Traffic"
+        assert backend.execute(pause, action_digest(pause)).outcome == "SUCCEEDED"
+        assert not control.admit(uid, "payments-api", "local_kind")
+        absent = OperationalBackend(lambda _: None, incidents, artifacts, runtime)
+        with pytest.raises(PermissionError, match="BACKEND_UNAVAILABLE"):
+            absent.context(pause, "unknown")
+        with pytest.raises(PermissionError, match="BACKEND_UNAVAILABLE"):
+            absent.execute(pause, action_digest(pause))
+        assert command.calls == []
+    finally:
+        incidents.close()
+        control.close()
