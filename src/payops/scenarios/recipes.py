@@ -94,7 +94,9 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
         if item.get("name") == "PAYOPS_SANDBOX_CONFIG":
             settings = SandboxConfig.model_validate_json(str(item.get("value")))
             if settings.cpu_rounds or settings.concurrency_memory or settings.dependency != "none":
-                raise ValueError("active synthetic workload cannot become a healthy baseline")
+                raise ValueError(
+                    "active CPU, memory or dependency workload cannot become a healthy baseline"
+                )
     return deepcopy(spec)
 
 

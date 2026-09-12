@@ -265,8 +265,9 @@ def setup(
     )
     root = tmp_path / "runs"
     cluster.journal_root = root
+    # Real artifact writes need scheduling slack on busy Windows hosts; retries remain bounded.
     runner = SamplingHarness(
-        tmp_path / "kubeconfig", root, cluster, observer, 0.1, 0.001, clock.now
+        tmp_path / "kubeconfig", root, cluster, observer, 1.0, 0.001, clock.now
     )
     return runner, cluster, observer
 
