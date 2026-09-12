@@ -47,6 +47,8 @@ class ConcurrencyRun:
 class ConcurrencyHarness(LocalScenarioRunner):
     """An operator-owned experiment with a cluster latch and exact-state recovery."""
 
+    runtime_image_digest = RUNTIME_IMAGE_DIGEST
+
     def __init__(
         self,
         kubeconfig: Path,
@@ -98,7 +100,7 @@ class ConcurrencyHarness(LocalScenarioRunner):
             if len(statuses) != 1:
                 raise ValueError("payments container multiplicity changed")
             image = str(statuses[0].get("imageID", ""))
-            if image.split("@")[-1] != RUNTIME_IMAGE_DIGEST:
+            if image.split("@")[-1] != self.runtime_image_digest:
                 raise ValueError("payments worker image differs from calibrated import")
         identities = protocol_identities(
             state,

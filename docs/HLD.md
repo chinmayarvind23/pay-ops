@@ -120,3 +120,8 @@ Dependency scenarios reuse the local TLS data plane with bounded read-only calls
 from synthetic payments. Observation conditions change evidence freshness or add
 archived distractions separately from the actual failed dependency. No ledger
 mutation or public-demo credential is introduced. Live qualification is pending.
+
+
+### Shared dependency scenario lifecycle
+
+The operator-only dependency harness reuses the existing payments lifecycle, process ownership checks and recovery latch. DEP-03/04 and TELEM-02/04 share three-request healthy/fault/recovered controls on one enabled payments process. PostgreSQL pressure uses four owned read-only sessions at a dedicated role limit; Redis availability uses an atomic one-to-zero replica transition. These are local synthetic variants. Live qualification is recorded separately from implementation.
