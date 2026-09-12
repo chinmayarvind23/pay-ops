@@ -216,3 +216,34 @@ HTTP windows, exact traffic plans and original-state restoration. Evidence:
 the repository. The total is **23/24** local cases. Actual node-pressure eviction
 (SCHED-04) remains; model quality, provider cost/latency and paired human timing
 are separate unfinished measurements.
+
+
+## SCHED-04: isolated kubelet memory-pressure eviction
+
+Qualified at `f658e0c`, run `5ce1d4bee12c4af7b2488a89413f10dc`.
+A dedicated one-node kind cluster ran a healthy synthetic webhook before its
+memory reserve was raised 256Mi above observed availability. The kubelet emitted
+an owned Evicted event and DisruptionTarget/TerminationByKubelet memory condition,
+terminated the victim, and reported MemoryPressure=True. Captured available memory
+was 15,575,072,768 bytes below the configured 15,757,451,264-byte threshold.
+This is reserve-induced local eviction; it does not claim host-wide exhaustion.
+
+The application exited cleanly and Kubernetes retained phase Succeeded. Acceptance
+therefore required the explicit kubelet disruption cause, matching event, terminated
+container, effective config and memory signal; Succeeded alone is insufficient.
+Original kubelet bytes, node health and an accepted replacement webhook request
+were restored before the owned namespace was removed. All five main-sandbox pod
+identities, processes and deployment specs remained unchanged.
+
+Post-run review checked 27 artifact hashes, 140 source/dependency hashes, original
+and effective configuration, current event/signal timestamps and exact recovery.
+Evidence: `chunk-16-eviction-v4`; verifier result:
+`audit/evidence/eviction-live-verification.json` outside the repository. Earlier
+attempts remain unqualified. One needed verified manual configuration restoration
+because Windows text-mode stdin converted LF to CRLF; binary stdin corrected that
+transport issue before the fresh accepted run.
+
+**All 24 local scenarios have now qualified.** These are documented synthetic
+variants, not production incidents. The complete model benchmark, evidence-attribution
+measurement, operational executor and paired human timing study remain unfinished.
+No model quality, provider cost or latency target is inferred from scenario coverage.
