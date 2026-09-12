@@ -141,7 +141,7 @@ class EvictionGateway(ConcurrencyGateway):
         process = subprocess.Popen(
             (*self._prefix, "port-forward", "pod/" + name, "18084:8080", "--address", "127.0.0.1"),
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         try:
@@ -163,7 +163,24 @@ class EvictionGateway(ConcurrencyGateway):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=5)
-        raise TimeoutError("victim HTTP forward unavailable")
+        diagnostic = process.stderr.read(8192).decode(errors="replace") if process.stderr else ""
+        return {
+            "acquisition_error": "victim HTTP forward unavailable",
+            "forward_error": diagnostic,
+            "pod": self.pod(recovered),
+            "logs": bounded_read(
+                (
+                    *self._prefix,
+                    "logs",
+                    name,
+                    "--container=sandbox",
+                    "--tail=40",
+                    "--limit-bytes=16384",
+                ),
+                16384,
+                10,
+            ).decode(errors="replace"),
+        }
 
     def remove_namespace(self, expected: JsonObject, run_id: str) -> None:
         """Delete the created namespace under UID and version preconditions."""
