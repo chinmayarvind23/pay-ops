@@ -42,7 +42,7 @@ The technology list in `resources/pay_ops/PROJECT_PLAN.md` is broader than the r
 | TypeScript / Bun | Built and tested static replay in [apps/web](../apps/web/package.json); no privileged browser access |
 | Google Identity Platform | [Firebase Admin token adapter](../src/payops/auth/firebase.py) and backend grant checks; provider responses tested, enterprise SAML tenant configuration not deployed |
 | GCP / Terraform | Disabled-by-default GKE/VPC/bucket/Pub/Sub [foundation](../infra/terraform/gcp/main.tf), schema validation and mock-provider plans |
-| Cloud Logging / Cloud Monitoring | Planned managed observability destinations; current evidence comes from Kubernetes logs, Prometheus and local OTel. No dedicated cloud ingestion adapter is claimed |
+| Cloud Logging / Cloud Monitoring | [Fixed-scope SDK reads](cloud-observability.md) ingest container logs and native Kubernetes restart counters into the standard evidence contract; bounded pages, returned scope and timestamps tested locally, no hosted reads |
 | Pub/Sub / GCS | Optional Terraform resources exist; [GCS archive transport](gcs-archive.md) verifies create-once uploads and local restore through the real SDK. The [Pub/Sub worker](pubsub-worker.md) dispatches stored incident references through durable investigation and commits reports before acknowledgement; hosted consumption is not claimed |
 | AWS Lightsail | [Self-service replay deployment instructions](../infra/terraform/aws-lightsail/README.md), as requested; no AWS resources created |
 | Hugging Face Spaces | Public free Static Space serving the sanitized replay and compiled frontend |

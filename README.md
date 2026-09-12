@@ -23,7 +23,7 @@ The local implementation runs against a five-service synthetic payment system in
 
 [Results and evidence scope](docs/results.md) distinguish those measurements from the release targets: 24 cases, 83.3% Recall@1, 91.7% Recall@3, 96.4% attribution accuracy, 2.9-minute median investigation, 4.6-second p95 model-step latency and $0.07 average provider cost. The 11.8-minute human baseline also requires measurement. No paid-provider quality, latency or cost result is claimed yet.
 
-Final local verification: **2,465 tests passed**, with every configured module coverage floor passing (85% generally; 95% for critical modules). GraphQL and Slack are included in this full run. This is local verification, not a claim about hosted CI.
+Core release verification: **2,465 tests passed**, with every configured module coverage floor passing (85% generally; 95% for critical modules). GraphQL and Slack are included in this full run. The subsequent optional cloud adapters passed a combined 50-test cloud/graph subset (100% GCS and observability coverage, 95% queue-worker coverage). This is local verification, not a claim about hosted CI.
 
 ## What works
 
@@ -84,7 +84,7 @@ The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell c
 
 The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
 
-The public replay runs on a free Hugging Face Static Space. An optional [GCP Terraform foundation](infra/terraform/gcp/README.md) defines GKE, networking, private evidence storage and Pub/Sub; it is disabled by default and has not been provisioned. Cloud SQL/Memorystore and cloud worker/storage adapters remain extensions. [LangSmith receipt export](docs/telemetry.md) is implemented and tested without hosted ingestion. AWS has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. See [exact stack coverage](docs/stack-status.md). [Authenticated GraphQL and opt-in Slack notifications](docs/graphql-and-slack.md) are implemented; enterprise SAML tenant configuration remains an extension. The terminal demo is recorded.
+The public replay runs on a free Hugging Face Static Space. An optional [GCP Terraform foundation](infra/terraform/gcp/README.md) defines GKE, networking, private evidence storage and Pub/Sub; it is disabled by default and has not been provisioned. Cloud SQL/Memorystore remain managed deployment options. [GCS archival](docs/gcs-archive.md), [Pub/Sub investigation delivery](docs/pubsub-worker.md), and [Cloud Logging/Monitoring reads](docs/cloud-observability.md) are implemented with local contract tests; hosted validation is not claimed. [LangSmith receipt export](docs/telemetry.md) is implemented and tested without hosted ingestion. AWS has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. See [exact stack coverage](docs/stack-status.md). [Authenticated GraphQL and opt-in Slack notifications](docs/graphql-and-slack.md) are implemented; enterprise SAML tenant configuration remains an extension. The terminal demo is recorded.
 
 ## Documentation
 
