@@ -253,7 +253,7 @@ enable capture and use Recreate; only the CPU limit differs between 500m control
 and 100m restriction. Memory, resource requests and peer settings are preserved.
 Stage aggregation requires distinct sequential samples, matching actual kernel
 quotas and positive CPU consumption. Both control and recovered mean work times
-must be at most one second. Restricted mean time must be 1–4.5 seconds and at least
+must be at most one second. Restricted mean time must be 1â€“4.5 seconds and at least
 twice each control; mean throttled time must exceed 0.5 seconds and three times
 each control. These thresholds come from the retained prequalification calibration
 and must not be tuned against a qualification run. They measure work duration,
@@ -369,7 +369,7 @@ kubectl-log parser (256KiB/2000lines, at most42workload records). Runtime timest
 must agree with the application's UTC within1second. Container start/end times
 bound the records; monotonic timestamps enforce order and the35second duration
 ceiling. A release control requires all40steps plus terminal release. Retention
-requires5�39successive steps, matching8Mi increments and at least64Mi of observed
+requires5–39successive steps, matching8Mi increments and at least64Mi of observed
 kernel memory growth. Declared retained bytes alone cannot pass. Mixed modes/PIDs,
 duplicate starts, stale records and premature release reject.
 
@@ -823,3 +823,6 @@ separate from primary-cause labels. Live qualification and cleanup remain requir
 ### Eviction implementation
 
 `EvictionGateway` pins kind-payops-eviction, its sole Docker node and payops-eviction namespace. It reads only the fixed kubelet config path; no certificate contents are read. `EvictionHarness` journals original config/container identity before creating a token-free webhook Pod. Treatment changes evictionHard.memory.available, uses a one-second pressure transition period and enforceNodeAllocatable=[none]. Acceptance joins the owned Pod Failed/Evicted memory status, its Evicted event, node MemoryPressure=True, effective configz threshold and availableBytes below that threshold. OOMKilled, missing events and foreign Pod UIDs are rejected. Configuration and namespace cleanup are independently attempted under the shared latch. Raw failed acquisition observations survive kubelet restarts.
+
+
+Eviction acceptance revision: on Kubernetes v1.35.8 the first pressure run retained an Evicted event and DisruptionTarget=True/TerminationByKubelet memory message, but the gracefully exited container left phase Succeeded. This failed the original phase-only rule and remains unqualified. A fresh run may qualify either canonical Failed/Evicted or a terminal pod with the explicit memory disruption condition and terminated non-OOM container. Both forms still require the matching owned Evicted event, current MemoryPressure condition, effective threshold and memory signal. The cause is never inferred from Succeeded alone. Source: https://raw.githubusercontent.com/kubernetes/kubernetes/v1.35.8/pkg/kubelet/eviction/eviction_manager.go (memory pressure assigns TerminationByKubelet and emits the Evicted event).

@@ -62,12 +62,35 @@ def victim_pod(run_id: str, recovered: bool = False) -> JsonObject:
 
 
 def evicted(pod: JsonObject, original: JsonObject) -> bool:
-    """Require kubelet's owned Failed/Evicted memory outcome, not OOMKilled or deletion."""
+    """Require an owned terminal memory eviction, including the explicit kubelet disruption form."""
     status = object_value(pod.get("status", {}))
-    return (
-        object_value(pod["metadata"]).get("uid") == object_value(original["metadata"]).get("uid")
-        and status.get("phase") == "Failed"
-        and status.get("reason") == "Evicted"
-        and "memory" in str(status.get("message", "")).lower()
-        and "low on resource" in str(status.get("message", "")).lower()
+    if object_value(pod["metadata"]).get("uid") != object_value(original["metadata"]).get("uid"):
+        return False
+    if status.get("phase") == "Failed" and status.get("reason") == "Evicted":
+        return memory_eviction_message(status.get("message"))
+    if status.get("phase") not in {"Succeeded", "Failed"}:
+        return False
+    conditions = object_items(status.get("conditions", []))
+    statuses = object_items(status.get("containerStatuses", []))
+    termination = (
+        object_value(object_value(statuses[0].get("state", {})).get("terminated", {}))
+        if len(statuses) == 1
+        else {}
     )
+    return (
+        bool(termination.get("finishedAt"))
+        and termination.get("reason") != "OOMKilled"
+        and any(
+            row.get("type") == "DisruptionTarget"
+            and row.get("status") == "True"
+            and row.get("reason") == "TerminationByKubelet"
+            and memory_eviction_message(row.get("message"))
+            for row in conditions
+        )
+    )
+
+
+def memory_eviction_message(value: object) -> bool:
+    """An unrelated kubelet disruption cannot substitute the memory-pressure cause."""
+    message = str(value).lower()
+    return "memory" in message and "low on resource" in message

@@ -95,3 +95,28 @@ def test_failed_reads_or_http_status_alone_cannot_prove_recovery() -> None:
     assert not node_recovered({"acquisition_error": "CalledProcessError"})
     assert not eviction_proof({"acquisition_error": "CalledProcessError"}, {}, "")
     assert not webhook_healthy({"status": 200, "body": {"status": "accepted"}})
+
+
+def test_clean_exit_requires_explicit_memory_disruption_and_termination() -> None:
+    """Succeeded after a graceful shutdown qualifies only with kubelet's explicit memory cause."""
+    original: JsonObject = {"metadata": {"uid": "owned"}}
+    status: JsonObject = {
+        "phase": "Succeeded",
+        "conditions": [
+            {
+                "type": "DisruptionTarget",
+                "status": "True",
+                "reason": "TerminationByKubelet",
+                "message": "The node was low on resource: memory.",
+            }
+        ],
+        "containerStatuses": [
+            {"state": {"terminated": {"finishedAt": "2026-09-12T00:00:00Z", "reason": "Completed"}}}
+        ],
+    }
+    pod: JsonObject = {"metadata": {"uid": "owned"}, "status": status}
+    assert evicted(pod, original)
+    status["containerStatuses"] = []
+    assert not evicted(pod, original)
+    status["conditions"] = []
+    assert not evicted(pod, original)
