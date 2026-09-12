@@ -792,3 +792,19 @@ completion. Neither correction changes the frozen CPU demand thresholds.
 
 Source c59892c passed the full live experiment and post-run evidence review.
 See docs/results.md and external audit/evidence/hpa-live-verification.json.
+
+
+The dependency scenario group uses the existing TLS-enabled local PostgreSQL and
+Redis services. The synthetic payment path now supports a deployment-only dependency
+profile: one constant SELECT 1 through a dedicated read-only PostgreSQL identity,
+or PING through Redis's existing probe-only identity. Destinations, commands, TLS
+verification and timeout bounds are fixed. HTTP samples cannot configure clients.
+A failure prevents synthetic payment completion and releases its idempotency claim;
+accepted replay still avoids duplicate work. Default service behavior has no new
+network dependency or extra dependency span.
+
+The same image contains two observation conditions. The cache scenario can emit an
+explicitly archived synthetic database error dated one day earlier. The database
+scenario can serve a real previous metrics snapshot for60seconds, retaining its
+original timestamp in both a gauge and response header. These conditions are kept
+separate from primary-cause labels. Live qualification and cleanup remain required.

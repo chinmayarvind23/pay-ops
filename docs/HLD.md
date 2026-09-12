@@ -114,3 +114,9 @@ Autoscaling qualification now correlates controller cap status, independent CPU
 metrics, actual replica identities and per-request kernel work. Capacity remains
 limited at two replicas; the experiment demonstrates real scale-out and restores
 the original workload afterward. Local qualification now covers18of24cases.
+
+
+Dependency scenarios reuse the local TLS data plane with bounded read-only calls
+from synthetic payments. Observation conditions change evidence freshness or add
+archived distractions separately from the actual failed dependency. No ledger
+mutation or public-demo credential is introduced. Live qualification is pending.

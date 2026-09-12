@@ -8,14 +8,16 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from opentelemetry import propagate, trace
 from opentelemetry.trace import SpanKind
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST
 
 from payops.sandbox.client import call_peer
 from payops.sandbox.concurrency_memory import ConcurrentMemory
 from payops.sandbox.cpu import CpuWork
+from payops.sandbox.dependencies import DependencyGate
 from payops.sandbox.models import RiskSampleV2, Role, Sample, SandboxConfig, SimulationResult
 from payops.sandbox.runtime import FaultState, SampleStore
 from payops.sandbox.telemetry import SandboxMetrics
+from payops.sandbox.telemetry_conditions import MetricSnapshot, emit_archived_error
 
 
 def decode_sample(payload: Sample | RiskSampleV2, role: Role, config: SandboxConfig) -> Sample:
@@ -47,6 +49,7 @@ async def execute_sample(
     transport: httpx.AsyncBaseTransport | None,
     cpu: CpuWork,
     memory: ConcurrentMemory,
+    dependency: DependencyGate | None = None,
 ) -> SimulationResult:
     """Apply trusted fault state before executing the role's bounded simulation."""
     declined = await faults.apply(sample)
@@ -57,6 +60,11 @@ async def execute_sample(
         trace.get_current_span().set_attribute("sandbox.cpu.rounds", config.cpu_rounds)
         trace.get_current_span().set_attribute("sandbox.cpu.thread_seconds", consumed)
     if role == "payments" and not declined:
+        if dependency is not None and dependency.kind != "none":
+            with trace.get_tracer("payops.sandbox").start_as_current_span(
+                "sandbox.dependency." + dependency.kind, kind=SpanKind.CLIENT
+            ):
+                await dependency.check(sample.sample_id)
         return await payment_path(sample, config, transport)
     return SimulationResult(
         sample_id=sample.sample_id, role=role, status="declined" if declined else "accepted"
@@ -72,18 +80,27 @@ async def process_sample(
     transport: httpx.AsyncBaseTransport | None,
     cpu: CpuWork,
     memory: ConcurrentMemory,
+    dependency: DependencyGate | None = None,
 ) -> SimulationResult:
     """Reservations protect each role independently; failure frees only its local slot."""
     cached = store.reserve(sample)
     if cached is not None:
         return cached
     try:
-        result = await execute_sample(role, sample, config, faults, transport, cpu, memory)
+        result = await execute_sample(
+            role, sample, config, faults, transport, cpu, memory, dependency
+        )
         store.complete(sample.sample_id, result)
         return result
     except BaseException:
         store.abandon(sample.sample_id)
         raise
+
+
+def validate_profile(role: Role, settings: SandboxConfig) -> None:
+    """Only payments owns the optional dependency and concurrent-memory fault surfaces."""
+    if role != "payments" and (settings.concurrency_memory or settings.dependency != "none"):
+        raise ValueError("dependency/memory profile requires payments role")
 
 
 def create_service(
@@ -99,15 +116,18 @@ def create_service(
     fault_state = faults or FaultState()
     store = SampleStore(settings.idempotency_capacity)
     metrics = SandboxMetrics()
-    if settings.concurrency_memory and role != "payments":
-        raise ValueError("concurrent-memory profile requires payments role")
+    validate_profile(role, settings)
     memory = ConcurrentMemory(settings.concurrency_memory)
     cpu = CpuWork(settings.cpu_rounds, settings.cpu_capture)
+    dependency = DependencyGate(settings.dependency)
+    snapshot = MetricSnapshot(metrics.registry, settings.telemetry_condition == "delayed_metrics")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         """Close admission while bounded in-flight CPU and memory work finishes."""
         try:
+            if settings.telemetry_condition == "archived_error":
+                emit_archived_error()
             yield
         finally:
             memory.close()
@@ -123,8 +143,14 @@ def create_service(
     @app.get("/metrics")
     async def metric_export() -> Response:
         """Export only this process's bounded synthetic metric registry."""
+        body, acquired = snapshot.read()
         return Response(
-            generate_latest(metrics.registry), headers={"Content-Type": CONTENT_TYPE_LATEST}
+            body,
+            headers={
+                "Content-Type": CONTENT_TYPE_LATEST,
+                "X-Payops-Metrics-Snapshot": acquired,
+                "Cache-Control": "no-store",
+            },
         )
 
     @app.post("/simulate", response_model=SimulationResult)
@@ -141,7 +167,7 @@ def create_service(
         ):
             try:
                 result = await process_sample(
-                    role, sample, settings, fault_state, store, transport, cpu, memory
+                    role, sample, settings, fault_state, store, transport, cpu, memory, dependency
                 )
                 status = result.status
                 return result

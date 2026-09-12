@@ -101,10 +101,18 @@ class SandboxConfig(BaseModel):
     cpu_rounds: int = Field(default=0, ge=0, le=200000)
     cpu_capture: bool = False
     concurrency_memory: bool = False
+    dependency: Literal["none", "postgres", "redis"] = "none"
+    telemetry_condition: Literal["normal", "archived_error", "delayed_metrics"] = "normal"
 
     @model_validator(mode="after")
     def validate_origins(self) -> Self:
         """Validate all peers at startup so later requests use immutable safe origins."""
+        if (self.telemetry_condition == "archived_error" and self.dependency != "redis") or (
+            self.telemetry_condition == "delayed_metrics" and self.dependency != "postgres"
+        ):
+            raise ValueError("observation condition requires its fixed dependency profile")
+        if self.dependency != "none" and (self.cpu_rounds or self.concurrency_memory):
+            raise ValueError("dependency and CPU/memory fault profiles must be isolated")
         if self.concurrency_memory and self.cpu_rounds:
             raise ValueError("CPU and concurrent-memory experiments must be isolated")
         if self.cpu_capture and not self.cpu_rounds:
