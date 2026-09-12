@@ -125,3 +125,8 @@ mutation or public-demo credential is introduced. Live qualification is pending.
 ### Shared dependency scenario lifecycle
 
 The operator-only dependency harness reuses the existing payments lifecycle, process ownership checks and recovery latch. DEP-03/04 and TELEM-02/04 share three-request healthy/fault/recovered controls on one enabled payments process. PostgreSQL pressure uses four owned read-only sessions at a dedicated role limit; Redis availability uses an atomic one-to-zero replica transition. These are local synthetic variants. Live qualification is recorded separately from implementation.
+
+
+### CPU distractor control
+
+TELEM-01 runs one independent, credential-free CPU Job through healthy payments, processor replicas zero and restored payments. The same noise process must consume at least 0.2 CPU cores across every full HTTP window while its CPU request is 0.05 cores. The processor outage has three actual 503 outcomes; both noise-on controls have three accepted outcomes. CPU work is local hashing, with no network activity or writes. This separates the measured CPU distraction from the service outage. Live qualification is recorded separately.

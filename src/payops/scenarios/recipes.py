@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "TELEM-01": "processor outage and recovery while independent measured CPU noise persists",
     "DEP-03": "real read-only PostgreSQL role connection exhaustion and recovery",
     "DEP-04": "real Redis endpoint outage and recovery with TLS PING payment gate",
     "TELEM-02": "Redis outage with explicitly archived synthetic PostgreSQL error distractor",
@@ -100,6 +101,7 @@ def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
     if case_id in {
+        "TELEM-01",
         "DEP-03",
         "DEP-04",
         "TELEM-02",

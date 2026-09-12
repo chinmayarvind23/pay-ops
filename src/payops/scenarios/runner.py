@@ -144,6 +144,7 @@ class LocalScenarioRunner:
         """Receipt failures are returned after cleanup; an unverified cleanup blocks later runs."""
         case_id = TypeAdapter[CaseId](CaseId).validate_python(case_id)
         if case_id in {
+            "TELEM-01",
             "DEP-03",
             "DEP-04",
             "TELEM-02",

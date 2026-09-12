@@ -813,3 +813,8 @@ separate from primary-cause labels. Live qualification and cleanup remain requir
 ### Dependency group harness
 
 `dependency_specs.py` preserves startup and resource checks, pins the imported worker image and projects one fixed read-only credential directory. `dependency_gateway.py` confines data writes to Redis replicas 0/1 under UID/version/full-spec tests. `dependency_pressure.py` owns its loopback forward and four SELECT-1 sessions, closes them on every exit and relies on a 45-second server idle timeout as a second bound. No credentials enter evidence. `dependency_evidence.py` requires exact three-request plans, current HTTP 503 plus cause/sample/time/trace matches, and original timestamps for archived or delayed observations. `DependencyHarness` journals both namespaces and attempts data and payments restoration independently; incomplete recovery retains the cross-harness latch. Free HF hosting remains a credential-free replay; AWS setup is optional documentation only.
+
+
+### CPU noise lifecycle
+
+`NoiseHarness` uses the shared cluster latch, immutable receipt writer and finally-recovery path. `noise_contract.py` freezes a 120-second hashing script inside a hardened one-shot Job with a 150-second deadline, 500m/256Mi limits and no service-account token. `NoiseGateway` validates the Job template, pod owner, actual imported image and zero restarts before reading per-second CPU counters. Every traffic window must be bracketed by advancing CPU/time samples. Four sandbox peer processes remain unchanged. Processor restoration and Job deletion are attempted independently; cleanup failure retains the latch. There are no model-selected scripts or command parameters.
