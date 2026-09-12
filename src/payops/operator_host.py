@@ -38,6 +38,7 @@ from payops.orchestrator.budget import (
 )
 from payops.orchestrator.graph import InvestigationWorker
 from payops.orchestrator.graph_reasoning import terminal
+from payops.orchestrator.local_llama import LocalLlamaAdapter
 from payops.orchestrator.loop import ReasoningLoop
 from payops.orchestrator.model_runtime import ModelRuntime, ModelSettings, ProviderDetails
 from payops.orchestrator.nodes import incident_directory
@@ -158,7 +159,9 @@ class DeferredClose:
 class ManagedProvider:
     """The host lease adds lifecycle ownership without changing the reviewed provider wire path."""
 
-    def __init__(self, provider: OpenAIResponsesAdapter, lifetime: DeferredClose) -> None:
+    def __init__(
+        self, provider: OpenAIResponsesAdapter | LocalLlamaAdapter, lifetime: DeferredClose
+    ) -> None:
         """Borrow a fixed adapter and register exactly one owner-side close."""
         self.provider, self.lifetime = provider, lifetime
         self.settings = provider.settings
@@ -345,11 +348,17 @@ class OperatorHost:
             elastic_password=config.elastic_key.load(),
             elastic_port=config.elastic_port,
         )
-        provider = OpenAIResponsesAdapter(
-            config.model,
-            config.provider_key.load(),
-            test_transport=fixture.openai if fixture else None,
-        )
+        if config.model.provider == "local_llama":
+            provider = LocalLlamaAdapter(
+                config.model, test_transport=fixture.openai if fixture else None
+            )
+        else:
+            assert config.provider_key is not None
+            provider = OpenAIResponsesAdapter(
+                config.model,
+                config.provider_key.load(),
+                test_transport=fixture.openai if fixture else None,
+            )
         self.runtime = ModelRuntime(
             ManagedProvider(provider, self.lifetime), self.authority.allowed
         )

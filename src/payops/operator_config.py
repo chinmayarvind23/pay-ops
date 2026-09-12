@@ -13,6 +13,8 @@ from pydantic import AwareDatetime, ConfigDict, Field, SecretStr, model_validato
 
 from payops.contracts import Contract, utc_now
 from payops.orchestrator.budget import ReasoningBudget
+from payops.orchestrator.local_llama import MODEL as LOCAL_MODEL
+from payops.orchestrator.local_llama import ZERO_PRICE
 from payops.orchestrator.model_runtime import ModelSettings
 from payops.orchestrator.openai_adapter import STANDARD_PRICE
 from payops.orchestrator.openai_wire import MODEL, decode
@@ -187,6 +189,28 @@ def reasoning_budget() -> ReasoningBudget:
     )
 
 
+def reviewed_model(model: ModelSettings, key: SecretReference | None) -> bool:
+    """Local inference has no credential or charged rate; remote configuration remains explicit."""
+    if model.mode != "provider" or model.token_accounting != "provider_ceiling":
+        return False
+    if model.provider == "local_llama":
+        return (
+            model.model == LOCAL_MODEL
+            and model.price == ZERO_PRICE
+            and key is None
+            and model.input_token_limit <= 4096
+            and 16 <= model.output_token_limit <= 512
+        )
+    return (
+        model.provider == "openai"
+        and model.model == MODEL
+        and model.price == STANDARD_PRICE
+        and key is not None
+        and model.input_token_limit <= 16000
+        and 16 <= model.output_token_limit <= 2048
+    )
+
+
 class OperatorConfig(Contract):
     """Paths, endpoints, prices and budgets are trusted operator input, never model arguments."""
 
@@ -196,7 +220,7 @@ class OperatorConfig(Contract):
     grant_file: Path
     release_labels: Path
     knowledge_bundle: Path
-    provider_key: SecretReference
+    provider_key: SecretReference | None = None
     elastic_key: SecretReference
     elastic_ca: Path
     elastic_port: int = Field(default=29200, strict=True, ge=1, le=65535)
@@ -218,13 +242,8 @@ class OperatorConfig(Contract):
             local_path(path)
         model = self.model
         if (
-            model.provider != "openai"
-            or model.model != MODEL
-            or model.mode != "provider"
-            or model.token_accounting != "provider_ceiling"
-            or model.price != STANDARD_PRICE
-            or model.input_token_limit > 16000
-            or not 16 <= model.output_token_limit <= 2048
+            not reviewed_model(model, self.provider_key)
+            or (model.provider == "local_llama" and self.reasoning.cost_nano_usd != 0)
             or self.reasoning.tool_calls > 20
             or self.reasoning.backend_reads > 34
         ):

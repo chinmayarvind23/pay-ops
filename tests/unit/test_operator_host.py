@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from threading import Event, Thread
@@ -15,6 +16,8 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite import SqliteSaver
 from sqlalchemy.orm import Session
 from test_data_clients import evidence
+from test_local_llama import Wire
+from test_local_llama import settings as local_settings
 from test_openai_adapter import generation, response
 from test_payment_window import interval, raw_snapshot
 
@@ -327,6 +330,47 @@ def test_full_host_catalog_native_graph_sql_and_restart_zero_dispatch(harness: H
         2,
         8,
     )
+
+
+def test_free_local_host_needs_no_provider_key_and_replays_without_calls(
+    harness: HostHarness,
+) -> None:
+    """The same durable graph accepts a zero-price local model without opening remote transport."""
+    h = harness
+    wire = Wire()
+    h.config = OperatorConfig.model_validate(
+        {
+            **h.config.model_dump(),
+            "provider_key": None,
+            "model": local_settings(),
+            "reasoning": {**h.config.reasoning.model_dump(), "cost_nano_usd": 0},
+        }
+    )
+    h.fixture = replace(h.fixture, openai=httpx.MockTransport(wire))
+    host = h.bind()
+    state = host.start(h.incident)
+    assert state.reasoning_stop_reason == "REFUSED" and state.phase == "FINISHED"
+    assert len(wire.calls) == 2 and not h.model_calls
+    assert host.ledger.get(h.incident.incident_id).limits.cost_nano_usd == 0
+    host.close()
+    assert h.bind().resume(h.incident.incident_id) == state
+    assert len(wire.calls) == 2
+
+
+def test_free_local_host_rejects_key_or_positive_budget(harness: HostHarness) -> None:
+    """A local profile cannot silently retain a paid provider credential or spending allowance."""
+    base = {
+        **harness.config.model_dump(),
+        "model": local_settings(),
+        "provider_key": None,
+        "reasoning": {**harness.config.reasoning.model_dump(), "cost_nano_usd": 0},
+    }
+    for changes in (
+        {"provider_key": harness.config.provider_key},
+        {"reasoning": harness.config.reasoning},
+    ):
+        with pytest.raises(ValueError, match="reviewed bounds"):
+            OperatorConfig.model_validate({**base, **changes})
 
 
 def test_revoked_grant_prevents_credential_loading(

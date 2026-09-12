@@ -23,8 +23,8 @@ The local implementation runs against a five-service synthetic payment system in
 - Fixed Kubernetes, Prometheus, payment and Elasticsearch reads with bounded output, current authorization and incident/service scope checks.
 - Immutable evidence artifacts with SHA-256 verification, payment-window arithmetic and nested trace/retrieval source checks.
 - Durable investigations that reserve model/read budgets before dispatch and recover completed work without dispatching it again. Uncertain completion stops the run.
-- A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and price profile and validates raw provider usage.
-- A local operator CLI connects the model and all six read tools with an expiring OS-account grant. Completed restart verifies the journal without issuing new requests; live provider measurements remain pending.
+- A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and prices. A [free local Qwen adapter](docs/free-inference.md) uses measured token counts with zero provider charges and no paid fallback.
+- A local operator CLI connects either model adapter and all six read tools with an expiring OS-account grant. Completed restart verifies the journal without issuing new requests; full model evaluation remains pending.
 - Deterministic approval policy, authenticated action routes and an idempotent SQL broker, with current identity and resource revalidation. A closed local executor supports conditional restart, scale and immutable-image rollback with rollout postchecks. Managed synthetic traffic uses a durable SQL pause gate.
 - Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
 - PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
