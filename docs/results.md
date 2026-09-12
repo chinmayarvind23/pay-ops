@@ -197,3 +197,22 @@ server session removal after client close and restored the sandbox.
 The qualified total is **22/24**. CPU-noise distraction (TELEM-01) and actual
 node-pressure eviction (SCHED-04) remain. This group measures reproduction and
 recovery; model diagnosis, human timing, provider latency and cost remain pending.
+
+
+## TELEM-01: unrelated CPU activity during processor outage
+
+Qualified at `de4d980`, run `187f629d1ec44b2c9d0d9d8bf30dbb71`.
+One independent CPU worker sustained 0.4995, 0.5003 and 0.4994 cores across the
+healthy, processor-outage and recovered request windows, against a 0.05-core
+request. Each stage used three fresh payments: accepted, HTTP 503, then accepted.
+The same CPU process continued throughout, so recovery did not depend on removing
+the noisy signal. Four peer processes remained unchanged. Processor specification,
+accepted payment health and absence of the noise Job were verified at exit.
+
+Post-run verification checked 43 artifact hashes and 137 source/dependency hashes,
+the actual Job/pod/image relationship, advancing CPU counters bracketing all three
+HTTP windows, exact traffic plans and original-state restoration. Evidence:
+`chunk-15-noise-v1`; result: `audit/evidence/noise-live-verification.json` outside
+the repository. The total is **23/24** local cases. Actual node-pressure eviction
+(SCHED-04) remains; model quality, provider cost/latency and paired human timing
+are separate unfinished measurements.
