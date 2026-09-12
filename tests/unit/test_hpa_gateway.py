@@ -115,3 +115,36 @@ def test_load_log_does_not_tail_away_cri_fragments(tmp_path: Path) -> None:
         assert adapter.load_log("hpa-load-" + RUN + "-abcde", RUN) == b"{}"
     args = read.call_args.args[0]
     assert "--tail=2000" in args and "--limit-bytes=262144" in args
+
+
+def test_metrics_and_inventory_preserve_complete_observations(tmp_path: Path) -> None:
+    """The harness must see existing controllers and all payments replicas before mutation."""
+    adapter = gateway(tmp_path)
+    with patch.object(adapter, "_json", side_effect=[{"items": ["existing"]}, {"items": []}]):
+        assert adapter.experiment_resources() == {"hpas": ["existing"], "jobs": []}
+    with patch("payops.scenarios.hpa_gateway.bounded_read", return_value=b"{}") as read:
+        assert adapter.cpu_metrics() == b"{}"
+        assert "app.kubernetes.io%2Fname%3Dpayments-api" in read.call_args.args[0][-1]
+    with patch("payops.scenarios.hpa_gateway.bounded_read", return_value=b"x" * 262144):
+        with pytest.raises(ValueError, match="CPU metrics are capped"):
+            adapter.cpu_metrics()
+        with pytest.raises(ValueError, match="load log is capped"):
+            adapter.load_log("hpa-load-" + RUN + "-abcde", RUN)
+
+
+def test_foreign_log_and_oversized_mutation_never_reach_transport(tmp_path: Path) -> None:
+    """Local validation rejects foreign pods and oversized bodies before any subprocess I/O."""
+    adapter = gateway(tmp_path)
+    with patch("payops.scenarios.hpa_gateway.bounded_read") as read:
+        with pytest.raises(ValueError, match="differs from the run"):
+            adapter.load_log("hpa-load-" + "b" * 32 + "-abcde", RUN)
+    read.assert_not_called()
+    observed = document()
+    object_value(observed["metadata"])["annotations"] = {"large": "x" * 65536}
+    with (
+        patch.object(adapter, "verify_scope"),
+        patch("payops.scenarios.hpa_gateway.subprocess.run") as write,
+    ):
+        with pytest.raises(ValueError, match="payload exceeds"):
+            adapter.set_cap(observed, RUN, 2)
+    write.assert_not_called()
