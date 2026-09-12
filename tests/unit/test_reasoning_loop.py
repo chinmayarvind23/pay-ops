@@ -26,7 +26,13 @@ from payops.orchestrator.budget import (
     ReadCharge,
     ReasoningBudget,
 )
-from payops.orchestrator.loop import LoopResult, LoopSession, LoopStopped, ReasoningLoop
+from payops.orchestrator.loop import (
+    LoopResult,
+    LoopSession,
+    LoopStopped,
+    ReasoningLoop,
+    prompt_context,
+)
 from payops.orchestrator.loop_records import (
     ModelReceipt,
     PreparedTurn,
@@ -35,7 +41,7 @@ from payops.orchestrator.loop_records import (
     retain,
 )
 from payops.orchestrator.model_runtime import ModelRuntime
-from payops.orchestrator.reasoning import ReadRequest
+from payops.orchestrator.reasoning import ReadRequest, parse_decision
 from payops.tools.registry import CATALOG, ReadRegistry, ReadResult, Reserve
 
 
@@ -472,6 +478,62 @@ def test_prompt_token_limit_stops_before_charge(harness: Harness) -> None:
     h.adapter.tokens = 201
     assert h.run().stop_reason == "BUDGET_EXHAUSTED"
     assert not h.ledger.get("incident").charges and not h.adapter.calls
+
+
+@pytest.mark.parametrize("limit", [100, 2000, 4096, 16000])
+def test_local_context_omissions_keep_all_sources_verified(harness: Harness, limit: int) -> None:
+    """Smaller prompts cannot admit omitted citations or hide corruption in dropped evidence."""
+    h = harness
+    h.runtime.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": limit}
+    )
+    sources = tuple(item(h.store, text="observed " * 160) for _ in range(20))
+    session = LoopSession(h.loop, h.incident, "a" * 64, sources)
+    context = session.context()
+    assert len(context.model_dump_json()) <= max(128, min(4096, limit))
+    assert context.omitted_count == len(sources) - len(context.entries) > 0
+    omitted = next(source for source in sources if source.evidence_id not in context.evidence_ids())
+    with pytest.raises(ValueError, match="unresolved"):
+        parse_decision(json.dumps(h.finish(omitted)), context.evidence_ids(), h.loop.causes)
+    h.store.path_for(omitted.artifact_sha256).write_text("{}", encoding="utf-8")
+    with pytest.raises(EvidenceIntegrityError):
+        session.context()
+
+
+def test_local_prompt_preserves_facts_and_replays_without_dispatch(harness: Harness) -> None:
+    """Compact presentation keeps exact citation IDs/facts and durable original context."""
+    h = harness
+    settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    h.runtime.settings = h.adapter.settings = settings
+    h.adapter.chat = FakeMessagesListChatModel(responses=[reply(json.dumps(h.finish()))])
+    first = h.run()
+    assert first.stop_reason == "FINISHED"
+    charge = h.ledger.get("incident").charges[0]
+    assert isinstance(charge, ModelCharge)
+    prepared = restore(h.store, charge.prompt_sha256, PreparedTurn)
+    data = json.loads(str(h.adapter.calls[0][0][1].content))
+    entry = data["context"]["entries"][0]
+    assert entry["facts"] == prepared.context.entries[0].facts
+    assert entry["evidence"]["evidence_id"] == h.initial.evidence_id
+    assert "summary" not in entry["evidence"] and "artifact_sha256" not in entry["evidence"]
+    assert prompt_context(prepared.context, local=False) == prepared.context.model_dump(mode="json")
+    assert h.run() == first and len(h.adapter.calls) == 1
+
+
+def test_local_metadata_only_entry_keeps_summary(harness: Harness) -> None:
+    """When bounded source facts are omitted, their original summary must remain visible."""
+    h = harness
+    h.runtime.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    source = item(h.store, text="x" * 30000)
+    context = LoopSession(h.loop, h.incident, "a" * 64, (source,)).context()
+    data = json.loads(json.dumps(prompt_context(context, local=True)))
+    entry = data["entries"][0]
+    assert entry["facts"] is None and entry["facts_omitted"] is True
+    assert entry["evidence"]["summary"] == source.summary
 
 
 @pytest.mark.parametrize(

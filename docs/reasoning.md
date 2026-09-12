@@ -59,6 +59,21 @@ quality, latency or billing. Setup and invocation are in [Commands](commands.md#
 
 ## Provider ceiling and stage accounting
 
+Local llama inference uses the `reasoning-loop-local-context-v2` binding. Verified
+context is limited to at most 4,096 serialized characters (less for a smaller input
+allowance), leaving room for the incident, cause vocabulary and tool catalog. This
+character budget is a heuristic; exact staged tokenization still enforces the token
+ceiling before generation. Every source is verified even when omitted, and omitted
+IDs cannot be cited. Original artifacts and complete included context remain durable.
+
+The local prompt omits storage metadata and a duplicate summary when complete facts
+are included; metadata-only entries keep their summary and explicit omission flag.
+It gives a concise decision contract because llama.cpp receives the complete JSON
+Schema separately. Python validation remains authoritative, including identifier
+patterns that the pinned llama.cpp grammar converter cannot enforce. This change
+does not alter remote-provider or fixture context selection. Existing local v1
+journals require their original source/configuration; use a new incident for v2.
+
 A live adapter first sends a bounded token-count request for the exact generation request shape. Its count enters a runtime-owned hook before generation: strict integer, nonnegative, at most the reserved ceiling. The hook refreshes authority inside the already-owned model worker and checks the original deadline both before and after that refresh. An oversized count, late authorization or revoked identity cannot start generation. Calling the public authorization method recursively from that worker would deadlock admission, so the stage hook performs no new submission.
 
 Fixture charges retain the fixture_exact discriminator and reserve zero actual provider requests. Provider charges use provider_ceiling and reserve both count and generation requests even if work stops after counting. The separate provider-request allowance defaults to20 and cannot exceed20. These requests are not Kubernetes, telemetry or search reads. Actual provider usage must match the server count and fit the input/output reservation. Receipts retain count time and generation time separately; provider_seconds refers to generation only. Failed unobserved stages retain unknown timing/usage.
