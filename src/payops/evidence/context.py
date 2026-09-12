@@ -6,6 +6,7 @@ from pydantic import Field, JsonValue
 
 from payops.contracts import Contract, EvidenceItem, Source
 from payops.evidence.artifacts import JSON_OBJECT, ArtifactStore, EvidenceIntegrityError
+from payops.evidence.log_context import log_context
 from payops.evidence.payment_window import verify_payment_window
 from payops.evidence.trace_span import verify_trace_span
 from payops.evidence.verification import verify_evidence
@@ -43,7 +44,9 @@ class ReasoningContext(Contract):
         return frozenset(entry.evidence.evidence_id for entry in self.entries)
 
 
-def _facts(item: EvidenceItem, store: ArtifactStore) -> dict[str, JsonValue]:
+def _facts(
+    item: EvidenceItem, store: ArtifactStore, structured_logs: bool = False
+) -> dict[str, JsonValue]:
     """Derived numbers retain their provenance IDs without duplicating full source envelopes."""
     if item.source == "PAYMENT":
         window = verify_payment_window(item, store)
@@ -69,7 +72,8 @@ def _facts(item: EvidenceItem, store: ArtifactStore) -> dict[str, JsonValue]:
             "original_summary": lineage.source.summary,
             "retrieved_at": lineage.retrieved_at.isoformat(),
         }
-    return JSON_OBJECT.validate_python(store.verify(item).get("payload"))
+    payload = JSON_OBJECT.validate_python(store.verify(item).get("payload"))
+    return log_context(payload) if item.source == "LOG" and structured_logs else payload
 
 
 def build_context(
@@ -79,6 +83,8 @@ def build_context(
     *,
     max_characters: int = 24000,
     max_items: int = 64,
+    recent_first: bool = False,
+    preferred_ids: frozenset[str] = frozenset(),
 ) -> ReasoningContext:
     """Verify even dropped evidence; fixed source priority uses no scenario IDs or gold causes."""
     if not 128 <= max_characters <= 24000 or not 0 <= max_items <= 64 or len(evidence) > 256:
@@ -90,12 +96,40 @@ def build_context(
             raise EvidenceIntegrityError("context incident mismatch")
         verify_evidence(item, store)
     result = ReasoningContext(entries=(), omitted_count=len(evidence))
-    for item in sorted(evidence, key=lambda entry: PRIORITY[entry.source]):
+    for item in _ordered(evidence, recent_first, preferred_ids):
         if len(result.entries) >= max_items:
             break
-        entry = ContextEntry(evidence=item, facts=_facts(item, store), facts_omitted=False)
+        entry = ContextEntry(
+            evidence=item, facts=_facts(item, store, recent_first), facts_omitted=False
+        )
         result = _append(result, entry, max_characters)
     return result
+
+
+def _ordered(
+    evidence: tuple[EvidenceItem, ...], recent: bool, preferred: frozenset[str]
+) -> list[EvidenceItem]:
+    """Round-robin fresh source/service groups so repeated snapshots cannot crowd out logs."""
+    if not recent:
+        return sorted(evidence, key=lambda entry: PRIORITY[entry.source])
+    ordered = sorted(
+        evidence,
+        key=lambda entry: (
+            entry.evidence_id not in preferred,
+            entry.source in {"MEMORY", "RUNBOOK"},
+            -entry.observed_at.timestamp(),
+            PRIORITY[entry.source],
+            entry.evidence_id,
+        ),
+    )
+    counts: dict[tuple[str, str], int] = {}
+    ranked: list[tuple[int, int, EvidenceItem]] = []
+    for index, entry in enumerate(ordered):
+        group = (entry.source, entry.resource)
+        depth = counts.get(group, 0)
+        counts[group] = depth + 1
+        ranked.append((depth, index, entry))
+    return [entry for _, _, entry in sorted(ranked, key=lambda row: (row[0], row[1]))]
 
 
 def _append(bundle: ReasoningContext, entry: ContextEntry, limit: int) -> ReasoningContext:

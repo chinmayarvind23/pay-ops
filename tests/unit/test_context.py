@@ -82,7 +82,13 @@ def test_invalid_even_omitted_evidence_invalidates_whole_bundle(tmp_path: Path, 
 def test_invalid_context_ceiling_rejected(tmp_path: Path, kwargs: dict[str, int]) -> None:
     """Caller configuration cannot exceed the model-context admission limits."""
     with pytest.raises(ValueError):
-        build_context((), ArtifactStore(tmp_path), "incident", **kwargs)
+        build_context(
+            (),
+            ArtifactStore(tmp_path),
+            "incident",
+            max_items=kwargs.get("max_items", 64),
+            max_characters=kwargs.get("max_characters", 24000),
+        )
 
 
 def test_payment_context_contains_recomputed_numbers_and_source_ids(tmp_path: Path) -> None:
@@ -131,3 +137,22 @@ def test_retrieval_remains_old_guidance_and_nested_source_is_verified(tmp_path: 
     store.path_for(source.artifact_sha256).write_bytes(b"corrupt")
     with pytest.raises(EvidenceIntegrityError):
         verify_evidence(current, store)
+
+
+def test_recent_context_diversifies_sources_and_prefers_completed_reads(tmp_path: Path) -> None:
+    """A pile of deployment snapshots cannot hide a newly requested diagnostic log."""
+    store = ArtifactStore(tmp_path)
+    old = item(store, "DEPLOYMENT", "old")
+    logs = item(store, text="new diagnostic fact")
+    new = item(store, "DEPLOYMENT", "new")
+    bundle = build_context((old, logs, new), store, "incident", max_items=2, recent_first=True)
+    assert [entry.evidence for entry in bundle.entries] == [new, logs]
+    preferred = build_context(
+        (old, logs, new),
+        store,
+        "incident",
+        max_items=1,
+        recent_first=True,
+        preferred_ids=frozenset({logs.evidence_id}),
+    )
+    assert preferred.evidence_ids() == frozenset({logs.evidence_id})

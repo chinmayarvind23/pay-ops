@@ -1,0 +1,956 @@
+[
+  {
+    "case_id": "DEP-01",
+    "started_at": "2026-09-12T04:40:27.934492+00:00",
+    "elapsed_seconds": 4.9539999999979045,
+    "receipt_sha256": "3582750a3bc0db1d419485dc3b29f7164a145767fb49dbe56e261e308a09795a",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "PROCESSOR_UNAVAILABLE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 293,
+        "output_tokens": 32,
+        "total_tokens": 325,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 4.921999999991385,
+      "output_sha256": "889c1603bd75e3ad101125214bf9c5bf1f157e2e106721e8ad663289b386f0a7",
+      "provider_details": {
+        "counted_input_tokens": 293,
+        "provider_requests": 2,
+        "count_seconds": 0.01600000000325963,
+        "generation_seconds": 4.921999999991385,
+        "request_shape_sha256": "57d0da1963db17caf8aeec50fa5a723c38f702be730c06305f52f5a4a81c9580",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "DEP-02",
+    "started_at": "2026-09-12T04:40:32.921421+00:00",
+    "elapsed_seconds": 4.827999999994063,
+    "receipt_sha256": "d156bcf895879ba15915db109acc3986a8ba7b16f17ad51badc1df8b98eb7cee",
+    "observation": {
+      "status": "REFUSED",
+      "decision": {
+        "decision": "refuse",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": []
+      },
+      "usage": {
+        "input_tokens": 417,
+        "output_tokens": 14,
+        "total_tokens": 431,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 4.827999999994063,
+      "output_sha256": "a8e65b1d1aaa60cabad25e231df65e069e9f063880d05a5c3a2a770c92121a31",
+      "provider_details": {
+        "counted_input_tokens": 417,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 4.827999999994063,
+        "request_shape_sha256": "7c9f35328f160556016056a73e085fe5c5df70f387487f73ee90ad4c5a5906dc",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "DEP-03",
+    "started_at": "2026-09-12T04:40:37.790156+00:00",
+    "elapsed_seconds": 10.60899999999674,
+    "receipt_sha256": "0523ea684613d79d3896df911384a467e8aa224c70aeabb669d18604739adf71",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "DATABASE_CONNECTION_EXHAUSTION",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 949,
+        "output_tokens": 33,
+        "total_tokens": 982,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 10.60899999999674,
+      "output_sha256": "91aa1e24ea05320bf4b11aa9e34fa30156f3d17fd62e4fe8dd0eb1baf3afbcc8",
+      "provider_details": {
+        "counted_input_tokens": 949,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 10.60899999999674,
+        "request_shape_sha256": "56ab2d1e06808404cef180f7a2b09465771c4cddf387426eeb93439a9e074c83",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "DEP-04",
+    "started_at": "2026-09-12T04:40:48.463450+00:00",
+    "elapsed_seconds": 9.984000000011292,
+    "receipt_sha256": "0c245cb7f295bb989a0371bd373fd7df5c45e109b2997512bb30c01948d74bd8",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "CACHE_UNAVAILABLE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 928,
+        "output_tokens": 32,
+        "total_tokens": 960,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 9.984000000011292,
+      "output_sha256": "3a08ae6345e9a990026cc6c04beeb6d20545314a3b5531607affcfb1655992ab",
+      "provider_details": {
+        "counted_input_tokens": 928,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 9.984000000011292,
+        "request_shape_sha256": "72a5d65f46d2eae559e5fa28100f613a84dc07d27c340ab90dd51ce8bf6089ac",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "OOM-01",
+    "started_at": "2026-09-12T04:40:58.510408+00:00",
+    "elapsed_seconds": 7.9060000000026776,
+    "receipt_sha256": "7a341d1f7de5e7129076585c2fd07c1d420104a5448771aafdcef2cbf98023af",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "MEMORY_LIMIT_BELOW_WORKING_SET",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 723,
+        "output_tokens": 35,
+        "total_tokens": 758,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 7.9060000000026776,
+      "output_sha256": "2e321d37f747a347ab533c2cf976715d7b015b58eb61aaa312f0d19712ba83ca",
+      "provider_details": {
+        "counted_input_tokens": 723,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 7.9060000000026776,
+        "request_shape_sha256": "092fdff07001c6f06e24c5c0c459e1f9a1e09df6c280f28a3537c7befb1e92d8",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "OOM-02",
+    "started_at": "2026-09-12T04:41:06.459961+00:00",
+    "elapsed_seconds": 13.639999999999418,
+    "receipt_sha256": "693beb5c9214c86e92db658a37db15d88d5f44f3d78942b0326f278b6822f5a5",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "MEMORY_LEAK",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1348,
+        "output_tokens": 32,
+        "total_tokens": 1380,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 13.639999999999418,
+      "output_sha256": "192edace4abb5e7215f1520d9f69fb732216b403b8d85aac735b34740c1e1158",
+      "provider_details": {
+        "counted_input_tokens": 1348,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 13.639999999999418,
+        "request_shape_sha256": "9f8dca758fe0b8d607247b9def201a59a6d31c63de5dbd6c6606b087dea2e8d3",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "OOM-03",
+    "started_at": "2026-09-12T04:41:20.137463+00:00",
+    "elapsed_seconds": 17.389999999999418,
+    "receipt_sha256": "043fd51e10b2a3be39e551e9090a756d113d56753cd77590ab89e5869d073f8b",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "CPU_THROTTLING",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1611,
+        "output_tokens": 33,
+        "total_tokens": 1644,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 17.389999999999418,
+      "output_sha256": "144dfc14263d78ee800f1400b3365612971848fa2bb8f3450187402fe274703f",
+      "provider_details": {
+        "counted_input_tokens": 1611,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 17.389999999999418,
+        "request_shape_sha256": "88bf7c53761b7e34b5c4214222ef14667a4e73ba0e8b198f4deceb9923a88d81",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "OOM-04",
+    "started_at": "2026-09-12T04:41:37.578322+00:00",
+    "elapsed_seconds": 15.515999999988708,
+    "receipt_sha256": "e3af1ab18de9066a922ecdecb560c3664cc4b6cf900e41384add98f386a883ee",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "CONCURRENCY_MEMORY_PRESSURE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1365,
+        "output_tokens": 34,
+        "total_tokens": 1399,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 15.5,
+      "output_sha256": "1d010a212b1afce3f1a9ff0f75eef036ac77055fc59cc18c67b172f13c09416a",
+      "provider_details": {
+        "counted_input_tokens": 1365,
+        "provider_requests": 2,
+        "count_seconds": 0.015999999988707714,
+        "generation_seconds": 15.5,
+        "request_shape_sha256": "104fbe7dd39d247a8d6e5b38a347b53e55efbcff8786bc14681d54893d6b06ea",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "PAY-01",
+    "started_at": "2026-09-12T04:41:53.132045+00:00",
+    "elapsed_seconds": 5.077999999994063,
+    "receipt_sha256": "50ead3064f9d5c19a3c964a54ff8cded7b726958582c9c402a875d9cb6e4c635",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "PROCESSOR_SPECIFIC_DECLINES",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 426,
+        "output_tokens": 33,
+        "total_tokens": 459,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 5.077999999994063,
+      "output_sha256": "aeb2707a03d881fc3399e4c62b6bf00b88a10c0bc94d37e856daa1f68d98cc30",
+      "provider_details": {
+        "counted_input_tokens": 426,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 5.077999999994063,
+        "request_shape_sha256": "cfdd79c504173cd7ba7485e0eab893b93214860c661c8d24c7f1351f00234fdb",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "PAY-02",
+    "started_at": "2026-09-12T04:41:58.247803+00:00",
+    "elapsed_seconds": 5.4060000000026776,
+    "receipt_sha256": "2705c7b09f8947a15f944ec33683dd2d66f6d722039997c23c54570ee6156174",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "REGION_SPECIFIC_LATENCY",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 425,
+        "output_tokens": 33,
+        "total_tokens": 458,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 5.4060000000026776,
+      "output_sha256": "18b21c7ff0544b084d046f528ccc8e576825e9b323037fc7b8df3ec69d334e2e",
+      "provider_details": {
+        "counted_input_tokens": 425,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 5.4060000000026776,
+        "request_shape_sha256": "1c9ebf3287d69c350384ccbd7d307a1d1eccfb8d58b2e212bd69ba8ea8d812c0",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "PAY-03",
+    "started_at": "2026-09-12T04:42:03.686091+00:00",
+    "elapsed_seconds": 4.812999999994645,
+    "receipt_sha256": "fffdc29dfbd3347c6750e163eb96ff784364a9d7668dbe20f6e230a87de4d00f",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "METHOD_SPECIFIC_DECLINES",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 356,
+        "output_tokens": 33,
+        "total_tokens": 389,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 4.812999999994645,
+      "output_sha256": "856e929737cb07e343d00a5382d35c3dde8b44f8270f7a010f83d86421e34c8f",
+      "provider_details": {
+        "counted_input_tokens": 356,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 4.812999999994645,
+        "request_shape_sha256": "3a13ec8d5da5cac890d6377b088032536db9d17a661ee004a554d2b070fd0aca",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "PAY-04",
+    "started_at": "2026-09-12T04:42:08.539433+00:00",
+    "elapsed_seconds": 5.5939999999973224,
+    "receipt_sha256": "922be5c3902457e50d5e3da7ec66a11c4494417ad3d03d1fd659678ca34846d3",
+    "observation": {
+      "status": "REFUSED",
+      "decision": {
+        "decision": "refuse",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": []
+      },
+      "usage": {
+        "input_tokens": 440,
+        "output_tokens": 14,
+        "total_tokens": 454,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 5.5939999999973224,
+      "output_sha256": "a8e65b1d1aaa60cabad25e231df65e069e9f063880d05a5c3a2a770c92121a31",
+      "provider_details": {
+        "counted_input_tokens": 440,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 5.5939999999973224,
+        "request_shape_sha256": "a031d054217ecebfa43dddcba6ab540a45123ee487e1650e8240246e15e352d8",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "ROLLOUT-01",
+    "started_at": "2026-09-12T04:42:14.176645+00:00",
+    "elapsed_seconds": 10.031999999991967,
+    "receipt_sha256": "75c39479c41d10f907d577abb490c0f98f4476ec1240accafe290ba6c0f0451b",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "STARTUP_FAILURE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 772,
+        "output_tokens": 32,
+        "total_tokens": 804,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 10.01600000000326,
+      "output_sha256": "f5217429686a112504d80968c1562ae42e91c22109b606190fc39123e3e20653",
+      "provider_details": {
+        "counted_input_tokens": 772,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 10.01600000000326,
+        "request_shape_sha256": "b5fa3fca366eb067925864d89e02cf7aa03ac10d739e32053c59ce14b3aa5cd5",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "ROLLOUT-02",
+    "started_at": "2026-09-12T04:42:24.254474+00:00",
+    "elapsed_seconds": 9.264999999999418,
+    "receipt_sha256": "b4196794f2d74aeb4753c45edae73b3e3e747e1c431bf7083649847ed75caabc",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "STARTUP_FAILURE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 712,
+        "output_tokens": 32,
+        "total_tokens": 744,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 9.264999999999418,
+      "output_sha256": "f5217429686a112504d80968c1562ae42e91c22109b606190fc39123e3e20653",
+      "provider_details": {
+        "counted_input_tokens": 712,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 9.264999999999418,
+        "request_shape_sha256": "19391b325ff679055384546823ef2851332178eaa17e49f00220831cb5ed3233",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "ROLLOUT-03",
+    "started_at": "2026-09-12T04:42:33.565572+00:00",
+    "elapsed_seconds": 7.875,
+    "receipt_sha256": "62d51ef8bc02e9918d91477d4b1fa3b1ade2b83e07d153ed53afa7fa92445457",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "READINESS_PROBE_FAILURE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 642,
+        "output_tokens": 34,
+        "total_tokens": 676,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 7.85899999999674,
+      "output_sha256": "8840f1b8ee43f41b97309e6c6d8eb0637dd7061453cd576e0fb4a1bd450a67f1",
+      "provider_details": {
+        "counted_input_tokens": 642,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 7.85899999999674,
+        "request_shape_sha256": "9398e1cff2c4a8e81d5a7900850a860c42827539f9442231f7339e4f18c925a8",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "ROLLOUT-04",
+    "started_at": "2026-09-12T04:42:41.476728+00:00",
+    "elapsed_seconds": 3.625,
+    "receipt_sha256": "f958ebe5e87c39122c09e3143c23584b26ed0d5c55d31b5f17b301c669cc365e",
+    "observation": {
+      "status": "REFUSED",
+      "decision": {
+        "decision": "refuse",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": []
+      },
+      "usage": {
+        "input_tokens": 302,
+        "output_tokens": 14,
+        "total_tokens": 316,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 3.625,
+      "output_sha256": "a8e65b1d1aaa60cabad25e231df65e069e9f063880d05a5c3a2a770c92121a31",
+      "provider_details": {
+        "counted_input_tokens": 302,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 3.625,
+        "request_shape_sha256": "fed791139b0fc57fe46dd7b4c5fc25fe9dc611746d4786d4a755f9702bb573df",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "SCHED-01",
+    "started_at": "2026-09-12T04:42:45.152698+00:00",
+    "elapsed_seconds": 14.985000000000582,
+    "receipt_sha256": "e7dbac7f2a2c0d948c6f3d33d704751e06912c2071b0c2222e8cc7976b90884c",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "INSUFFICIENT_CPU_REQUEST_CAPACITY",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1269,
+        "output_tokens": 35,
+        "total_tokens": 1304,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 14.968999999997322,
+      "output_sha256": "fbc308034b381541050b5e81a7aee1dc4839c8c48b5de6fc08f2fe3ca5c139ab",
+      "provider_details": {
+        "counted_input_tokens": 1269,
+        "provider_requests": 2,
+        "count_seconds": 0.01600000000325963,
+        "generation_seconds": 14.968999999997322,
+        "request_shape_sha256": "65c0009d67d0565af25ecba25401caed50b171df61d66ae031a35addafddf42e",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "SCHED-02",
+    "started_at": "2026-09-12T04:43:00.173311+00:00",
+    "elapsed_seconds": 18.281000000002678,
+    "receipt_sha256": "52376c7287ecc724550ce1ac8b9d27d2bab236e3777c163f026b44e0e2351c7f",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "INSUFFICIENT_MEMORY_REQUEST_CAPACITY",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1259,
+        "output_tokens": 35,
+        "total_tokens": 1294,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 18.26600000000326,
+      "output_sha256": "8915d2066bd0185624a15b03b37976b868c833942e22d3c2f6d415e41754afe6",
+      "provider_details": {
+        "counted_input_tokens": 1259,
+        "provider_requests": 2,
+        "count_seconds": 0.014999999999417923,
+        "generation_seconds": 18.26600000000326,
+        "request_shape_sha256": "bda8844c4744d367f80e50166cb76931b0d910a546df2f0c6f3208fd9421f370",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "SCHED-03",
+    "started_at": "2026-09-12T04:43:18.503137+00:00",
+    "elapsed_seconds": 8.578000000008615,
+    "receipt_sha256": "61cdc9c02a24595fa3b48a814d670dde8af31b6bdfdade38838c1261e7c9a397",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "AUTOSCALING_MAX_REPLICAS",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 563,
+        "output_tokens": 34,
+        "total_tokens": 597,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 8.562000000005355,
+      "output_sha256": "da3338913106a6359a0d7372c7f5f7841ea0499b1e4efee4fd0862d2c49ebf80",
+      "provider_details": {
+        "counted_input_tokens": 563,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 8.562000000005355,
+        "request_shape_sha256": "0e470778fdb00df72ecba3dc00243ab67782d5f0862af09e5bf48a09079ffad2",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "SCHED-04",
+    "started_at": "2026-09-12T04:43:27.110656+00:00",
+    "elapsed_seconds": 7.094000000011874,
+    "receipt_sha256": "529f368b19745c3ca3d7baf86f288b72d62dc16596a55a7ea8b21bb7a6b8a1b6",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "NODE_PRESSURE_EVICTION",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 681,
+        "output_tokens": 33,
+        "total_tokens": 714,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 7.078000000008615,
+      "output_sha256": "7fcd49dc2aec18037a1ebb047314fb4d11a02007129c8850944cab29edb4b0de",
+      "provider_details": {
+        "counted_input_tokens": 681,
+        "provider_requests": 2,
+        "count_seconds": 0.01600000000325963,
+        "generation_seconds": 7.078000000008615,
+        "request_shape_sha256": "1367414f58e229e906729c86edc3dc765b9327605c2314e075dcbd3ab40be4cb",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "TELEM-01",
+    "started_at": "2026-09-12T04:43:34.243594+00:00",
+    "elapsed_seconds": 17.156000000002678,
+    "receipt_sha256": "20d1d5eb034ad28d4ca9ea3e1d3b758cd0d3643d42709291a621c08cdaec1196",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "PROCESSOR_UNAVAILABLE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1806,
+        "output_tokens": 32,
+        "total_tokens": 1838,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 17.156000000002678,
+      "output_sha256": "889c1603bd75e3ad101125214bf9c5bf1f157e2e106721e8ad663289b386f0a7",
+      "provider_details": {
+        "counted_input_tokens": 1806,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 17.156000000002678,
+        "request_shape_sha256": "58115d6d9cafd114f8f9fb4a23232dc456271c7adad457c67a4af8cd3d39b220",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "TELEM-02",
+    "started_at": "2026-09-12T04:43:51.444120+00:00",
+    "elapsed_seconds": 8.515999999988708,
+    "receipt_sha256": "8dc664196cf3b8832bea87c9356048997b3858dfa6911daa377bee4b1a966198",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "CACHE_UNAVAILABLE",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 900,
+        "output_tokens": 32,
+        "total_tokens": 932,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 8.5,
+      "output_sha256": "3a08ae6345e9a990026cc6c04beeb6d20545314a3b5531607affcfb1655992ab",
+      "provider_details": {
+        "counted_input_tokens": 900,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 8.5,
+        "request_shape_sha256": "af69b640ecc5ae0bee1d3fc64ae73227a14284425138ff20d4bfa21e8611e4c1",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "TELEM-03",
+    "started_at": "2026-09-12T04:43:59.992788+00:00",
+    "elapsed_seconds": 5.4689999999973224,
+    "receipt_sha256": "0f2bfbf8afa18088c046a35c028ea2ffe7f1bae4b42f945994d6f524850c4940",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "PROCESSOR_LATENCY",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 491,
+        "output_tokens": 32,
+        "total_tokens": 523,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 5.4689999999973224,
+      "output_sha256": "ca0d0a26b7774070874d1599997471a201a62e0cabdcb6d501617970102059a2",
+      "provider_details": {
+        "counted_input_tokens": 491,
+        "provider_requests": 2,
+        "count_seconds": 0.0,
+        "generation_seconds": 5.4689999999973224,
+        "request_shape_sha256": "d801d94dd1d6ed76b718f114b9194896e0af98f66fc5ab76a076b11991f58b78",
+        "normalized_refusal": false
+      }
+    }
+  },
+  {
+    "case_id": "TELEM-04",
+    "started_at": "2026-09-12T04:44:05.499215+00:00",
+    "elapsed_seconds": 16.781000000002678,
+    "receipt_sha256": "b8fd43583943158eafa1ecad99aa2ee9f6719f455e47b22d9d73400605d7ee14",
+    "observation": {
+      "status": "OK",
+      "decision": {
+        "decision": "finish",
+        "summary": "Compact local diagnosis; confidence not estimated.",
+        "reads": [],
+        "hypotheses": [
+          {
+            "cause_code": "DATABASE_CONNECTION_EXHAUSTION",
+            "confidence": 0.0,
+            "supporting_evidence_ids": [
+              "e1"
+            ],
+            "refuting_evidence_ids": [],
+            "missing_evidence": []
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1585,
+        "output_tokens": 33,
+        "total_tokens": 1618,
+        "cached_input_tokens": 0
+      },
+      "provider_seconds": 16.764999999999418,
+      "output_sha256": "91aa1e24ea05320bf4b11aa9e34fa30156f3d17fd62e4fe8dd0eb1baf3afbcc8",
+      "provider_details": {
+        "counted_input_tokens": 1585,
+        "provider_requests": 2,
+        "count_seconds": 0.01600000000325963,
+        "generation_seconds": 16.764999999999418,
+        "request_shape_sha256": "fb18f72632d2dfb0ab21fa1d864c2c2723377bdd748dc4f8ea216ebb0c6f36c8",
+        "normalized_refusal": false
+      }
+    }
+  }
+]

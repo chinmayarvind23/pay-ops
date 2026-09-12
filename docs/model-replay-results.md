@@ -9,9 +9,27 @@ not a live autonomous investigation or production generalization.
 | --- | ---: | ---: | ---: | ---: |
 | Qwen3 1.7B Q4_K_M, compact output | 9/24 (37.5%) | 16/24 (66.7%) | 13.016 s | 24.344 s |
 | Qwen2.5 3B Q4_K_M, explicit category definitions and prefix caching | 5/24 (20.8%) | 9/24 (37.5%) | 14.351 s | 26.453 s |
+| Qwen3 1.7B Q4_K_M, predicate-assisted single diagnosis | 20/24 (83.3%) | 20/24 (83.3%) | 8.547 s | 17.390 s |
 
-The treatments differ in model, template and prompt, so the table does not isolate
-model size as the cause of the difference. Both used the same selected observations.
+The predicate-assisted treatment uses [source-specific diagnostic checks](diagnostic-support.md)
+to restrict model output to a supported candidate and its evidence ID. It generated 21
+diagnoses and three refusals; 20 diagnoses matched the frozen cause labels. All 21
+published links matched the existing development attribution reference. That reference
+informed predicate development, so this is not an independent or held-out semantic
+accuracy result. The predicates generally leave one candidate: Python performs most
+of the classification in this treatment, and the model selects from its checked output.
+
+The new run measured 20,263 input and 736 output tokens across all 24 cases, with zero
+provider charges. Its 8.547-second median and 17.390-second p95 include local tokenization
+and model calls, excluding live collection and human investigation. The comparison
+used the same frozen corpus on a shared workstation, without repeated trials or
+confidence intervals. It meets the original Recall@1 value in development replay;
+Recall@3 and p95 remain below target. Results and source bindings are in
+`evals/results/qwen3-predicate-assisted`; raw receipts are in
+`resources/pay_ops/evidence/supported-model-v1`.
+
+The treatments differ in model, template, prompt and diagnostic predicates, so the table
+does not isolate model size as the cause of the difference. All use the same observations.
 Several earlier diagnostic runs stopped after invalid output or repeated timeouts;
 their outcomes are retained, and no full-run score is claimed for them.
 
@@ -26,11 +44,10 @@ and retained source integrity, not whether each citation supports the proposed c
 The model often proposed causes unsupported by the observations. No 96.4% semantic
 attribution result or human investigation speedup is claimed.
 
-These accuracy and latency values are below the original targets and are omitted
-from the résumé. The stronger verified results remain 24 local fault reproductions,
-120/120 forbidden fixture capabilities denied, durable replay and real conditional
-remediation controls. The study demonstrates why schema validity alone cannot
-justify an operational diagnosis.
+The original model-only accuracy and latency values remain below target. The résumé
+now uses the predicate-assisted 83.3% Recall@1 with its development-replay scope,
+alongside 24 fault reproductions and 120/120 forbidden fixture capabilities denied.
+The study demonstrates why schema validity alone cannot justify a diagnosis.
 
 ## Recompute and inspect
 

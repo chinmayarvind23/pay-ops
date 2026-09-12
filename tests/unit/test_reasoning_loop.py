@@ -14,8 +14,9 @@ from test_context import item
 from test_model_runtime import Adapter, reply
 from test_reasoning import finished
 
-from payops.contracts import EvidenceItem, Incident, IncidentCreate
+from payops.contracts import EvidenceItem, Incident, IncidentCreate, utc_now
 from payops.evidence.artifacts import ArtifactStore, EvidenceIntegrityError
+from payops.evidence.normalize import Observation, normalize
 from payops.evidence.verification import verify_evidence
 from payops.orchestrator.budget import (
     BudgetConflict,
@@ -544,7 +545,10 @@ def test_local_read_budget_denial_retains_one_final_decision(harness: Harness) -
     )
     h.loop.limits = h.limits.model_copy(update={"tool_calls": 0, "backend_reads": 0})
     refusal: dict[str, Any] = {
-        "decision": "refuse", "summary": "Insufficient evidence", "reads": [], "hypotheses": []
+        "decision": "refuse",
+        "summary": "Insufficient evidence",
+        "reads": [],
+        "hypotheses": [],
     }
     h.adapter.chat = FakeMessagesListChatModel(
         responses=[reply(json.dumps(read_decision())), reply(json.dumps(refusal))]
@@ -655,3 +659,73 @@ def test_persistent_auth_outage_stops_without_queued_work(harness: Harness) -> N
         assert not h.ledger.get("incident").charges
     finally:
         release.set()
+
+
+def test_local_repeated_reads_reuse_receipts_and_survive_reentry(harness: Harness) -> None:
+    """Duplicate model requests spend no backend allowance and force a terminal next turn."""
+    h = harness
+    h.runtime.settings = h.adapter.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    h.responses(read_decision(), read_decision(), h.finish(h.additional))
+    result = h.run()
+    assert result.stop_reason == "FINISHED"
+    assert len(h.read_calls) == 1 and len(h.adapter.calls) == 3
+    content = h.adapter.calls[2][0][1].content
+    assert isinstance(content, str)
+    assert json.loads(content)["allowed_decisions"] == ["finish", "refuse"]
+    ledger = h.ledger.get("incident")
+    assert len([charge for charge in ledger.charges if isinstance(charge, ReadCharge)]) == 1
+    assert h.run() == result and h.ledger.get("incident") == ledger
+    assert len(h.read_calls) == 1 and len(h.adapter.calls) == 3
+
+
+def test_local_mixed_batch_dispatches_only_unseen_requests(harness: Harness) -> None:
+    """Reusing one observation must not prevent a different requested tool from running."""
+    h = harness
+    h.runtime.settings = h.adapter.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    mixed = read_decision()
+    mixed["reads"].append({"tool": "pod_events", "service": "payments-api", "query": None})
+    h.responses(read_decision(), mixed, h.finish(h.additional))
+    result = h.run()
+    assert result.stop_reason == "FINISHED"
+    assert [request.tool for request in h.read_calls] == ["recent_logs", "pod_events"]
+    before = h.ledger.get("incident")
+    assert h.run() == result and h.ledger.get("incident") == before
+    assert len(h.read_calls) == 2
+
+
+@pytest.mark.parametrize("supported", [True, False])
+def test_local_finish_requires_claim_specific_source_support(
+    harness: Harness, supported: bool
+) -> None:
+    """A valid artifact ID cannot turn a generic dependency error into SQLSTATE 53300."""
+    h = harness
+    now = utc_now()
+    h.initial = normalize(
+        Observation(
+            source="LOG",
+            resource="payments-api",
+            observed_at=now,
+            query="fixed-read",
+            summary="Current dependency response",
+            payload={"dependency": "postgres", "sqlstate": "53300" if supported else None},
+        ),
+        "incident",
+        now,
+        now,
+        h.store,
+    )
+    h.runtime.settings = h.adapter.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    h.loop.causes = frozenset({"DATABASE_CONNECTION_EXHAUSTION"})
+    decision = h.finish()
+    decision["hypotheses"][0]["cause_code"] = "DATABASE_CONNECTION_EXHAUSTION"
+    h.responses(decision)
+    result = h.run()
+    assert result.stop_reason == "FINISHED"
+    assert len(result.hypotheses) == int(supported)
+    assert h.run() == result and len(h.adapter.calls) == 1

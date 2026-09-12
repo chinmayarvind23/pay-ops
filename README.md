@@ -15,7 +15,8 @@ The local implementation runs against a five-service synthetic payment system in
 | Measurement | Verified result | Scope |
 | --- | --- | --- |
 | Local fault reproduction | 24 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, HPA saturation, database/cache outages, misleading telemetry and isolated kubelet eviction |
-| Model diagnosis | 9/24 Recall@1; 16/24 Recall@3 | Qwen3 compact diagnosis on curated recorded evidence; full results include a weaker second treatment |
+| Predicate-assisted diagnosis | 20/24 (83.3%) Recall@1 and Recall@3 | Diagnostic predicates plus local Qwen on frozen development evidence; model-only baseline remains 9/24 and 16/24 |
+| Local replay latency and cost | 8.547 s median; 17.390 s p95; $0 provider charges | 24 recorded-evidence calls; excludes live collection and human investigation |
 | Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
 | Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |
 | Trace correlation | One nine-span path across five services | Historical bounded capture; four other spans retained unresolved parents |
@@ -94,7 +95,7 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 
 ## Work still required
 
-Improve diagnosis on held-out evidence and reduce repeated reads. The live host has verified collection, bounded generation, insufficient-evidence completion and recovery, but has not completed a successful root-cause diagnosis. The recorded-evidence study measures diagnosis, replay-call timing and usage; it does not establish full-agent latency or human speedup. Semantic attribution and paired human investigation time remain unmeasured. The terminal demo is recorded; browser visual verification remains unavailable.
+Validate diagnosis on held-out evidence and collect missing mechanism details for the remaining cases. Local context now prioritizes fresh observations, repeated reads reuse receipts, and [diagnostic predicates](docs/diagnostic-support.md) gate support links. The live host has verified collection, bounded generation, insufficient-evidence completion and recovery, but has not completed a successful live root-cause diagnosis. The recorded-evidence study measures diagnosis, replay-call timing and usage; it does not establish full-agent latency or human speedup. The new treatment matches 21/21 citations against a development reference that informed its predicates; independent semantic attribution and paired human investigation time remain unmeasured. The terminal demo is recorded; browser visual verification remains unavailable.
 
 ## With more time
 

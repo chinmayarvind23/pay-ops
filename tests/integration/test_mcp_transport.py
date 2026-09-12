@@ -388,7 +388,8 @@ def test_cancelled_call_propagates(tmp_path: Path) -> None:
 
     async def run() -> None:
         """Cancel only an operation task while the owning task controls context teardown."""
-        async with connect_mcp(fixture_config(tmp_path, "timeout")) as transport:
+        config = replace(fixture_config(tmp_path, "timeout"), timeout_seconds=5)
+        async with connect_mcp(config) as transport:
             task = asyncio.create_task(transport.call_tool("get_k8s_logs", {}))
             await asyncio.sleep(0.1)
             task.cancel()

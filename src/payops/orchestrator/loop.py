@@ -12,6 +12,7 @@ from pydantic import Field
 from payops.contracts import Contract, EvidenceItem, Identifier, Incident, RootCauseHypothesis
 from payops.evidence.artifacts import JSON_OBJECT, ArtifactStore, EvidenceIntegrityError
 from payops.evidence.context import ReasoningContext, build_context
+from payops.evidence.diagnostic_support import support_index
 from payops.evidence.verification import verify_evidence
 from payops.orchestrator.budget import BudgetLedger, ModelCharge, ReadCharge, ReasoningBudget
 from payops.orchestrator.loop_records import (
@@ -53,6 +54,8 @@ LOCAL_INSTRUCTION = (
     "Prior reads have already completed; do not repeat identical requests. "
     "Choose only from allowed_decisions. On a terminal turn, finish from available evidence "
     "or refuse if it is insufficient; never invent a diagnosis to finish. "
+    "Only host_support_candidates permit a published cause and its support IDs. "
+    "These are conservative diagnostic predicates, not proof of unique causality. "
     "Omitted evidence is unavailable, not healthy. Never propose remediation."
 )
 
@@ -130,7 +133,7 @@ class ReasoningLoop:
         binding = self.store.write(
             JSON_OBJECT.validate_python(
                 {
-                    "version": "reasoning-loop-local-contract-v3"
+                    "version": "reasoning-loop-local-contract-v4"
                     if self.runtime.settings.provider == "local_llama"
                     else "reasoning-loop-v1",
                     "incident": incident.model_dump(mode="json"),
@@ -165,6 +168,8 @@ class LoopSession:
         self.receipts: list[str] = []
         self.feedback: list[dict[str, str]] = []
         self.reads_exhausted = False
+        self.completed_reads: set[str] = set()
+        self.preferred_ids: frozenset[str] = frozenset()
 
     def context(self) -> ReasoningContext:
         """Leave local prompt space for schema/catalog; exact staged tokenization still gates it."""
@@ -175,7 +180,12 @@ class LoopSession:
             else 24000
         )
         return build_context(
-            self.evidence, self.owner.store, self.incident.incident_id, max_characters=limit
+            self.evidence,
+            self.owner.store,
+            self.incident.incident_id,
+            max_characters=limit,
+            recent_first=settings.provider == "local_llama",
+            preferred_ids=self.preferred_ids,
         )
 
     def run(self) -> LoopResult:
@@ -202,7 +212,7 @@ class LoopSession:
                 assert observed.decision is not None
                 decision = observed.decision
                 if decision.decision == "finish":
-                    final, reason = hypotheses(decision), "FINISHED"
+                    final, reason = self.supported(decision, context), "FINISHED"
                     break
                 self.request_reads(turn, decision.reads)
         except LoopStopped as stopped:
@@ -243,6 +253,11 @@ class LoopSession:
                 "cause_codes": sorted(self.owner.causes),
                 "catalog": tool_catalog(),
                 "prior_results": self.feedback,
+                **(
+                    {"host_support_candidates": self.supports(context)}
+                    if self.owner.runtime.settings.provider == "local_llama"
+                    else {}
+                ),
                 "turn": turn,
                 "max_turns": self.owner.limits.model_calls,
                 **(
@@ -262,6 +277,31 @@ class LoopSession:
             binding_sha256=self.binding,
             context=context,
             prompt=self.owner.runtime.prepare(system, data),
+        )
+
+    def supports(self, context: ReasoningContext) -> dict[str, tuple[str, ...]]:
+        """Only included verified facts can satisfy a mechanism predicate; summaries cannot."""
+        return support_index(
+            tuple(
+                (entry.evidence.evidence_id, entry.evidence.resource, entry.facts)
+                for entry in context.entries
+                if not entry.facts_omitted and entry.evidence.source not in {"RUNBOOK", "MEMORY"}
+            )
+        )
+
+    def supported(
+        self, decision: ReasoningDecision, context: ReasoningContext
+    ) -> tuple[RootCauseHypothesis, ...]:
+        """Local claims need predicate support for every citation; unsupported claims abstain."""
+        values = hypotheses(decision)
+        if self.owner.runtime.settings.provider != "local_llama":
+            return values
+        index = self.supports(context)
+        return tuple(
+            value
+            for value in values
+            if set(value.supporting_evidence_ids) <= set(index.get(value.cause_code, ()))
+            and not value.refuting_evidence_ids
         )
 
     def model(self, turn: int, context: ReasoningContext) -> ModelObservation:
@@ -327,6 +367,21 @@ class LoopSession:
 
     def request_reads(self, turn: int, requests: tuple[ReadRequest, ...]) -> None:
         """A denied local read budget may use an already-budgeted final model turn to refuse."""
+        if self.owner.runtime.settings.provider == "local_llama":
+            requests = tuple(
+                request
+                for request in requests
+                if request.model_dump_json() not in self.completed_reads
+            )
+            if not requests:
+                self.reads_exhausted = True
+                self.feedback.append(
+                    {
+                        "status": "READS_ALREADY_COMPLETED",
+                        "instruction": "Reuse observations; finish or refuse",
+                    }
+                )
+                return
         try:
             self.reads(turn, requests)
         except LoopStopped as stopped:
@@ -422,3 +477,7 @@ class LoopSession:
         if len(merged) > 256:
             raise LoopStopped("BUDGET_EXHAUSTED")
         self.evidence = tuple(merged.values())
+        self.completed_reads.update(result.request.model_dump_json() for result in results)
+        self.preferred_ids = frozenset(
+            item.evidence_id for result in results for item in result.evidence
+        )

@@ -1,0 +1,19 @@
+{
+  "metric": "post_hoc_support_link_reference_match",
+  "reviewer": "Codex development review",
+  "scope": "conservative support-link reference review of the exact curated excerpts, not independent human adjudication",
+  "timing": "post-hoc; predictions were already visible",
+  "score": {
+    "cases": 24,
+    "cases_without_decision": 3,
+    "cases_with_citations": 21,
+    "correct": 21,
+    "total": 21,
+    "invalid": 0,
+    "accuracy": 1.0
+  },
+  "corpus_sha256": "717644aaf60c194b89ff3a3852e0ff3c1389afd4e7ce6e486299efd81a23895a",
+  "review_sha256": "74bb2f7c2a28b6c16de78fa9d34eadfa40ed60c042905dc499cabac40029f3c8",
+  "results_sha256": "46ce07c802fb9781497225281daa3eb4b60790278871ada018c3e54e66aa3857",
+  "scorer_sha256": "2dd109a578d6c09d4d6c5be7b23f5fc29f71461382839dd592511d924ee3e1a7"
+}

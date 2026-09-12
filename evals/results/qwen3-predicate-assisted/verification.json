@@ -1,0 +1,40 @@
+{
+  "scope": "separate receipt and score recomputation by Codex; not independent human review",
+  "receipts_verified": 24,
+  "recall_at_1": {
+    "hits": 20,
+    "total": 24,
+    "k": 1
+  },
+  "recall_at_3": {
+    "hits": 20,
+    "total": 24,
+    "k": 3
+  },
+  "source_results_sha256": {
+    "DEP-01-result.json": "e4b74908c771ead82f79a99432ca5052d15b9dc8114b2c25e84019766a10bbb4",
+    "DEP-02-result.json": "55643f6e955e07dfd0e92edbde93d04c4cea5a873d48f767163b835460e2a175",
+    "DEP-03-result.json": "1ad147fc13a08162b7d25d8e3a0b326c86145b9b5358f5320996dce55a30b7a7",
+    "DEP-04-result.json": "4571c42eb7b393e44c08bbdb0e772802745160a92cfbf52789174e7e31e6d1b8",
+    "OOM-01-result.json": "802be6aad9d9a389b2ab0714ab704c72906322b422e1f6eaba009064c973e549",
+    "OOM-02-result.json": "573c1f64a1fbf8f009fbc661f40020b893369d8939d869fc0520b1fc2b761c7c",
+    "OOM-03-result.json": "bc755755e6c17e00d04dfe9cb61efc138caa29db99f22b08b2eaffd5a381599f",
+    "OOM-04-result.json": "d09b81c61042d3a52e86dd889875d7df5cd0a9f940434afec1507c072617a13c",
+    "PAY-01-result.json": "f73fb098b5cdc25a25f06fd7a888ddbf16db3fd02b21e214d84c4376ca79afb6",
+    "PAY-02-result.json": "63e4f1d0e377efbcdcd96e97a03619529510dca660d8636f919806ccfe10cc9a",
+    "PAY-03-result.json": "c4698be58692c42d4dc2fd32f321eb5341fc10ec66ae44f3ab0fe5167eae0103",
+    "PAY-04-result.json": "aa3ba34d1df2a1d7cdec80ec6d4b846a8f8caafe08458204ef5ce65d77c9f65a",
+    "ROLLOUT-01-result.json": "406850ebd4111c5da8bc12dc18c5cc56b61c753d9c59ab7eadc2c34713d54953",
+    "ROLLOUT-02-result.json": "4752d13b3a0e8b09ba4990044eb90c67cdabcc49d5ba7cefe6187043eb10b182",
+    "ROLLOUT-03-result.json": "db2b4a6effb870566111bbcedd233d6ccda5b214a3a50b66d6c42bdaafaba5db",
+    "ROLLOUT-04-result.json": "c52ab2b8bdce7a687b12b47dc33e1a25606c216a23119d048606814a2da7a4fa",
+    "SCHED-01-result.json": "5e83fda5fa937fe05e5823256b47c4d2b9640b5016ff4655ea68f0a070279c7b",
+    "SCHED-02-result.json": "425cdc7c9f3efba6dbc5a7a52e3950d448165e3deb39d1692d5fa49b6cf28723",
+    "SCHED-03-result.json": "7b8d85e76e03e3ab76cbaed2b8cec46d128c22ce98e06fcd54ce81846265c791",
+    "SCHED-04-result.json": "a2f8a51b8ddf6b69b0dda5dde9bd21eb9ec5d5f10e754f050f1dfe06627c6c74",
+    "TELEM-01-result.json": "130c5c0cfbf16956de36d867dc3d7e430db6a639b7d3a85059d1b10e65dde73c",
+    "TELEM-02-result.json": "e8d4472439a4d48180305ebc493b38f0302676d128fe9c0fa133056809b92802",
+    "TELEM-03-result.json": "071c04a7d213c8b63f4c919eb9adbc136263e293a3540c063d320a7702ebcaa5",
+    "TELEM-04-result.json": "9af037e50e93bca76d89d78757179ded2505aba63197017885419a732404306f"
+  }
+}
