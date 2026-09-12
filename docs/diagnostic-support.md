@@ -10,13 +10,17 @@ Only included, verified source facts supply candidates. Retrieved guidance, omit
 
 ## Context and repeated reads
 
-Local context selection now orders fresh observations across source/service groups, with recently requested evidence first. Repeated snapshots from one group cannot occupy every available slot. All artifacts are verified even when their contents do not fit.
+Local context selection prioritizes source facts satisfying diagnostic predicates, then recently requested and fresh observations across source/service groups. Repeated snapshots from one group cannot occupy every available slot. All artifacts are verified even when their contents do not fit. This avoids replacing an observed failure with a newer unrelated healthy sample solely because collection happened later.
 
 Operational JSON log lines are exposed as structured records, preserving outer timestamps and all unparsed text. Duplicate-key, malformed and nonfinite JSON remains raw evidence and cannot supply predicate fields. This lets database and allocation records reach the same checks used on recorded evidence.
 
 Within one local investigation, an exact tool/service/query request is issued once. Reentry reconstructs completed requests from verified SQL-anchored receipts. Mixed batches dispatch only unseen requests. A wholly repeated batch moves the next model turn to finish/refuse. Failed completed reads are not silently retried. Refreshing a changing system requires a new investigation; this is snapshot reuse, not a cache with an implied freshness guarantee.
 
-The local run binding is versioned `reasoning-loop-local-contract-v4`. Existing runs from an older contract cannot silently resume under changed prompt or support semantics.
+The local run binding is versioned `reasoning-loop-local-contract-v5`. Existing runs from an older contract cannot silently resume under changed prompt or support semantics.
+
+When included evidence satisfies a diagnostic predicate, the local model receives a compact terminal prompt. Generation permits one cause, one support ID, an 80-character summary and no unverified refutation links. Unknown cases retain the bounded read loop. This avoids spending additional reads and long summaries on an already observed mechanism; the candidate remains provisional and remediation still requires independent approval.
+
+HTTP predicates additionally require executed endpoint role: a webhook 409 conflict flag, or processor-specific 429 responses with a matched other-processor 200 control at the same region and method. Raw Prometheus metric dictionaries are not confused with normalized metric-name strings.
 
 ## Evaluation
 

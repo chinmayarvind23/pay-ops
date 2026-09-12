@@ -3,6 +3,7 @@
 
 # Frozen evidence and result hashes bind exact bytes, including existing newlines.
 evals/replay-v1/** -text
+evals/replay-v2/** -text
 evals/results/** -text
 apps/web/src/replay.json -text
 

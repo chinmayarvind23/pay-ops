@@ -1,0 +1,1 @@
+{"value":{"deployment":[{"containers":[],"kind":"Deployment","replicas":0,"resource":"processor-adapter","resources":[{"limits":{"cpu":"500m","ephemeral-storage":"128Mi","memory":"256Mi"},"requests":{"cpu":"50m","ephemeral-storage":"64Mi","memory":"96Mi"}}],"status":{"conditions":[]}}],"events":[],"pods":[]}}

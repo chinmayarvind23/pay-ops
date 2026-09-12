@@ -1,16 +1,16 @@
 ﻿# Results
 
 The [24-case model replay study](model-replay-results.md) now includes a predicate-assisted
-treatment with **83.3% Recall@1 and Recall@3**, **8.547-second median** and
-**17.390-second p95** replay latency, with **$0 provider charges**. Python diagnostic
+treatment with expanded HTTP evidence and **91.7% Recall@1 and Recall@3**,
+**8.414-second median** and **15.578-second p95** replay latency, with **$0 provider charges**. Python diagnostic
 checks supply the candidate mechanisms; this is development replay, not held-out
 model-only accuracy. The original compact model remains at 37.5%/66.7%.
 The historical scenario notes below concern fault reproduction, not model diagnosis.
 The separate [post-hoc attribution review](attribution-review.md) awards 15/72 and
 9/55 support links against an explicit excerpt-level reference. It is not independent
 human adjudication or the original 96.4% target. The predicate-assisted treatment
-matches **21/21 links across 21/24 cases** against that same reference, which informed
-predicate development. Three cases abstain; one supported broader diagnosis misses
+matches **23/23 links across 23/24 cases** against its development reference, which informed
+predicate development. One case abstains; one supported broader diagnosis misses
 the more specific frozen root-cause label.
 
 ## Measured development and component results

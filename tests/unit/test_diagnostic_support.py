@@ -94,6 +94,8 @@ def test_no_slice_claim_from_unmatched_or_sparse_observations() -> None:
     assert not slice_causes({"spans": [None, "sandbox.call.processor: 100 us; incomplete"]})
     assert not slice_causes({"metric": "payment_requests_total", "value": 10, "labels": []})
     assert not slice_causes({"metric": "payment_authorization_latency_seconds_sum", "value": 0})
+    assert not slice_causes({"metric": {"__name__": "up"}, "value": [1, "1"]})
+    assert not slice_causes({"metric": ["up"], "value": 1})
 
 
 def test_frozen_development_regression_preserves_missing_mechanisms() -> None:

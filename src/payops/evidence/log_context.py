@@ -23,7 +23,7 @@ def log_context(payload: dict[str, JsonValue]) -> dict[str, JsonValue]:
                     candidate, object_pairs_hook=unique_fields, parse_constant=invalid_constant
                 )
             )
-        except ValueError:
+        except (ValueError, RecursionError):
             unparsed.append(line)
             continue
         records.append(

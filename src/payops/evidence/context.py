@@ -6,6 +6,7 @@ from pydantic import Field, JsonValue
 
 from payops.contracts import Contract, EvidenceItem, Source
 from payops.evidence.artifacts import JSON_OBJECT, ArtifactStore, EvidenceIntegrityError
+from payops.evidence.diagnostic_support import support_index
 from payops.evidence.log_context import log_context
 from payops.evidence.payment_window import verify_payment_window
 from payops.evidence.trace_span import verify_trace_span
@@ -96,18 +97,32 @@ def build_context(
             raise EvidenceIntegrityError("context incident mismatch")
         verify_evidence(item, store)
     result = ReasoningContext(entries=(), omitted_count=len(evidence))
-    for item in _ordered(evidence, recent_first, preferred_ids):
+    facts = {item.evidence_id: _facts(item, store, recent_first) for item in evidence}
+    signals = (
+        support_index(
+            tuple(
+                (item.evidence_id, item.resource, facts[item.evidence_id])
+                for item in evidence
+                if item.source not in {"RUNBOOK", "MEMORY"}
+            )
+        )
+        if recent_first
+        else {}
+    )
+    signaled = frozenset(identifier for ids in signals.values() for identifier in ids)
+    for item in _ordered(evidence, recent_first, preferred_ids, signaled):
         if len(result.entries) >= max_items:
             break
-        entry = ContextEntry(
-            evidence=item, facts=_facts(item, store, recent_first), facts_omitted=False
-        )
+        entry = ContextEntry(evidence=item, facts=facts[item.evidence_id], facts_omitted=False)
         result = _append(result, entry, max_characters)
     return result
 
 
 def _ordered(
-    evidence: tuple[EvidenceItem, ...], recent: bool, preferred: frozenset[str]
+    evidence: tuple[EvidenceItem, ...],
+    recent: bool,
+    preferred: frozenset[str],
+    signaled: frozenset[str],
 ) -> list[EvidenceItem]:
     """Round-robin fresh source/service groups so repeated snapshots cannot crowd out logs."""
     if not recent:
@@ -115,6 +130,7 @@ def _ordered(
     ordered = sorted(
         evidence,
         key=lambda entry: (
+            entry.evidence_id not in signaled,
             entry.evidence_id not in preferred,
             entry.source in {"MEMORY", "RUNBOOK"},
             -entry.observed_at.timestamp(),

@@ -7,7 +7,16 @@ from pydantic import Field, JsonValue, TypeAdapter
 from payops.contracts import Contract
 from payops.evidence.artifacts import JSON_OBJECT
 from payops.evidence.payment_window import Service
-from payops.orchestrator.reasoning import Brief, RankedCause
+from payops.orchestrator.reasoning import RankedCause
+
+type LocalBrief = Annotated[str, Field(min_length=1, max_length=80)]
+
+
+class LocalCause(RankedCause):
+    """One checked citation is enough for a compact local diagnosis; refutation is not inferred."""
+
+    supporting_evidence_ids: tuple[str, ...] = Field(min_length=1, max_length=1)
+    refuting_evidence_ids: tuple[str, ...] = Field(max_length=0)
 
 
 class FixedRead(Contract):
@@ -33,25 +42,25 @@ class ReadDecision(Contract):
     """A read decision cannot simultaneously publish a diagnosis."""
 
     decision: Literal["read"]
-    summary: Brief
+    summary: LocalBrief
     reads: tuple[LocalRead, ...] = Field(min_length=1, max_length=2)
     hypotheses: tuple[RankedCause, ...] = Field(max_length=0)
 
 
 class FinishDecision(Contract):
-    """Finishing can cite up to three causes but cannot request additional work."""
+    """A compact local finish publishes one checked mechanism or abstains."""
 
     decision: Literal["finish"]
-    summary: Brief
+    summary: LocalBrief
     reads: tuple[LocalRead, ...] = Field(max_length=0)
-    hypotheses: tuple[RankedCause, ...] = Field(max_length=3)
+    hypotheses: tuple[LocalCause, ...] = Field(max_length=1)
 
 
 class RefuseDecision(Contract):
     """Refusal is terminal and grants neither reads nor a diagnosis."""
 
     decision: Literal["refuse"]
-    summary: Brief
+    summary: LocalBrief
     reads: tuple[LocalRead, ...] = Field(max_length=0)
     hypotheses: tuple[RankedCause, ...] = Field(max_length=0)
 

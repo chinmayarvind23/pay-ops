@@ -830,3 +830,14 @@ separate from primary-cause labels. Live qualification and cleanup remain requir
 
 
 Eviction acceptance revision: on Kubernetes v1.35.8 the first pressure run retained an Evicted event and DisruptionTarget=True/TerminationByKubelet memory message, but the gracefully exited container left phase Succeeded. This failed the original phase-only rule and remains unqualified. A fresh run may qualify either canonical Failed/Evicted or a terminal pod with the explicit memory disruption condition and terminated non-OOM container. Both forms still require the matching owned Evicted event, current MemoryPressure condition, effective threshold and memory signal. The cause is never inferred from Succeeded alone. Source: https://raw.githubusercontent.com/kubernetes/kubernetes/v1.35.8/pkg/kubelet/eviction/eviction_manager.go (memory pressure assigns TerminationByKubelet and emits the Evicted event).
+
+
+## Final local diagnosis and metrics release
+
+Predicate-assisted replay on 24 cases now achieves 22/24 (91.7%) Recall@1 and Recall@3, with 8.414-second median and 15.578-second p95 replay latency and zero provider charges. The expanded HTTP corpus preserves the original 28 facts and adds two checksum-bound observations. Its 23/23 citation agreement is against a development reference that informed the predicates, not independent semantic accuracy.
+
+The final live processor-outage control completed one real local model call and diagnosed PROCESSOR_UNAVAILABLE in 27.578 seconds. A fresh host replay left the SQL ledger and runtime files unchanged; the scenario harness restored the exact workload and verified healthy payments. Earlier parser failure, timeout and refusal runs remain retained. This single case is not a median human investigation study.
+
+The local contract prioritizes checked mechanisms, uses a compact terminal prompt when support is present, limits local output to one cause and one citation, and reuses exact completed reads. Unknown cases retain bounded investigation reads. The paired human timing collector/scorer is implemented; no human timing measurements are claimed. Free Hugging Face hosting and AWS self-service instructions remain available.
+
+Evidence: resources/pay_ops/evidence/supported-model-v2 and operator-live-diagnosis-v4. Full suite: 2308 passed. Module coverage gaps remain in scenario harnesses; the full-suite coverage snapshot preceded final prompt edits, which receive focused verification.

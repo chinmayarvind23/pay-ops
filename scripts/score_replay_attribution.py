@@ -28,9 +28,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--corpus", type=Path)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
-    corpus = repo / "evals/replay-v1/corpus.json"
+    corpus = args.corpus or repo / "evals/replay-v1/corpus.json"
     annotation = corpus.with_name("attribution-review-v1.json")
     labels = repo / "evals/golden/release-v2.json"
     corpus_raw, _ = load(corpus)
@@ -45,12 +46,17 @@ def main() -> None:
             raise ValueError("duplicate or invalid prediction case")
         observations[row["case_id"]] = ModelObservation.model_validate(row["observation"])
     score = score_replay_attribution(
-        corpus.parent, load_cases(corpus_raw), parsed, observations,
+        corpus.parent,
+        load_cases(corpus_raw),
+        parsed,
+        observations,
         load_labels(labels.read_bytes()).cause_vocabulary(),
     )
     report = {
         "metric": "post_hoc_support_link_reference_match",
-        "reviewer": review["reviewer"], "scope": review["scope"], "timing": review["timing"],
+        "reviewer": review["reviewer"],
+        "scope": review["scope"],
+        "timing": review["timing"],
         "score": score.model_dump(mode="json"),
         "corpus_sha256": sha256(corpus_raw).hexdigest(),
         "review_sha256": sha256(review_raw).hexdigest(),

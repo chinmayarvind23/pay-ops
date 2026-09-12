@@ -1,0 +1,19 @@
+{
+  "metric": "post_hoc_support_link_reference_match",
+  "reviewer": "Codex development review",
+  "scope": "Development reference used during predicate design; not independent human or held-out attribution accuracy.",
+  "timing": "Original reviews followed earlier predictions; HTTP additions precede the expanded-corpus prediction run but informed its predicates.",
+  "score": {
+    "cases": 24,
+    "cases_without_decision": 1,
+    "cases_with_citations": 23,
+    "correct": 23,
+    "total": 23,
+    "invalid": 0,
+    "accuracy": 1.0
+  },
+  "corpus_sha256": "2cb01d0588a1dcf158b797eadbc9e7be9c8e8a4d19bb5bc772b4c41be2e82f90",
+  "review_sha256": "601e002e14564e73be8befcbb46aca9c9c49c2b1f78beb4aa1c03968ef546e87",
+  "results_sha256": "655f5686c268cb71b6a3d971c438d11df8aba5a6bf5ac8aa81ba88c95df4b697",
+  "scorer_sha256": "2dd109a578d6c09d4d6c5be7b23f5fc29f71461382839dd592511d924ee3e1a7"
+}

@@ -1,0 +1,1 @@
+{"value":{"http":{"body":"{\"detail\":\"synthetic risk returned 422\"}","status":502},"upstream":{"error_lines":["2026-09-11T20:36:40.693368939Z INFO:     10.244.1.11:58488 - \"POST /simulate HTTP/1.1\" 422 Unprocessable Entity"],"records":[]}}}

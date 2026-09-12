@@ -156,3 +156,26 @@ def test_recent_context_diversifies_sources_and_prefers_completed_reads(tmp_path
         preferred_ids=frozenset({logs.evidence_id}),
     )
     assert preferred.evidence_ids() == frozenset({logs.evidence_id})
+
+
+def test_observed_failure_survives_newer_unrelated_samples(tmp_path: Path) -> None:
+    """Collection order cannot hide a processor with zero replicas behind later healthy logs."""
+    store = ArtifactStore(tmp_path)
+    now = utc_now()
+    failure = normalize(
+        Observation(
+            source="DEPLOYMENT",
+            resource="processor-adapter",
+            observed_at=now,
+            query="fixed-read",
+            summary="Observed deployment",
+            payload={"kind": "Deployment", "replicas": 0},
+        ),
+        "incident",
+        now,
+        now,
+        store,
+    )
+    healthy = item(store, text="later unrelated healthy observation")
+    bundle = build_context((failure, healthy), store, "incident", max_items=1, recent_first=True)
+    assert bundle.evidence_ids() == frozenset({failure.evidence_id})

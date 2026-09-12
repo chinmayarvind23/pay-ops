@@ -55,7 +55,8 @@ def region_latency(rows: list[Object]) -> bool:
     for row in rows:
         metric, label, value = row.get("metric"), labels(row), number(row.get("value"))
         if (
-            metric
+            not isinstance(metric, str)
+            or metric
             not in {
                 "payment_authorization_latency_seconds_count",
                 "payment_authorization_latency_seconds_sum",
