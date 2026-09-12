@@ -81,8 +81,7 @@ def hpa_demand(
         or observed.get("apiVersion") != "autoscaling/v2"
         or observed.get("kind") != "HorizontalPodAutoscaler"
         or observed.get("spec") != hpa_spec(maximum)
-        or type(generation) is not int
-        or generation < 1
+        or (generation is not None and (type(generation) is not int or generation < 1))
         or (
             observed_generation is not None
             and (type(observed_generation) is not int or observed_generation != generation)

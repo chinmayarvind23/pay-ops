@@ -119,3 +119,14 @@ def test_incomplete_or_misleading_cap_evidence_rejects(fault: str) -> None:
         )
     with pytest.raises(ValueError):
         hpa_demand(row, "owned", 1, saturated=True)
+
+
+def test_hpa_without_metadata_generation() -> None:
+    """The HPA REST strategy does not assign Deployment-style generations on create/update."""
+    row = observed(True)
+    object_value(row["metadata"]).pop("generation")
+    object_value(row["status"]).pop("observedGeneration")
+    assert hpa_demand(row, "owned", 1, saturated=True).limited
+    object_value(row["status"])["observedGeneration"] = 1
+    with pytest.raises(ValueError):
+        hpa_demand(row, "owned", 1, saturated=True)
