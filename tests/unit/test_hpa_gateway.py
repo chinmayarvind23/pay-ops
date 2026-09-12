@@ -106,3 +106,12 @@ def test_mutation_response_cap_rejects(tmp_path: Path) -> None:
     ):
         with pytest.raises(ValueError, match="response is capped"):
             adapter.create_hpa(RUN)
+
+
+def test_load_log_does_not_tail_away_cri_fragments(tmp_path: Path) -> None:
+    """CRI can split one JSON record into many fragments; a ten-line tail loses its prefix."""
+    adapter = gateway(tmp_path)
+    with patch("payops.scenarios.hpa_gateway.bounded_read", return_value=b"{}") as read:
+        assert adapter.load_log("hpa-load-" + RUN + "-abcde", RUN) == b"{}"
+    args = read.call_args.args[0]
+    assert "--tail=2000" in args and "--limit-bytes=262144" in args

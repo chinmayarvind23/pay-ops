@@ -106,3 +106,18 @@ def test_bounds_reject(evidence: tuple[JsonObject, LoadProcess, datetime], fault
         finished = finished.replace(tzinfo=None)
     with pytest.raises(ValueError):
         validate_load_receipt(raw, process, finished)
+
+
+def test_whole_second_kubelet_exit_clock(
+    evidence: tuple[JsonObject, LoadProcess, datetime],
+) -> None:
+    """A fractional receipt completion can precede an exit reported at the same whole second."""
+    document, process, _ = evidence
+    receipt = object_value(document["receipt"])
+    ended = datetime.fromisoformat(str(receipt["completed_at"]).replace("Z", "+00:00"))
+    assert (
+        validate_load_receipt(
+            json.dumps(document).encode(), process, ended.replace(microsecond=0)
+        ).failures
+        == 1
+    )

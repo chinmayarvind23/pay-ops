@@ -2,7 +2,7 @@
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from payops.evidence.artifacts import JSON_OBJECT
 from payops.scenarios.concurrency_traffic import (
@@ -46,10 +46,12 @@ def _envelope(raw: bytes) -> tuple[TrafficReceipt, JsonObject]:
 def validate_load_receipt(raw: bytes, process: LoadProcess, finished: datetime) -> TrafficWindow:
     """Bind every completed attempt to the observed load-process lifetime and unique sample IDs."""
     receipt, _ = _envelope(raw)
+    # Kubelet termination timestamps have whole-second precision in this runtime.
+    end_bound = finished + timedelta(seconds=1) if finished.microsecond == 0 else finished
     clocks = (process.started, receipt.started_at, receipt.completed_at, finished)
     if (
         any(clock.tzinfo is None for clock in clocks)
-        or not process.started <= receipt.started_at <= receipt.completed_at <= finished
+        or not process.started <= receipt.started_at <= receipt.completed_at < end_bound
         or not 0 <= (receipt.completed_at - receipt.started_at).total_seconds() <= 180
     ):
         raise ValueError("load receipt falls outside the observed process lifetime")

@@ -155,7 +155,7 @@ class HpaGateway(ConcurrencyGateway):
                 "pod/" + pod_name,
                 "--container=load",
                 "--timestamps=false",
-                "--tail=10",
+                "--tail=2000",
                 "--limit-bytes=262144",
             ),
             262144,
