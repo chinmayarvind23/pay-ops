@@ -536,6 +536,31 @@ def test_local_metadata_only_entry_keeps_summary(harness: Harness) -> None:
     assert entry["evidence"]["summary"] == source.summary
 
 
+def test_local_read_budget_denial_retains_one_final_decision(harness: Harness) -> None:
+    """No backend effect follows exhausted reads; a remaining model turn may honestly refuse."""
+    h = harness
+    h.runtime.settings = h.adapter.settings = h.runtime.settings.model_copy(
+        update={"provider": "local_llama", "input_token_limit": 4096}
+    )
+    h.loop.limits = h.limits.model_copy(update={"tool_calls": 0, "backend_reads": 0})
+    refusal: dict[str, Any] = {
+        "decision": "refuse", "summary": "Insufficient evidence", "reads": [], "hypotheses": []
+    }
+    h.adapter.chat = FakeMessagesListChatModel(
+        responses=[reply(json.dumps(read_decision())), reply(json.dumps(refusal))]
+    )
+    result = h.run()
+    assert result.stop_reason == "REFUSED" and not result.hypotheses
+    assert not h.read_calls and len(h.adapter.calls) == 2
+    data = json.loads(str(h.adapter.calls[-1][0][1].content))
+    assert data["allowed_decisions"] == ["finish", "refuse"]
+    assert data["prior_results"][-1]["status"] == "READ_BUDGET_EXHAUSTED"
+    before = h.ledger.get("incident")
+    assert all(isinstance(charge, ModelCharge) for charge in before.charges)
+    assert h.run() == result and h.ledger.get("incident") == before
+    assert len(h.adapter.calls) == 2 and not h.read_calls
+
+
 @pytest.mark.parametrize(
     "changes",
     [

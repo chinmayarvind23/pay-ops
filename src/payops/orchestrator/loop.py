@@ -50,6 +50,9 @@ LOCAL_INSTRUCTION = (
     "refuting_evidence_ids (0-8 disjoint included IDs), "
     "and missing_evidence (0-4 brief strings). For refuse both arrays are empty. "
     "If evidence cannot support a cause, finish with no hypotheses or request a relevant read. "
+    "Prior reads have already completed; do not repeat identical requests. "
+    "Choose only from allowed_decisions. On a terminal turn, finish from available evidence "
+    "or refuse if it is insufficient; never invent a diagnosis to finish. "
     "Omitted evidence is unavailable, not healthy. Never propose remediation."
 )
 
@@ -127,7 +130,7 @@ class ReasoningLoop:
         binding = self.store.write(
             JSON_OBJECT.validate_python(
                 {
-                    "version": "reasoning-loop-local-context-v2"
+                    "version": "reasoning-loop-local-contract-v3"
                     if self.runtime.settings.provider == "local_llama"
                     else "reasoning-loop-v1",
                     "incident": incident.model_dump(mode="json"),
@@ -161,6 +164,7 @@ class LoopSession:
         self.evidence = evidence
         self.receipts: list[str] = []
         self.feedback: list[dict[str, str]] = []
+        self.reads_exhausted = False
 
     def context(self) -> ReasoningContext:
         """Leave local prompt space for schema/catalog; exact staged tokenization still gates it."""
@@ -200,7 +204,7 @@ class LoopSession:
                 if decision.decision == "finish":
                     final, reason = hypotheses(decision), "FINISHED"
                     break
-                self.reads(turn, decision.reads)
+                self.request_reads(turn, decision.reads)
         except LoopStopped as stopped:
             reason = stopped.reason
         build_context(self.evidence, self.owner.store, self.incident.incident_id)
@@ -241,6 +245,14 @@ class LoopSession:
                 "prior_results": self.feedback,
                 "turn": turn,
                 "max_turns": self.owner.limits.model_calls,
+                **(
+                    {"allowed_decisions": ["finish", "refuse"]}
+                    if self.owner.runtime.settings.provider == "local_llama"
+                    and (self.reads_exhausted or turn == self.owner.limits.model_calls)
+                    else {"allowed_decisions": ["read", "finish", "refuse"]}
+                    if self.owner.runtime.settings.provider == "local_llama"
+                    else {}
+                ),
             },
             separators=(",", ":"),
         )
@@ -313,6 +325,25 @@ class LoopSession:
             )
         return saved.observation
 
+    def request_reads(self, turn: int, requests: tuple[ReadRequest, ...]) -> None:
+        """A denied local read budget may use an already-budgeted final model turn to refuse."""
+        try:
+            self.reads(turn, requests)
+        except LoopStopped as stopped:
+            if (
+                stopped.reason != "BUDGET_EXHAUSTED"
+                or self.owner.runtime.settings.provider != "local_llama"
+                or turn >= self.owner.limits.model_calls
+            ):
+                raise
+            self.reads_exhausted = True
+            self.feedback.append(
+                {
+                    "status": "READ_BUDGET_EXHAUSTED",
+                    "instruction": "Finish or refuse; no more reads",
+                }
+            )
+
     def receipt(self, operation: str) -> str:
         """A charge without a receipt may have reached the backend and cannot be retried."""
         digest = completion(self.owner.ledger, self.incident.incident_id, operation)
@@ -380,7 +411,14 @@ class LoopSession:
                 if item.evidence_id in merged and merged[item.evidence_id] != item:
                     raise EvidenceIntegrityError("read evidence ID collision")
                 merged[item.evidence_id] = item
-            self.feedback.append({"tool": result.request.tool, "status": result.status})
+            feedback = {"tool": result.request.tool, "status": result.status}
+            if self.owner.runtime.settings.provider == "local_llama":
+                feedback.update(
+                    service=result.request.service,
+                    query=json.dumps(result.request.query),
+                    evidence_ids=",".join(item.evidence_id for item in result.evidence),
+                )
+            self.feedback.append(feedback)
         if len(merged) > 256:
             raise LoopStopped("BUDGET_EXHAUSTED")
         self.evidence = tuple(merged.values())

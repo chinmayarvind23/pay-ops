@@ -59,7 +59,7 @@ quality, latency or billing. Setup and invocation are in [Commands](commands.md#
 
 ## Provider ceiling and stage accounting
 
-Local llama inference uses the `reasoning-loop-local-context-v2` binding. Verified
+Local llama inference uses the `reasoning-loop-local-contract-v3` binding. Verified
 context is limited to at most 4,096 serialized characters (less for a smaller input
 allowance), leaving room for the incident, cause vocabulary and tool catalog. This
 character budget is a heuristic; exact staged tokenization still enforces the token
@@ -72,7 +72,9 @@ It gives a concise decision contract because llama.cpp receives the complete JSO
 Schema separately. Python validation remains authoritative, including identifier
 patterns that the pinned llama.cpp grammar converter cannot enforce. This change
 does not alter remote-provider or fixture context selection. Existing local v1
-journals require their original source/configuration; use a new incident for v2.
+journals require their original source/configuration; use a new incident for v3.
+The [local generation contract](local-model-contract.md) further constrains tool
+query types and reserves terminal decisions for the final model turn.
 
 A live adapter first sends a bounded token-count request for the exact generation request shape. Its count enters a runtime-owned hook before generation: strict integer, nonnegative, at most the reserved ceiling. The hook refreshes authority inside the already-owned model worker and checks the original deadline both before and after that refresh. An oversized count, late authorization or revoked identity cannot start generation. Calling the public authorization method recursively from that worker would deadlock admission, so the stage hook performs no new submission.
 

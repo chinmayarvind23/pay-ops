@@ -1,5 +1,33 @@
 # Local operator integration
 
+## Completed bounded control
+
+`operator-live-release-v11` completed the real local workflow with
+`reasoning_stop=FINISHED`, terminal `EVIDENCE_INSUFFICIENT`, and zero root-cause
+hypotheses. Its four original model responses passed canonical validation. It
+collected 25 initial observations and two additional payment snapshots; two pod-event
+reads returned empty, valid results. A further requested read batch was denied before
+dispatch by the original budget. The remaining model turn finished from existing
+evidence. A fresh host resumed with equal SQL ledger contents and no changed hashed
+runtime files.
+
+The four model calls used 1,434, 1,512, 1,586 and 1,605 input tokens; output counts
+were 114, 121, 133 and 60. Generation times were 18.157, 20.469, 24.047 and 18.093
+seconds. These are individual CPU-local healthy-control observations, not a p95
+latency benchmark or incident-time improvement. Provider charges were zero.
+
+Original responses, model/read receipts, receipt hashes, source snapshots and
+restart verification are retained outside the repository. The model repeated reads
+and made an unsupported readiness assertion in an intermediate summary; no diagnosis
+was published. This validates bounded live execution and safe insufficient-evidence
+completion, not successful root-cause diagnosis. The compact 24-case diagnosis
+benchmark remains unchanged.
+
+Separate scoped Elasticsearch controls in v8 returned valid empty results for both
+runbook and incident search in 2.140 and 0.016 seconds. The preceding deadline failure
+is retained. This checks live authenticated search, not successful retrieval of a
+nonempty source document. See the [local decision contract](local-model-contract.md).
+
 ## Context-budget correction
 
 The local v2 reasoning profile bounds context before prompting and omits duplicate
@@ -22,8 +50,9 @@ adapter tests passed. Omitted sources remain verified, omitted IDs cannot be cit
 and the complete included context remains stored. The local binding version changes;
 old journals need their original code/configuration. See [reasoning](reasoning.md).
 
-The remaining integration limitation is model decision validity and diagnostic
-quality. No successful full-agent diagnosis or new Recall score is claimed.
+The bounded control above supersedes the decision-validity failure for that run.
+Diagnostic quality and repeated-read efficiency remain limitations. No successful
+root-cause diagnosis or new Recall score is claimed.
 
 ## Original oversized-prompt control
 

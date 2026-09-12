@@ -69,7 +69,8 @@ the server's work. Stop only your owned server process when finished.
 A small real model smoke run verified the adapter and shared runtime. The completed
 [24-case compact replay benchmark](model-replay-results.md) separately measures diagnosis.
 The [full operator controls](operator-integration-results.md) collected real evidence and,
-after context compaction, reached bounded generation. Invalid model decisions still prevent
-a successful full investigation; compact replay is the measured diagnosis path.
+after context compaction and a stricter generation contract, completed a bounded healthy
+control with an insufficient-evidence report. Compact replay is the measured diagnosis path;
+the live control does not establish root-cause accuracy.
 Any comparison against paid model prices must be labeled an estimate, especially because
 different providers use different tokenizers and may have different quality.

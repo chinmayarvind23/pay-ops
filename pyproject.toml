@@ -39,7 +39,16 @@ packages = ["src/payops"]
 payops = "payops.cli:main"
 
 [dependency-groups]
-dev = ["pytest","pytest-cov","hypothesis","ruff","pyright","mutmut","types-PyYAML"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "ruff",
+    "pyright",
+    "mutmut",
+    "types-PyYAML",
+    "jsonschema>=4,<5",
+]
 
 [tool.ruff]
 line-length = 100

@@ -16,6 +16,7 @@ from payops.orchestrator.local_llama import (
     LocalLlamaAdapter,
     framed_prompt,
 )
+from payops.orchestrator.local_schema import generation_schema
 from payops.orchestrator.model_runtime import ModelRuntime, ModelSettings
 
 
@@ -58,6 +59,7 @@ class Wire:
                 payload["tokens"] = overlong
         else:
             assert json.loads(request.content)["prompt"] == [1, 2, 3]
+            assert json.loads(request.content)["json_schema"] == generation_schema()
             assert json.loads(request.content)["n_predict"] == 96
             payload = {
                 "content": json.dumps(

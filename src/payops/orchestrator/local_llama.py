@@ -10,10 +10,11 @@ import httpx
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import JsonValue
 
+from payops.orchestrator.local_schema import final_prompt, generation_schema
 from payops.orchestrator.model_runtime import ModelSettings, ProviderDetails
 from payops.orchestrator.openai_adapter import ValidatedAIMessage
 from payops.orchestrator.openai_wire import count, decode, object_value
-from payops.orchestrator.reasoning import ProviderUsage, ReasoningDecision, TextPrice
+from payops.orchestrator.reasoning import ProviderUsage, TextPrice
 
 ORIGIN = "http://127.0.0.1:18089"
 MODEL = "payops-qwen3-1.7b-q4-k-m"
@@ -158,7 +159,9 @@ class LocalLlamaAdapter:
                     "seed": 0,
                     "stream": False,
                     "cache_prompt": False,
-                    "json_schema": ReasoningDecision.model_json_schema(),
+                    "json_schema": generation_schema(
+                        final_only=final_prompt(str(messages[1].content))
+                    ),
                 },
                 deadline,
             )
