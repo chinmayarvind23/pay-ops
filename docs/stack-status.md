@@ -14,7 +14,7 @@
 | AWS | Optional Lightsail replay setup instructions | Documentation only, as requested; not provisioned |
 | Hugging Face | Public sanitized Static Space | Hosted release files verified |
 
-Cloud SQL, Memorystore, a live Pub/Sub worker and GCS artifact transport remain
+Cloud SQL, Memorystore and a live Pub/Sub worker remain
 architecture extensions. Listing an installed SDK does not establish an integration.
 The zero-spend release runs locally and publishes credential-free replay assets.
 
@@ -43,7 +43,7 @@ The technology list in `resources/pay_ops/PROJECT_PLAN.md` is broader than the r
 | Google Identity Platform | [Firebase Admin token adapter](../src/payops/auth/firebase.py) and backend grant checks; provider responses tested, enterprise SAML tenant configuration not deployed |
 | GCP / Terraform | Disabled-by-default GKE/VPC/bucket/Pub/Sub [foundation](../infra/terraform/gcp/main.tf), schema validation and mock-provider plans |
 | Cloud Logging / Cloud Monitoring | Planned managed observability destinations; current evidence comes from Kubernetes logs, Prometheus and local OTel. No dedicated cloud ingestion adapter is claimed |
-| Pub/Sub / GCS | Optional Terraform resources exist; live queue worker and GCS artifact transport are not implemented. Current execution and immutable artifacts are local |
+| Pub/Sub / GCS | Optional Terraform resources exist; [GCS archive transport](gcs-archive.md) verifies create-once uploads and local restore through the real SDK. The live Pub/Sub queue worker remains unimplemented |
 | AWS Lightsail | [Self-service replay deployment instructions](../infra/terraform/aws-lightsail/README.md), as requested; no AWS resources created |
 | Hugging Face Spaces | Public free Static Space serving the sanitized replay and compiled frontend |
 | Vercel | Excluded by user direction; Hugging Face is the selected host |
