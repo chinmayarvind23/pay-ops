@@ -1,13 +1,16 @@
 """Paired human timing keeps incorrect diagnoses and order effects in the reported denominator."""
 
 from collections import Counter
+from hashlib import sha256
+from pathlib import Path
 from statistics import median
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, JsonValue
 
 from payops.contracts import Contract, Identifier
 from payops.evaluation.labels import Case, FrozenLabels, score_causes
+from payops.orchestrator.openai_wire import decode
 
 
 class TimingTrial(Contract):
@@ -65,3 +68,23 @@ def correct(trial: TimingTrial, labels: FrozenLabels) -> bool:
     """Use frozen release gold after measurement, never the participant's self-rated correctness."""
     score = score_causes(labels, {trial.case_id: (trial.cause_code,)}, 1)
     return score.hits == 1
+
+
+def load_timing_trial(path: Path) -> TimingTrial:
+    """A completed trial must match its original start record and the actual presented packet."""
+    trial = TimingTrial.model_validate(read_record(path))
+    started = read_record(path.with_name("started.json"))
+    fields = ("participant_id", "case_id", "condition", "order", "evidence_sha256")
+    if any(started.get(field) != getattr(trial, field) for field in fields):
+        raise ValueError("timing trial differs from its start record")
+    with path.with_name("source.txt").open("rb") as stream:
+        packet = stream.read(262145)
+    if len(packet) > 262144 or sha256(packet).hexdigest() != trial.evidence_sha256:
+        raise ValueError("timing source packet checksum differs")
+    return trial
+
+
+def read_record(path: Path) -> dict[str, JsonValue]:
+    """Bound trial metadata and reject duplicate fields before identity validation."""
+    with path.open("rb") as stream:
+        return decode(stream.read(16385), 16384)

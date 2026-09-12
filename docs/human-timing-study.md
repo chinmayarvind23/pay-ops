@@ -1,5 +1,9 @@
 # Human investigation timing
 
+Scoring reopens each trial's start record and presented source packet. Participant, case,
+condition, order and source digest must match; altered or missing packets fail before
+statistics are computed. This establishes journal consistency, not proof of participation.
+
 The paired-study collector and scorer are implemented. No human trials have been run, so the 11.8-to-2.9-minute claim remains unmeasured.
 
 Before recruiting participants, freeze a study plan containing every participant/case pair, for example `{"pairs":[["participant-01","DEP-01"]]}`. This is a format example, not a completed study. Assign half the pairs baseline-first and half assisted-first. Specify the same incident intake, available operational tools, stopping rule, training, time budget and a washout interval for both conditions. Record the repeated-case learning limitation. Keep cause labels hidden until scoring.

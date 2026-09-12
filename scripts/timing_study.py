@@ -10,7 +10,7 @@ from pydantic import TypeAdapter
 
 from payops.contracts import Identifier, utc_now
 from payops.evaluation.labels import Case, load_labels
-from payops.evaluation.timing import TimingTrial, summarize_timing
+from payops.evaluation.timing import TimingTrial, load_timing_trial, summarize_timing
 from payops.orchestrator.openai_wire import decode
 
 
@@ -66,7 +66,7 @@ def score(args: argparse.Namespace) -> None:
     )
     if len(set(pairs)) != len(pairs):
         raise ValueError("duplicate planned pair")
-    trials = tuple(TimingTrial.model_validate_json(path.read_bytes()) for path in args.trials)
+    trials = tuple(load_timing_trial(path) for path in args.trials)
     labels_raw = args.labels.read_bytes()
     report = summarize_timing(trials, load_labels(labels_raw), frozenset(pairs))
     report.update(

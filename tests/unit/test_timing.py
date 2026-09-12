@@ -1,11 +1,13 @@
 """Synthetic unit controls verify paired arithmetic; they are not human-study measurements."""
 
+import json
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
 
 from payops.evaluation.labels import load_labels
-from payops.evaluation.timing import TimingTrial, summarize_timing
+from payops.evaluation.timing import TimingTrial, load_timing_trial, summarize_timing
 
 
 def trials() -> tuple[TimingTrial, ...]:
@@ -77,3 +79,29 @@ def test_invalid_duration_rejected(seconds: object) -> None:
     row["elapsed_seconds"] = seconds
     with pytest.raises(ValueError):
         TimingTrial.model_validate(row)
+
+
+@pytest.mark.parametrize(
+    "change", ["none", "source", "identity", "missing", "oversized", "duplicate"]
+)
+def test_recorded_trial_requires_original_packet_and_start(tmp_path: Path, change: str) -> None:
+    """Synthetic journals test tamper detection; these are not human benchmark observations."""
+    packet = b"synthetic unit-test incident packet"
+    trial = trials()[0].model_copy(update={"evidence_sha256": sha256(packet).hexdigest()})
+    path = tmp_path / "trial.json"
+    path.write_text(trial.model_dump_json(), encoding="utf-8")
+    started = trial.model_dump()
+    if change == "identity":
+        started["participant_id"] = "different-participant"
+    (tmp_path / "started.json").write_text(json.dumps(started), encoding="utf-8")
+    if change != "missing":
+        (tmp_path / "source.txt").write_bytes(
+            b"changed" if change == "source" else b"x" * 262145 if change == "oversized" else packet
+        )
+    if change == "duplicate":
+        path.write_text('{"order":1,"order":2}', encoding="utf-8")
+    if change == "none":
+        assert load_timing_trial(path) == trial
+    else:
+        with pytest.raises((ValueError, OSError)):
+            load_timing_trial(path)
