@@ -12,6 +12,7 @@ from payops.scenarios.contracts import (
 )
 
 VARIANTS: dict[CaseId, str] = {
+    "SCHED-03": "sustained CPU demand at HPA cap one versus two owned replicas and recovery",
     "OOM-04": "eight parallel versus serial payments at fixed 256Mi with owned OOM and recovery",
     "OOM-02": "risk retained allocations versus release control at fixed 256Mi; repeated OOM",
     "SCHED-02": "admitted 16Gi memory request exceeds both local node capacities",
@@ -94,7 +95,16 @@ def validate_baseline(document: JsonObject, name: DeploymentName) -> JsonObject:
 def fault_spec(case_id: CaseId, original: JsonObject) -> JsonObject:
     """Recreate makes rollout faults observable instead of leaving a healthy old replica."""
     spec = deepcopy(original)
-    if case_id in {"OOM-02", "OOM-03", "OOM-04", "SCHED-01", "SCHED-02", "TELEM-03", "ROLLOUT-04"}:
+    if case_id in {
+        "OOM-02",
+        "OOM-03",
+        "OOM-04",
+        "SCHED-01",
+        "SCHED-02",
+        "SCHED-03",
+        "TELEM-03",
+        "ROLLOUT-04",
+    }:
         raise ValueError("case requires its specialized journaled harness")
     if case_id == "OOM-01":
         spec = memory_control_spec(original)

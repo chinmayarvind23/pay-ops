@@ -4,8 +4,8 @@ import re
 
 from payops.scenarios.contracts import JsonObject
 
-IMAGE = "payops-sandbox:hpa-load-c0b1792"
-RUNTIME_IMAGE_DIGEST = "sha256:8addf3e215722e4eb8606bcc8a30d97faa5a36ba4b1f219020e890f09f1882d6"
+IMAGE = "payops-sandbox:hpa-paced"
+RUNTIME_IMAGE_DIGEST = "sha256:4b793c101fd8127ed7d99d5315252539514607e4513877acd8b81867027bb5e6"
 
 
 def load_job(run_id: str) -> JsonObject:

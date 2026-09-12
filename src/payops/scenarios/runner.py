@@ -149,6 +149,7 @@ class LocalScenarioRunner:
             "OOM-04",
             "SCHED-01",
             "SCHED-02",
+            "SCHED-03",
             "TELEM-03",
             "ROLLOUT-04",
         }:

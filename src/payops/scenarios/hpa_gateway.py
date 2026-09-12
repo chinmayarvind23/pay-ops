@@ -124,3 +124,43 @@ class HpaGateway(ConcurrencyGateway):
             },
         }
         return self._write(("delete", "--raw", resource_path(kind, run_id), "-f", "-"), options)
+
+    def experiment_resources(self) -> JsonObject:
+        """Read complete bounded namespace inventories so pre-existing controllers are visible."""
+        return {
+            "hpas": self._json(("get", "hpa"))["items"],
+            "jobs": self._json(("get", "jobs"))["items"],
+        }
+
+    def cpu_metrics(self) -> bytes:
+        """The fixed selector excludes the load Job while retaining every payments replica."""
+        path = (
+            "/apis/metrics.k8s.io/v1beta1/namespaces/payops-sandbox/pods"
+            "?labelSelector=app.kubernetes.io%2Fname%3Dpayments-api"
+        )
+        raw = bounded_read((*self._prefix, "get", "--raw", path), 262144, 12)
+        if len(raw) >= 262144:
+            raise ValueError("HPA CPU metrics are capped")
+        return raw
+
+    def load_log(self, pod_name: str, run_id: str) -> bytes:
+        """Only the current run's generated Job pod and load container can supply a receipt."""
+        resource_path("job", run_id)
+        if re.fullmatch("hpa-load-" + run_id + r"-[a-z0-9]+", pod_name) is None:
+            raise ValueError("load log pod name differs from the run")
+        raw = bounded_read(
+            (
+                *self._prefix,
+                "logs",
+                "pod/" + pod_name,
+                "--container=load",
+                "--timestamps=false",
+                "--tail=10",
+                "--limit-bytes=262144",
+            ),
+            262144,
+            12,
+        )
+        if len(raw) >= 262144:
+            raise ValueError("HPA load log is capped")
+        return raw
