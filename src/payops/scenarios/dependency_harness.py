@@ -102,6 +102,15 @@ class DependencyHarness(ConcurrencyHarness):
 
     def _sessions(self, count: int, directory: Path, receipt: ScenarioReceipt) -> None:
         """Retain server-side role counts during pressure and after owned sessions close."""
+        if count == 0:
+            self._wait(
+                directory,
+                receipt,
+                "postgres-drained",
+                lambda: self.access.postgres_sessions(receipt.run_id),
+                postgres_drained,
+            )
+            return
         state = self.access.postgres_sessions(receipt.run_id)
         self._save(directory, receipt, "postgres-sessions", state)
         if state.get("limit") != 4 or state.get("total") != count or state.get("owned") != count:
@@ -185,6 +194,8 @@ class DependencyHarness(ConcurrencyHarness):
         errors: list[Exception] = []
         try:
             self._restore_data(directory, receipt)
+            if dependency_kind(receipt.case_id) == "postgres":
+                self._sessions(0, directory, receipt)
         except Exception as error:
             errors.append(error)
         try:
@@ -232,6 +243,11 @@ def redis_down(document: JsonObject) -> bool:
         and status.get("replicas", 0) == 0
         and status.get("observedGeneration") == object_value(document["metadata"]).get("generation")
     )
+
+
+def postgres_drained(document: JsonObject) -> bool:
+    """Backend disappearance can lag client close; only observed zero sessions proves cleanup."""
+    return document.get("limit") == 4 and document.get("total") == 0 and document.get("owned") == 0
 
 
 def redis_ready(document: JsonObject) -> bool:
