@@ -4,7 +4,7 @@ PayOps investigates Kubernetes payment incidents by correlating health, logs, tr
 
 Payment failures can look alike at the API boundary. A processor timeout, a bad rollout and a missing trace need different responses. PayOps preserves the observations behind a diagnosis so an operator can inspect its reasoning and decline an unsupported action.
 
-The local implementation runs against a five-service synthetic payment system in `kind`. The [public replay demo](https://huggingface.co/spaces/chinmayarvind/payops-incident-replay) is hosted on a free Hugging Face Static Space. The full model benchmark is still in progress. No real payments or ledger writes occur.
+The local implementation runs against a five-service synthetic payment system in `kind`. The [public replay demo](https://huggingface.co/spaces/chinmayarvind/payops-incident-replay) is hosted on a free Hugging Face Static Space. A [24-case local model replay study](docs/model-replay-results.md) is complete; its accuracy remains below target. No real payments or ledger writes occur.
 
 ![Recorded terminal walkthrough](docs/assets/payops-terminal-demo.gif)
 
@@ -15,7 +15,7 @@ The local implementation runs against a five-service synthetic payment system in
 | Measurement | Verified result | Scope |
 | --- | --- | --- |
 | Local fault reproduction | 24 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, HPA saturation, database/cache outages, misleading telemetry and isolated kubelet eviction |
-| Diagnosis | 4/4 rank-1 and rank-3 hits | Frozen four-case development run using deterministic ranking |
+| Model diagnosis | 9/24 Recall@1; 16/24 Recall@3 | Qwen3 compact diagnosis on curated recorded evidence; full results include a weaker second treatment |
 | Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
 | Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |
 | Trace correlation | One nine-span path across five services | Historical bounded capture; four other spans retained unresolved parents |
@@ -94,7 +94,7 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 
 ## Work still required
 
-Run the frozen 24-case model evaluation with free inference, measure investigation timing and actual usage, and finish operational host integration validation. A paired human timing study is needed to substantiate the proposed human baseline. Unmeasured figures are omitted from résumé claims. The terminal demo is recorded; browser visual verification remains unavailable. The design documents retain the broader architecture; this README reports current implementation and measurements.
+Improve model diagnosis on held-out evidence and finish live operational host integration validation. The completed recorded-evidence study measures diagnosis, replay-call timing and usage; it does not establish full-agent latency or human speedup. A paired human study is needed for the proposed human baseline. Unsupported figures are omitted from résumé claims. The terminal demo is recorded; browser visual verification remains unavailable.
 
 ## With more time
 

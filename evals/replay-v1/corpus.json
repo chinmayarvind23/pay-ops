@@ -1,0 +1,321 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "case_id": "DEP-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/DEP-01-observation-1.json",
+          "sha256": "887a23d7d1f2a1d51ffda9a017f2f50d7f69891304e22678142336fadc9d371e",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "DEP-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "metrics",
+          "path": "facts/DEP-02-observation-1.json",
+          "sha256": "3f5dfed52c11252505cfb5ed340067d157ae4ba0f7b3756ba20cd5ac86e6a900",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "DEP-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/DEP-03-observation-1.json",
+          "sha256": "4a7ee947306da13b8d919b008c2675936662dfeab8334fe4cf3199aa668c4466",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "DEP-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/DEP-04-observation-1.json",
+          "sha256": "04ae02ace191fd83c6a143508d521bf341bf404e8af580a67b5138f24daa0e51",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "OOM-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/OOM-01-observation-1.json",
+          "sha256": "f70321f334b6e37c6bbe963fdd4afd5ac5e97ea99610ca7b19bd643036362b67",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "OOM-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/OOM-02-observation-1.json",
+          "sha256": "2023aa73fffe89b95454204354df2b28cef3fc443d41ea1d9906c6a2483ec709",
+          "pointer": "/value"
+        },
+        {
+          "evidence_id": "e2",
+          "source": "kubernetes",
+          "path": "facts/OOM-02-observation-2.json",
+          "sha256": "bd1299e7cd7e5b7ee44e8b0f57c1731d16162f02ab7f68116150489c2cd374c7",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "OOM-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/OOM-03-observation-1.json",
+          "sha256": "6b70bf492cc2c2ae4b699f03ee44a79625cbec28eeadc56679e08e8bf540904e",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "OOM-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/OOM-04-observation-1.json",
+          "sha256": "e48de06e57cdab92100a391bc153fe475ec2e27f9e01d62495064cd170e5f10b",
+          "pointer": "/value"
+        },
+        {
+          "evidence_id": "e2",
+          "source": "kubernetes",
+          "path": "facts/OOM-04-observation-2.json",
+          "sha256": "6da8950d7a5b2e19e0f286bc1ab74c31760b68895f0b29f540cbf6f701bbb459",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "PAY-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "metrics",
+          "path": "facts/PAY-01-observation-1.json",
+          "sha256": "2c5df090b4713f9ef1ac8a4ddc19a493e9143667781af69f7e65c1691d57dadf",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "PAY-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "metrics",
+          "path": "facts/PAY-02-observation-1.json",
+          "sha256": "f272bc003a9746451314bf797f61d913b96e4ba9da3c01a801bbe6b187964715",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "PAY-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "metrics",
+          "path": "facts/PAY-03-observation-1.json",
+          "sha256": "de50e8df3ed1dc4843e33fbe8059a087d0debfa5975d6f9bd99fe2556caa70b9",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "PAY-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "metrics",
+          "path": "facts/PAY-04-observation-1.json",
+          "sha256": "e76854b6d7573c86682afd36da372ac54bfc0baa94ad69fa33a7b9913776138a",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "ROLLOUT-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/ROLLOUT-01-observation-1.json",
+          "sha256": "0d028ddb9fdf9d5d1f73502842a3c007c220c97763e0b396d2d94faa4ed6d76f",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "ROLLOUT-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/ROLLOUT-02-observation-1.json",
+          "sha256": "086955f8102ffdc2eff1f011a87e2ead978c756388c45f962d2a054044b25175",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "ROLLOUT-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/ROLLOUT-03-observation-1.json",
+          "sha256": "276993708ce6ec823bd250744f8cf30cf8d0fc3a49ad57ec2fe44d191e61cff6",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "ROLLOUT-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "http",
+          "path": "facts/ROLLOUT-04-observation-1.json",
+          "sha256": "71056702f758c7dd34397a6f0d9c06ce966d27447e0d9989fadc0cd403011648",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "SCHED-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/SCHED-01-observation-1.json",
+          "sha256": "eba17994505092662b80efef57b8b92ad3dfec58aabc1f9d7337b0e8e7473191",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "SCHED-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/SCHED-02-observation-1.json",
+          "sha256": "d1a0a7f0efecb7908ab41010d4754069506b4bc114fe8644845a0283ecd8612f",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "SCHED-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/SCHED-03-observation-1.json",
+          "sha256": "6db3007d1661ff249cc8851cae4ba40b532cd1c0c07a8d021d702cc0fdc37c76",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "SCHED-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/SCHED-04-observation-1.json",
+          "sha256": "46a7f0dfe88728fa87ff27db1e0a7fe8460a2c1884131fe5b51ad1f327440415",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "TELEM-01",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "kubernetes",
+          "path": "facts/TELEM-01-observation-1.json",
+          "sha256": "1ee178b900c3fab4ddaf56d577928b5c530a83d72a2f19579935f87c352adb4f",
+          "pointer": "/value"
+        },
+        {
+          "evidence_id": "e2",
+          "source": "logs",
+          "path": "facts/TELEM-01-observation-2.json",
+          "sha256": "20ae8ae17a38135086c2a04f6fe94c1978f4fbd7a3de446bc7349e2a3508295d",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "TELEM-02",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/TELEM-02-observation-1.json",
+          "sha256": "fe67da3f865122ff4e414b5b2e0802f3f8311182b11d8878d7a14db72913021d",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "TELEM-03",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "traces",
+          "path": "facts/TELEM-03-observation-1.json",
+          "sha256": "0ea3b9a7db71c68a8ee4355885401a4af3c42ed8d5528bc3db1f2bf4388674d1",
+          "pointer": "/value"
+        }
+      ]
+    },
+    {
+      "case_id": "TELEM-04",
+      "facts": [
+        {
+          "evidence_id": "e1",
+          "source": "logs",
+          "path": "facts/TELEM-04-observation-1.json",
+          "sha256": "ffbe92988f838d69d98abd5c14f4ec9858a217854cbe2e1bec18e4ca3e7a45d9",
+          "pointer": "/value"
+        },
+        {
+          "evidence_id": "e2",
+          "source": "metrics",
+          "path": "facts/TELEM-04-observation-2.json",
+          "sha256": "6c80ae118a739ad5451485fd29f721d01720d287f7a7ccd8195349eee761e4eb",
+          "pointer": "/value"
+        }
+      ]
+    }
+  ]
+}

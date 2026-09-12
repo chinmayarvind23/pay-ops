@@ -1,5 +1,10 @@
 ﻿# Results
 
+The [completed 24-case model replay study](model-replay-results.md) measured
+37.5% Recall@1 and 66.7% Recall@3 for its stronger completed treatment. Those values
+are below the original targets and are not promoted as résumé achievements.
+The historical scenario notes below concern fault reproduction, not model diagnosis.
+
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored

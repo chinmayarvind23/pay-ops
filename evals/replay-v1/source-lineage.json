@@ -1,0 +1,198 @@
+[
+  {
+    "case_id": "DEP-01",
+    "evidence_id": "e1",
+    "source": "evidence\\baseline-committed\\9e577303-b653-4e70-b988-e319c341f05e\\injections\\413f1665bba1492b94e059aa8c59bdd8\\006-activation.json",
+    "source_sha256": "1ffe5e5a8d872aa48f4bc42bba9be83661644cbd961b710d2a44c9ed38bd0535",
+    "derived_sha256": "887a23d7d1f2a1d51ffda9a017f2f50d7f69891304e22678142336fadc9d371e"
+  },
+  {
+    "case_id": "DEP-02",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-04-package-a\\547a2fc8aa4f498fab5a0e5a1202ab10\\009-activation.json",
+    "source_sha256": "f6249160505a1bb217042baab7074bee60b44d2eb65146bd160fb69b340397e0",
+    "derived_sha256": "3f5dfed52c11252505cfb5ed340067d157ae4ba0f7b3756ba20cd5ac86e6a900"
+  },
+  {
+    "case_id": "DEP-03",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-14-dependencies-v3\\runs\\e2a72eb6ab654bb3aec80d67ef572f90\\022-raw-log.json",
+    "source_sha256": "3ee975ebabd2617038b55c8520f833823061789d1f8b0bb98af37551b58736c4",
+    "derived_sha256": "4a7ee947306da13b8d919b008c2675936662dfeab8334fe4cf3199aa668c4466"
+  },
+  {
+    "case_id": "DEP-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-14-dependencies-v3\\runs\\c535543c824e4f30a6f6158ce4236d64\\022-raw-log.json",
+    "source_sha256": "25ef3921f0f01dd2f5ec771f3849cd4e10a13d218e33e68220ba1292b87cfb19",
+    "derived_sha256": "04ae02ace191fd83c6a143508d521bf341bf404e8af580a67b5138f24daa0e51"
+  },
+  {
+    "case_id": "OOM-01",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-05-oom\\c38e01b78b5743eb942a2aca37b7bd8e\\021-activation.json",
+    "source_sha256": "69030a7d328bc3fb99e786ffd8aa6add563d5e44ff87c474da87484004b0dc91",
+    "derived_sha256": "f70321f334b6e37c6bbe963fdd4afd5ac5e97ea99610ca7b19bd643036362b67"
+  },
+  {
+    "case_id": "OOM-02",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-11-leak\\2ba6ab40c6eb415a9034155ecfdaa52e\\runs\\d2a14f09ce8349be8fd2c86fab89f44a\\104-raw-log.json",
+    "source_sha256": "351ecc3847a561140702468c9fe3e0f34d293842d0fb722e094da510fc8b75f1",
+    "derived_sha256": "2023aa73fffe89b95454204354df2b28cef3fc443d41ea1d9906c6a2483ec709"
+  },
+  {
+    "case_id": "OOM-02",
+    "evidence_id": "e2",
+    "source": "evidence\\chunk-11-leak\\2ba6ab40c6eb415a9034155ecfdaa52e\\runs\\d2a14f09ce8349be8fd2c86fab89f44a\\105-capture-after.json",
+    "source_sha256": "8c7dbf016483f490efd809649725e3afce1c5bf5d31f1b34420f4a162295a7ac",
+    "derived_sha256": "bd1299e7cd7e5b7ee44e8b0f57c1731d16162f02ab7f68116150489c2cd374c7"
+  },
+  {
+    "case_id": "OOM-03",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-09-cpu\\950b1dbfd70c4615b1f9ec6a2a9078b1\\runs\\84e657eadd244cbea21ba5f0ab8c3be3\\024-restricted.json",
+    "source_sha256": "d0ce77a0e1ba36d3071a4472ca02310957e06684c7092d4ea70a2860857922d7",
+    "derived_sha256": "6b70bf492cc2c2ae4b699f03ee44a79625cbec28eeadc56679e08e8bf540904e"
+  },
+  {
+    "case_id": "OOM-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-12-concurrency\\953e7735aa9546b9b586371586a83536\\runs\\79a03f72e74943bb95504b7e6e09ddca\\031-raw-log.json",
+    "source_sha256": "ab70cf324551f4c9da1ef4d2e8f8fe3f88b0a1d7e6d14caba15be7ceac0ef70b",
+    "derived_sha256": "e48de06e57cdab92100a391bc153fe475ec2e27f9e01d62495064cd170e5f10b"
+  },
+  {
+    "case_id": "OOM-04",
+    "evidence_id": "e2",
+    "source": "evidence\\chunk-12-concurrency\\953e7735aa9546b9b586371586a83536\\runs\\79a03f72e74943bb95504b7e6e09ddca\\032-capture-after.json",
+    "source_sha256": "ca631cfccb2fe5909045a280057669204e847594135fc48307cff3abbaf6456f",
+    "derived_sha256": "6da8950d7a5b2e19e0f286bc1ab74c31760b68895f0b29f540cbf6f701bbb459"
+  },
+  {
+    "case_id": "PAY-01",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-04-package-a\\a913281ec6fd4fed9a103d9d57a9b037\\009-activation.json",
+    "source_sha256": "2eab222569909f86ad3d995f450d6d630aab69f851cd3b9fd0389a62fcdbc930",
+    "derived_sha256": "2c5df090b4713f9ef1ac8a4ddc19a493e9143667781af69f7e65c1691d57dadf"
+  },
+  {
+    "case_id": "PAY-02",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-04-package-a\\955fcb52cf0d488f872105c3a9595538\\009-activation.json",
+    "source_sha256": "6da7eb51091ec74d77df591824a75fd7aee499b9ca10406179636bae85a0c75c",
+    "derived_sha256": "f272bc003a9746451314bf797f61d913b96e4ba9da3c01a801bbe6b187964715"
+  },
+  {
+    "case_id": "PAY-03",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-04-package-a\\270d831d48d44fcb9e31982b90375216\\008-activation.json",
+    "source_sha256": "a33048ea954b0ac1a4894f81dbbcb999498368126a579b3199629dfa280b8acf",
+    "derived_sha256": "de50e8df3ed1dc4843e33fbe8059a087d0debfa5975d6f9bd99fe2556caa70b9"
+  },
+  {
+    "case_id": "PAY-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-04-package-a\\4eb40bbce85d4769a17a43abdbc9d9cd\\006-activation.json",
+    "source_sha256": "493320113af4dc67045969ee6566aa91984f0c798681caf755e6adab64bb240c",
+    "derived_sha256": "e76854b6d7573c86682afd36da372ac54bfc0baa94ad69fa33a7b9913776138a"
+  },
+  {
+    "case_id": "ROLLOUT-01",
+    "evidence_id": "e1",
+    "source": "evidence\\baseline-committed\\9e577303-b653-4e70-b988-e319c341f05e\\injections\\4a91f98c2f8844d7ae9465ec5095ce47\\007-activation.json",
+    "source_sha256": "cc5d814e12286391ff2984f3128ef1b51d424d9a7f057199db44908e17c7e8b3",
+    "derived_sha256": "0d028ddb9fdf9d5d1f73502842a3c007c220c97763e0b396d2d94faa4ed6d76f"
+  },
+  {
+    "case_id": "ROLLOUT-02",
+    "evidence_id": "e1",
+    "source": "evidence\\baseline-committed\\9e577303-b653-4e70-b988-e319c341f05e\\injections\\2051ebb87557427ab9ba3a591f94af7a\\008-activation.json",
+    "source_sha256": "1d9040818e5a5d82a2f1a36bc4b8d39abcf24068338d7328d2ea25b17e9d4103",
+    "derived_sha256": "086955f8102ffdc2eff1f011a87e2ead978c756388c45f962d2a054044b25175"
+  },
+  {
+    "case_id": "ROLLOUT-03",
+    "evidence_id": "e1",
+    "source": "evidence\\baseline-committed\\9e577303-b653-4e70-b988-e319c341f05e\\injections\\5f2b571dbc684ab8be995efba96786cc\\008-activation.json",
+    "source_sha256": "d111901384c1e2b82b300552e6d67739afc2bbcd866ff86162b3aede2c77819a",
+    "derived_sha256": "276993708ce6ec823bd250744f8cf30cf8d0fc3a49ad57ec2fe44d191e61cff6"
+  },
+  {
+    "case_id": "ROLLOUT-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-08-protocol\\db7bf3b7ef444bb5949554da578a333c\\runs\\e0129da4358b4180b651a2298212cac4\\010-mismatch.json",
+    "source_sha256": "516162304f570e4286e687e533d868e5284268e782aa662f3838ebf6f57a711f",
+    "derived_sha256": "71056702f758c7dd34397a6f0d9c06ce966d27447e0d9989fadc0cd403011648"
+  },
+  {
+    "case_id": "SCHED-01",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-06-scheduler\\9a4fe93c84ce49eaaf9d4b5d5fafcac5\\007-activation.json",
+    "source_sha256": "ab22a8bc8c7eca2a1eafe933dc84cc74c1be01c75b1110b09c5232219c4b1434",
+    "derived_sha256": "eba17994505092662b80efef57b8b92ad3dfec58aabc1f9d7337b0e8e7473191"
+  },
+  {
+    "case_id": "SCHED-02",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-10-scheduler-memory\\dbde043cbb0c40a5becafebbd61e01d8\\runs\\05baf15280ff466395e32655c94a54e9\\008-activation.json",
+    "source_sha256": "5a469d4097060bbb202aa33d42d4961864f4ee036463c52fa06e6db1e4e4ebfa",
+    "derived_sha256": "d1a0a7f0efecb7908ab41010d4754069506b4bc114fe8644845a0283ecd8612f"
+  },
+  {
+    "case_id": "SCHED-03",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-13-hpa-v3\\runs\\b22aa3cbb01244cd82f1fb61e614ba4d\\088-hpa-demand.json",
+    "source_sha256": "db9dbbecafc65485aeb8a11794ee247ddbb48c6a1b33dd5760f8b85dcb0eec31",
+    "derived_sha256": "6db3007d1661ff249cc8851cae4ba40b532cd1c0c07a8d021d702cc0fdc37c76"
+  },
+  {
+    "case_id": "SCHED-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-16-eviction-v4\\runs\\5ce1d4bee12c4af7b2488a89413f10dc\\013-eviction.json",
+    "source_sha256": "fa13e068d31a84e5e69644edfe5628ad33a1a0d2f42f778b617902cf659a1db9",
+    "derived_sha256": "46a7f0dfe88728fa87ff27db1e0a7fe8460a2c1884131fe5b51ad1f327440415"
+  },
+  {
+    "case_id": "TELEM-01",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-15-noise-v1\\runs\\187f629d1ec44b2c9d0d9d8bf30dbb71\\022-runtime.json",
+    "source_sha256": "078948cf35c115252efba4821d354d0351c248916b49d81078858658ad44ee3f",
+    "derived_sha256": "1ee178b900c3fab4ddaf56d577928b5c530a83d72a2f19579935f87c352adb4f"
+  },
+  {
+    "case_id": "TELEM-01",
+    "evidence_id": "e2",
+    "source": "evidence\\chunk-15-noise-v1\\runs\\187f629d1ec44b2c9d0d9d8bf30dbb71\\023-noise-log.json",
+    "source_sha256": "49992655d8433999288d2a80af994060bfbee7c4b5e8ce8f37722a702e0c8d5c",
+    "derived_sha256": "20ae8ae17a38135086c2a04f6fe94c1978f4fbd7a3de446bc7349e2a3508295d"
+  },
+  {
+    "case_id": "TELEM-02",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-14-dependencies-v3\\runs\\2f1cdd73b98c42248ad5db7208372f61\\022-raw-log.json",
+    "source_sha256": "63788106927e6f5a2d6edc8803dafc7a27fddf8258c9bf7939c7d1242e663580",
+    "derived_sha256": "fe67da3f865122ff4e414b5b2e0802f3f8311182b11d8878d7a14db72913021d"
+  },
+  {
+    "case_id": "TELEM-03",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-07-sampling\\c1a066c96e9745b4ac759d7cd06dc78e\\runs\\b364e918b4944691946c7870f41ff86f\\012-suppressed.json",
+    "source_sha256": "a92c2515d663e7c3fa01cdca962fd5b4aa04260b0bd01b2b2c231e54deba85cd",
+    "derived_sha256": "0ea3b9a7db71c68a8ee4355885401a4af3c42ed8d5528bc3db1f2bf4388674d1"
+  },
+  {
+    "case_id": "TELEM-04",
+    "evidence_id": "e1",
+    "source": "evidence\\chunk-14-dependencies-v3\\runs\\c6669fa0856745028604d6af088f4603\\022-raw-log.json",
+    "source_sha256": "062ceadbfa74e6e034f6ccf718520e3a5eaffd5a7787f5bec0cace3e2714dbfe",
+    "derived_sha256": "ffbe92988f838d69d98abd5c14f4ec9858a217854cbe2e1bec18e4ca3e7a45d9"
+  },
+  {
+    "case_id": "TELEM-04",
+    "evidence_id": "e2",
+    "source": "evidence\\chunk-14-dependencies-v3\\runs\\c6669fa0856745028604d6af088f4603\\025-metrics-fault.json",
+    "source_sha256": "16ed08a526a6e3e3d880b1dba45265cf23fb13f2acd3a365afb07dff8de81d7a",
+    "derived_sha256": "6c80ae118a739ad5451485fd29f721d01720d287f7a7ccd8195349eee761e4eb"
+  }
+]
