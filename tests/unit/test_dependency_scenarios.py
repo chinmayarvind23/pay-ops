@@ -199,3 +199,17 @@ def test_redis_patch_requires_fixed_resource_and_atomic_tests(tmp_path: Path) ->
         assert patch_body[-1]["value"] == {"replicas": 0}
         with pytest.raises(ValueError):
             gateway.redis_replicas(document, 2)
+
+
+def test_existing_bounded_temporary_volume_is_preserved() -> None:
+    """The actual read-only-root filesystem profile needs its existing bounded /tmp volume."""
+    original = baseline()
+    pod = object_value(object_value(object_value(original["spec"])["template"])["spec"])
+    pod["volumes"] = [{"name": "temporary", "emptyDir": {"sizeLimit": "32Mi"}}]
+    container(object_value(original["spec"]))["volumeMounts"] = [
+        {"name": "temporary", "mountPath": "/tmp"}
+    ]
+    enabled = dependency_spec(original, "DEP-03")
+    actual = object_value(object_value(enabled["template"])["spec"])
+    assert object_items(actual["volumes"])[0] == object_items(pod["volumes"])[0]
+    assert object_items(container(enabled)["volumeMounts"])[0]["mountPath"] == "/tmp"

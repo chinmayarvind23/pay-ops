@@ -24,7 +24,12 @@ def dependency_spec(document: JsonObject, case_id: CaseId) -> JsonObject:
     enabled = concurrency_spec(document)
     item = container(enabled)
     pod = object_value(object_value(enabled["template"])["spec"])
-    if pod.get("volumes") or item.get("volumeMounts"):
+    volumes = object_items(pod.get("volumes", []))
+    mounts = object_items(item.get("volumeMounts", []))
+    if volumes not in (
+        [],
+        [{"name": "temporary", "emptyDir": {"sizeLimit": "32Mi"}}],
+    ) or mounts not in ([], [{"name": "temporary", "mountPath": "/tmp"}]):
         raise ValueError("dependency baseline must not contain credential projections")
     item["image"] = "payops-sandbox:dependencies"
     for row in object_items(item["env"]):
@@ -38,12 +43,14 @@ def dependency_spec(document: JsonObject, case_id: CaseId) -> JsonObject:
             }.get(case_id, "normal")
             row["value"] = json.dumps(config, sort_keys=True, separators=(",", ":"))
     pod["volumes"] = [
+        *volumes,
         {
             "name": "dependency",
             "secret": {"secretName": "payops-synthetic-" + kind, "defaultMode": 292},
-        }
+        },
     ]
     item["volumeMounts"] = [
-        {"name": "dependency", "mountPath": "/run/payops-dependency", "readOnly": True}
+        *mounts,
+        {"name": "dependency", "mountPath": "/run/payops-dependency", "readOnly": True},
     ]
     return enabled
