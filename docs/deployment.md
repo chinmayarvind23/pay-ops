@@ -15,8 +15,10 @@ request. [Optional AWS instructions](../infra/terraform/aws-lightsail/README.md)
 let others host the replay and describe the remaining external-processor integration.
 No AWS resources were created or billed by this deployment.
 
-GKE, Cloud SQL, Memorystore, Pub/Sub and cloud evidence storage remain unverified
-architecture targets. A future deployment must preserve separate evidence-reader,
+The optional GCP Terraform foundation now defines GKE, VPC, a private bucket and
+Pub/Sub, with provider validation and mock-provider tests. It remains disabled and
+unprovisioned. Cloud SQL, Memorystore and cloud worker/storage adapters remain
+architecture extensions. A future deployment must preserve separate evidence-reader,
 remediation-executor, scenario-injector and payment-service identities. Vercel,
 Supabase and a publicly reachable investigation backend are not prerequisites for
 this credential-free static demo.

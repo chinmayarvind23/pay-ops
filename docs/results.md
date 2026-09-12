@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Eighteen local fault reproductions now have verified activation and
+each workload. All 24 local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -84,13 +84,16 @@ Evidence: `chunk-09-cpu/950b1dbfd70c4615b1f9ec6a2a9078b1`, run
 not agent latency, diagnosis accuracy or human investigation time. No model diagnosis
 callback ran for this qualification.
 
-## Release targets still open
+## Original targets, not résumé claims
 
-The remaining targets require the following evidence; they are not achieved results.
+The owner chose to retain the strongest verified results and omit unsupported résumé
+metrics rather than prolong tuning to match aspirational numbers. All 24 local faults
+are qualified. Full model accuracy, attribution and paired human timing remain
+unmeasured; the values below are historical targets, not achieved results.
 
 | Metric                     | Evidence                                  |
 | -------------------------- | ----------------------------------------- |
-| 24 scenarios               | manifests + runs                          |
+| 24 scenarios               | achieved locally; manifests + verified runs |
 | Recall@1 83.3%             | 20/24 rank-1 hits                         |
 | Recall@3 91.7%             | 22/24 top-3 hits                          |
 | Evidence attribution 96.4% | labeled attribution numerator/denominator |
@@ -245,5 +248,8 @@ transport issue before the fresh accepted run.
 
 **All 24 local scenarios have now qualified.** These are documented synthetic
 variants, not production incidents. The complete model benchmark, evidence-attribution
-measurement, operational executor and paired human timing study remain unfinished.
+measurement and paired human timing study remain unfinished. The operational
+executor is implemented; real scale 1→2→1 and stale-write rejection were verified
+in `chunk-17-executor-live-v1`. Persistent managed-traffic pause was exercised in
+`chunk-17-traffic-pause-live-v1`.
 No model quality, provider cost or latency target is inferred from scenario coverage.

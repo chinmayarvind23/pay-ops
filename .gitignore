@@ -12,6 +12,8 @@ artifacts/local/
 .DS_Store
 terraform.tfstate
 terraform.tfstate.*
+.terraform/
+*.tfplan
 .kube/
 *.db
 .coverage*

@@ -77,7 +77,7 @@ The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell c
 
 The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
 
-The public replay runs on a free Hugging Face Static Space. GKE/Cloud SQL/Memorystore, Pub/Sub and cloud evidence storage remain design targets. AWS is optional and has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. GraphQL, enterprise SAML configuration, live LangSmith export and the demo recording remain open.
+The public replay runs on a free Hugging Face Static Space. An optional [GCP Terraform foundation](infra/terraform/gcp/README.md) defines GKE, networking, private evidence storage and Pub/Sub; it is disabled by default and has not been provisioned. Cloud SQL/Memorystore and cloud worker/storage adapters remain extensions. [LangSmith receipt export](docs/telemetry.md) is implemented and tested without hosted ingestion. AWS has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. See [exact stack coverage](docs/stack-status.md). GraphQL, enterprise SAML configuration and the demo recording remain open.
 
 ## Documentation
 
