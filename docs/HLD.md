@@ -108,3 +108,9 @@ Evidence: audit/evidence/hf-static-deployment-v2/verification.json.
 Browser inventory is empty, so layout/click verification and recording remain open.
 AWS was not provisioned; infra/terraform/aws-lightsail/README.md provides optional
 setup and explicitly identifies the unfinished cloud processor adapter.
+
+
+Autoscaling qualification now correlates controller cap status, independent CPU
+metrics, actual replica identities and per-request kernel work. Capacity remains
+limited at two replicas; the experiment demonstrates real scale-out and restores
+the original workload afterward. Local qualification now covers18of24cases.

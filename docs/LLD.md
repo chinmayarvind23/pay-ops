@@ -775,3 +775,20 @@ Evidence: audit/evidence/hf-static-deployment-v2/verification.json.
 Browser inventory is empty, so layout/click verification and recording remain open.
 AWS was not provisioned; infra/terraform/aws-lightsail/README.md provides optional
 setup and explicitly identifies the unfinished cloud processor adapter.
+
+
+The HPA scenario is now live-qualified. A fixed 0.5-second launch interval prevents
+rapid rejected requests from exhausting its 256-sample batch before controller
+sampling. Pacing is persisted with the original plan. Runtime validation accounts
+for an owned load Job separately from one/two actual payments pods; independent
+resource-metric windows must follow each stage's observed start. The cap changes
+through UID/version CAS and all resources are removed before original-spec recovery.
+
+Live corrections: HPA REST metadata can omit generation; Deployment generation
+requirements remain unchanged. CRI can fragment one long log record, so the Job
+reader retains up to 2000 fragments within the original256KiB cap. Whole-second
+kubelet termination times provide an exclusive next-second upper bound for receipt
+completion. Neither correction changes the frozen CPU demand thresholds.
+
+Source c59892c passed the full live experiment and post-run evidence review.
+See docs/results.md and external audit/evidence/hpa-live-verification.json.

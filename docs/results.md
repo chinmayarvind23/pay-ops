@@ -3,7 +3,7 @@
 ## Measured development and component results
 
 The frozen four-case development run matched all four causes at rank 1 and restored
-each workload. Seventeen local fault reproductions now have verified activation and
+each workload. Eighteen local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
 only the original four cases have been scored for diagnosis.
 
@@ -140,3 +140,30 @@ run `79a03f72e74943bb95504b7e6e09ddca`. The operator experiment ran from
 23:28:09 to 23:29:55 UTC on September 11, 2026. This duration includes rollouts and
 controls; it is not agent latency or a diagnosis measurement. The qualified count
 is now 17/24; model quality, timing and cost targets remain unmeasured.
+
+
+## SCHED-03: sustained load at an autoscaling cap
+
+Qualified at `c59892c`, run `b22aa3cbb01244cd82f1fb61e614ba4d`. One paced
+256-request Job kept CPU work active while the HPA maximum changed from one to two.
+The independent CPU samples were 7.28% idle, 956.81% at the one-replica cap, and
+611.66% per replica after scale-out, relative to the fixed 50m request. HPA reported
+ScalingLimited/TooManyReplicas under load; both payments pods were real, owned,
+healthy processes with unchanged workload configuration and image.
+
+The Job completed 256 attempts, including 21 failures. These are not 256 successful
+payments. Retained kernel records independently tied 11 and 5 post-scale CPU
+completions to the two processes and this Job's HTTP request windows. Raising the
+cap to two demonstrated scale-out; it did not bring utilization down to the 50%
+target. Final recovery removed the Job/HPA and restored the original deployment,
+one replica, unchanged peer identities and accepted payment health.
+
+Post-run verification checked 188 artifact hashes, 127 source/dependency hashes,
+raw HPA and Metrics API data, load-plan/receipt consistency, both replica work
+joins and exact cleanup. The paced worker's 124 installed Python files matched its
+frozen source. Two earlier failed attempts were retained and restored; they are
+not qualified. Evidence: `chunk-13-hpa-v3`; verifier result:
+`audit/evidence/hpa-live-verification.json` outside the repository.
+
+The qualified count is now **18/24**. This is local scenario reproduction, not a
+new model-quality, human-time, latency or cost measurement.

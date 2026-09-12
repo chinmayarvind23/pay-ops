@@ -1,8 +1,8 @@
 # Failure Scenarios
 
-The suite contains six groups with four scenarios each. Seventeen local variants now
+The suite contains six groups with four scenarios each. Eighteen local variants now
 have activation and restoration evidence; see [results](results.md) for scope and
-provenance. The remaining seven are SCHED-03/04, DEP-03/04 and
+provenance. The remaining six are SCHED-04, DEP-03/04 and
 TELEM-01/02/04. Local processor variants do not establish an AWS outage, and local
 dependency behavior does not establish a deployed cloud integration.
 
