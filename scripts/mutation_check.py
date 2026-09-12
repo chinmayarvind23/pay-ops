@@ -785,6 +785,30 @@ GRAPH_BOUNDARY_MUTATIONS = (
         GRAPH_TESTS,
     ),
 )
+EXECUTOR_TESTS = "tests/unit/test_local_executor.py"
+EXECUTOR_PLAN = "src/payops/remediation/deployment.py"
+EXECUTOR_MUTATIONS = (
+    Mutation(
+        "executor_mode", EXECUTOR_PLAN, 'action.mode != "local_kind"', "False", EXECUTOR_TESTS
+    ),
+    Mutation(
+        "executor_digest", EXECUTOR_PLAN, "key != action_digest(action)", "False", EXECUTOR_TESTS
+    ),
+    Mutation(
+        "executor_uid_cas",
+        EXECUTOR_PLAN,
+        '{"op": "test", "path": "/metadata/uid", "value": self.action.resource_uid}',
+        '{"op": "test", "path": "/metadata/name", "value": self.action.service}',
+        EXECUTOR_TESTS,
+    ),
+    Mutation(
+        "executor_ready_count",
+        EXECUTOR_PLAN,
+        'for field in ("replicas", "updatedReplicas", "readyReplicas", "availableReplicas")',
+        'for field in ("replicas", "updatedReplicas", "availableReplicas")',
+        EXECUTOR_TESTS,
+    ),
+)
 MUTATIONS = (
     CORE_MUTATIONS
     + POLICY_MUTATIONS
@@ -793,6 +817,7 @@ MUTATIONS = (
     + COMPLETION_MUTATIONS
     + REGISTRY_MUTATIONS
     + GRAPH_BOUNDARY_MUTATIONS
+    + EXECUTOR_MUTATIONS
 )
 
 
@@ -945,7 +970,8 @@ def main() -> int:
     manifest = run_metadata(repo, baseline)
     selection = (
         f"{SCHEMA_TESTS} {EVIDENCE_TESTS} {METRIC_TESTS} "
-        f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS} {BUDGET_TESTS} {REGISTRY_TESTS}"
+        f"{GRAPH_TESTS} {POLICY_TESTS} {BROKER_TESTS} {BUDGET_TESTS} "
+        f"{REGISTRY_TESTS} {EXECUTOR_TESTS}"
     )
     baseline_result = run_tests(baseline, selection)
     manifest["baseline"] = baseline_result

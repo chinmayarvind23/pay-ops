@@ -25,7 +25,7 @@ The local implementation runs against a five-service synthetic payment system in
 - Durable investigations that reserve model/read budgets before dispatch and recover completed work without dispatching it again. Uncertain completion stops the run.
 - A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and price profile and validates raw provider usage.
 - A local operator CLI connects the model and all six read tools with an expiring OS-account grant. Completed restart verifies the journal without issuing new requests; live provider measurements remain pending.
-- Deterministic approval policy and an idempotent SQL action broker, with current identity and resource revalidation before execution. The operational mutation executor remains unfinished.
+- Deterministic approval policy, authenticated action routes and an idempotent SQL broker, with current identity and resource revalidation. A closed local executor supports conditional restart, scale and immutable-image rollback with rollout postchecks; synthetic traffic pause remains unfinished.
 - Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
 - PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
 - Fault injectors with original-state journals, bounded synthetic traffic and cleanup verification. The four-stage sampling experiment verifies trace suppression and return while holding processor latency constant.
@@ -90,4 +90,4 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 
 ## Work still required
 
-Complete and qualify the remaining scenarios, run the frozen 24-case model evaluation and paired human timing study, then reconcile provider billing. The recorded demo and remaining integration validation follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
+Run the frozen 24-case model evaluation with free inference, measure investigation timing and actual usage, and finish traffic pause and operational host integration. A paired human timing study is still needed to substantiate the proposed human baseline. The recorded demo and remaining integration validation follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
