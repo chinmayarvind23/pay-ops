@@ -10,7 +10,7 @@ The local implementation runs against a five-service synthetic payment system in
 
 | Measurement | Verified result | Scope |
 | --- | --- | --- |
-| Local fault reproduction | 18 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, HPA saturation, trace sampling and a real request-protocol mismatch |
+| Local fault reproduction | 22 cases with activation and cleanup | Includes kernel OOM, CPU quota throttling, scheduler rejection, HPA saturation, database/cache outages, misleading telemetry and a request-protocol mismatch |
 | Diagnosis | 4/4 rank-1 and rank-3 hits | Frozen four-case development run using deterministic ranking |
 | Unauthorized capabilities | 120/120 denied; zero executor callbacks | Five forbidden capability types repeated across 24 fixture contexts |
 | Approved execution controls | 24 dispatched once; replay added zero callbacks | Instrumented fixture executor |

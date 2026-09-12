@@ -167,3 +167,33 @@ not qualified. Evidence: `chunk-13-hpa-v3`; verifier result:
 
 The qualified count is now **18/24**. This is local scenario reproduction, not a
 new model-quality, human-time, latency or cost measurement.
+
+
+## Dependency and misleading telemetry group
+
+DEP-03, DEP-04, TELEM-02 and TELEM-04 qualified together at `7d9bb08`.
+Each case retained one enabled payments process through three accepted controls,
+three HTTP 503 faults and three accepted recovered requests. The group contains
+36 distinct planned requests. PostgreSQL faults exhausted four real read-only
+sessions at a dedicated role limit of four; server counts and matching request
+logs established connection exhaustion. Redis faults removed the actual service
+endpoint by scaling its Deployment to zero, then restored TLS PING connectivity.
+
+TELEM-02 retained an explicitly synthetic, day-old PostgreSQL error while current
+Redis requests failed. TELEM-04 retained byte-identical earlier metrics and their
+original snapshot timestamp while current PostgreSQL requests failed. These are
+controlled local observation conditions, not historical production incidents.
+
+Post-run verification checked 161 artifact hashes and 134 source/dependency
+hashes, exact traffic plans, request/log/trace joins, one process per case, owned
+PostgreSQL session counts, unchanged PostgreSQL/Elasticsearch processes, and
+original deployment restoration. All four cases restored accepted payment health
+and released the shared latch. Evidence: `chunk-14-dependencies-v3`; verifier:
+`audit/evidence/dependency-live-verification.json` outside the repository.
+Two earlier attempts remain unqualified: preflight rejected the existing bounded
+temporary volume before mutation; a subsequent PostgreSQL run observed delayed
+server session removal after client close and restored the sandbox.
+
+The qualified total is **22/24**. CPU-noise distraction (TELEM-01) and actual
+node-pressure eviction (SCHED-04) remain. This group measures reproduction and
+recovery; model diagnosis, human timing, provider latency and cost remain pending.
