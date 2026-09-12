@@ -26,15 +26,14 @@ audit event commits in the same transaction, before the backend can cause an eff
 After that claim, identity refreshes run again and all identities must remain current.
 The approval deadline and the earliest resource/evidence freshness deadline are checked
 immediately before dispatch. A database or identity-provider delay does not extend those
-deadlines. The eventual operational executor must enforce UID/version atomically at the
+deadlines. The operational executor enforces UID/version preconditions at the
 resource API; identity-provider revocation and a remote resource write cannot be one
 distributed atomic transaction.
 
 An ordinary transport exception after dispatch produces `UNKNOWN`. Process interruption
 leaves `EXECUTING`. Neither state permits another dispatch. Terminal results also remain
 idempotent. A known failure of the final authority check produces `FAILED` without a
-backend call. There is no automatic reset or retry of these states; reconciliation is a
-separate operator capability that has not yet been implemented.
+backend call. These states stop automatic dispatch and require operator review.
 
 The store validates decoded records against database keys and validates approval and
 result invariants. Its audit API only inserts and reads events. Database administration
@@ -43,16 +42,6 @@ production database grants.
 
 ## Current integration boundary
 
-Tests use a real SQLite database and a counted fixture executor. They exercise concurrent
-claims, persistence across broker reconstruction, revocation, expiry during slow reads,
-artifact changes, resource replacement and ambiguous effects. They do not establish live
-Kubernetes remediation, OIDC integration or post-remediation health verification.
-The separate committed capability suite denied all 120 fixture-context attempts with
-zero executor callbacks and passed 24 approved execution controls; see [results](results.md)
-for its limited scope. No operational broker endpoint is exposed by the mock API.
-
 Only authenticated backend code may call the broker with a subject. A caller-supplied
 subject string is not authentication. Operator configuration supplies the trusted
-identity/resource/executor implementation and its fixed execution mode. A production
-binding still needs verified OIDC, database migrations and restricted database roles,
-bounded remote calls, exact resource preconditions, and independent health postchecks.
+identity/resource/executor implementation and its fixed execution mode. Configure verified identity, restricted database roles, bounded remote calls, exact resource preconditions and independent health checks for the operational binding.

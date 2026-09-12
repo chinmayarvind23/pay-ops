@@ -1,30 +1,7 @@
-# Deployment
+# Infrastructure setup
 
-The public [PayOps incident replay](https://huggingface.co/spaces/chinmayarvind/payops-incident-replay)
-runs on a **free Hugging Face Static Space**. It contains four sanitized recorded
-development investigations and makes no live provider or operational requests.
-[Release instructions](../infra/huggingface/README.md) cover building, publishing,
-verification and rollback. Static hosting needs no compute hardware or paid plan.
+Start the synthetic payment environment using the [local Kubernetes instructions](../infra/kubernetes/local/README.md), then configure the [operational host](commands.md). The operator supplies the kubeconfig, runtime directory, model profile and scoped data credentials.
 
-The working investigation environment is local: kind Kubernetes with five synthetic
-payment services, PostgreSQL, Redis, Elasticsearch and telemetry services. Scenario
-qualification and model benchmarking are separate from public replay hosting.
+The [GCP Terraform configuration](../infra/terraform/gcp/README.md) defines a cluster, networking, private object storage and messaging resources. Infrastructure provisioning is an explicit operator action. Keep evidence readers, remediation executors, scenario controllers and service identities separate.
 
-AWS provisioning is excluded from the current execution scope at the owner's
-request. [Optional AWS instructions](../infra/terraform/aws-lightsail/README.md)
-let others host the replay and describe the remaining external-processor integration.
-No AWS resources were created or billed by this deployment.
-
-The optional GCP Terraform foundation now defines GKE, VPC, a private bucket and
-Pub/Sub, with provider validation and mock-provider tests. It remains disabled and
-unprovisioned. Cloud SQL, Memorystore and cloud worker/storage adapters remain
-architecture extensions. A future deployment must preserve separate evidence-reader,
-remediation-executor, scenario-injector and payment-service identities. Vercel,
-Supabase and a publicly reachable investigation backend are not prerequisites for
-this credential-free static demo.
-
-Verification retained outside the repository: HF revision
-`ccdbfdbc1e3473cbbeb1ab2acafecfc1a0b2c23d`, SDK `static`, runtime `RUNNING`, no
-hardware request, four exact repository-file comparisons, exact hosted JS/CSS and
-HTML matching after the platform metadata insertion. Browser visual verification
-and video recording remain pending because no browser surface is connected.
+Integration setup is documented for [GCS](gcs-archive.md), [Pub/Sub](pubsub-worker.md), [Google observability](cloud-observability.md) and [GraphQL and Slack](graphql-and-slack.md). Configure only the integrations your deployment needs.

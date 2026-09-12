@@ -1,3 +1,3 @@
-# Runbook: Scheduler Saturation
+# Runbook: Scheduler saturation
 
-Check pending Pods, FailedScheduling events, requested resources, node allocatable capacity, HPA desired/current/max, and scheduler latency/attempt metrics.
+Inspect unscheduled pods, scheduler events, node allocatable resources, workload requests and namespace quotas. Compare the requested capacity with available capacity before proposing a change. Preserve the original workload specification and check service readiness after an approved action.

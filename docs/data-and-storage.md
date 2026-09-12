@@ -1,7 +1,9 @@
-# Data and Storage
+# Data and storage
 
-The implemented local system uses SQL stores for incidents, checkpoints, budgets and action state, immutable local evidence files with SHA-256 verification, Redis for derived caching, and Elasticsearch for scoped runbook/incident retrieval. PostgreSQL, Redis and Elasticsearch transports have local TLS integration evidence. SQLite supports local workflow and budget execution.
+SQL owns incident records, reports, work reservations and action claims. The local host uses SQLite for checkpoints. PostgreSQL supports the application data path through SQLAlchemy and scoped connections.
 
-Cloud SQL and Memorystore are proposed managed counterparts. Optional GCP Terraform defines a bucket and Pub/Sub, with implemented [GCS archival](gcs-archive.md) and [Pub/Sub worker](pubsub-worker.md) adapters tested locally. Supabase and Vercel are excluded by user direction; the deployed demo reads frozen static JSON and does not use Supabase.
+Redis holds derived cache entries. Elasticsearch retrieves allowed runbooks and prior incident evidence. Their contents are checked against the original stored artifacts before use in an investigation.
 
-Public sanitization produces a separate manifest and hashes. Operational evidence and credentials never enter the public replay. See [source-by-source stack coverage](stack-status.md).
+The local evidence store publishes content-addressed artifacts and verifies their metadata and hashes. The [GCS archive](gcs-archive.md) supports create-once remote storage and verified local restoration. The [Pub/Sub worker](pubsub-worker.md) delivers references to incidents already present in SQL.
+
+Credential paths, TLS certificates and application identities are configured by the operator. See [data service setup](../infra/kubernetes/data/README.md).

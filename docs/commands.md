@@ -70,21 +70,14 @@ The host accepts at most 16 originals and 1 MiB combined source bytes.
 ```bash
 uv run python -m payops.operator_host plan --config C:/payops-operator/config.json
 uv run python -m payops.operator_host start --config C:/payops-operator/config.json --incident C:/payops-operator/incident.json
-uv run python -m payops.operator_host resume --config C:/payops-operator/config.json --incident-id operator-demo
+uv run python -m payops.operator_host resume --config C:/payops-operator/config.json --incident-id operator-example
 ```
 
 An incident file can contain
-`{"incident_id":"operator-demo","request":{"title":"Investigate payment failures"}}`.
+`{"incident_id":"operator-example","request":{"title":"Investigate payment failures"}}`.
 `plan` validates configuration and prints allowances without loading credentials or sending
 requests. `start` and an unfinished `resume` can issue paid provider requests and operational
-reads. Defaults reserve four model turns, eight count/generation requests and 26/39 total
-logical/backend reads. The generation-token reservation is $0.084864; count-endpoint fees
-remain unestablished, so it is not an all-fees spend cap.
-
-Completed resume rechecks current authority, source artifacts and the complete SQL journal
-without new provider/backend requests. The CLI prints a verified summary; full reports remain
-in native graph checkpoints. Runnable integration is fixture-tested; live provider diagnosis,
-latency and billing remain unmeasured.
+reads. Review the configured work and provider budgets before starting an investigation.
 
 ## Local fault and development evaluation
 
@@ -97,16 +90,6 @@ uv run python -m payops.scenarios.run --scenario ROLLOUT-01 --kubeconfig ../reso
 uv run python -m payops.evaluation.run --kubeconfig ../resources/pay_ops/runtime/kubeconfig --output ../resources/pay_ops/evidence/manual-initial-suite
 ```
 
-The evaluation entry point runs the initial four-case deterministic suite. SCHED-01
-and TELEM-03 require their specialized lifecycle classes and reject the generic fault
-runner. The full 24-case provider benchmark remains open; the operator command above is
-implemented and validated with synthetic transport fixtures.
+## Related setup
 
-## Other setup paths
-
-Use [free local inference](free-inference.md) for the zero-provider-charge operator
-profile. The OpenAI configuration above is optional and may incur charges.
-Use the exact [local Kubernetes setup](../infra/kubernetes/local/README.md) and
-[web app commands](../apps/web/README.md), rather than creating an unconfigured cluster.
-[GCP Terraform](../infra/terraform/gcp/README.md) supports local validation and mock
-plans; [AWS instructions](../infra/terraform/aws-lightsail/README.md) are optional.
+Use [local inference](free-inference.md) to configure the loopback model adapter. See [Kubernetes setup](../infra/kubernetes/local/README.md) for the payment environment and [GCP configuration](../infra/terraform/gcp/README.md) for infrastructure settings.

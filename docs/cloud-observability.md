@@ -39,9 +39,5 @@ container and timestamps are checked again. A next-page token marks observations
 as partial; empty results do not establish health or completeness. The common
 normalizer applies redaction and binds incident metadata to content hashes.
 
-The SDK protobuf contracts and evidence normalization are tested locally. No GKE
-cloud deployment or hosted observability read was performed. These adapters add no
-new diagnosis benchmark result.
-
 References: Google's [Logging client contracts](https://docs.cloud.google.com/python/docs/reference/logging/latest/upgrading)
 and [Monitoring time-series API](https://docs.cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.timeSeries/list).

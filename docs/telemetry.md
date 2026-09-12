@@ -22,20 +22,10 @@ An operator with a LangSmith account can explicitly add
 `--langsmith-key-file /private/path/key --project payops --started-at ISO_TIME
 --ended-at ISO_TIME`. Supply actual journal timestamps for that invocation. The SDK
 sends empty inputs/outputs with reviewed scalar metadata and a stable receipt-based
-ID. Repeated exports address the same ID; server deduplication is not verified.
-Hosted account limits and retention are the operator's responsibility. PayOps has
-made no hosted LangSmith calls or incurred tracing charges.
+ID. Repeated exports address the same ID. Configure account retention and access controls for the exported records.
 
 Export is separate from investigation: a hosted outage cannot alter approval policy
 or trigger another model invocation. Tests cover SDK arguments, the content allowlist,
 checksum rejection, unknown usage and timestamp validation, not hosted ingestion.
 The implementation follows [explicit client configuration](https://docs.langchain.com/langsmith/trace-without-env-vars)
 and [input/output masking](https://docs.langchain.com/langsmith/mask-inputs-outputs).
-
-## Cost and timing
-
-Local Qwen records actual token usage and zero provider prices. Electricity and
-existing hardware costs are unmeasured. Paid-model comparisons must identify prices,
-model and tokenizer; local token counts alone do not prove an avoided bill or equal
-quality. Scenario lifecycle time includes injection and cleanup and is not agent
-latency. The proposed human speedup still requires paired human measurements.

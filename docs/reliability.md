@@ -1,29 +1,11 @@
 # Reliability
 
-Pub/Sub workers tolerate redelivery:
+The investigation records work reservations and completed receipts before advancing its durable state. A repeated delivery loads those records and reuses completed observations. A reservation without a trustworthy completion receipt stops automatic redispatch.
 
-```text
-receive
--> idempotency key
--> load durable state
--> execute next legal transition
--> persist
--> acknowledge
-```
+The Pub/Sub worker commits a scoped incident report before acknowledgement. Failed processing receives a negative acknowledgement; configure subscription backoff and dead-letter handling. The local checkpoint directory belongs to a single operational host.
 
-Retry transient rate limits, 502/503, network timeouts, and temporary telemetry failures with exponential backoff and jitter.
+A timeout limits acceptance of a result. It does not establish that the underlying transport stopped. Active work retains its concurrency slot until the operation returns, and late output is excluded from the incident response.
 
-Do not retry policy denial, auth failure, invalid action, or payment mutation.
+Provider and retrieval failures remain explicit observations or terminal states. Model requests do not receive automatic retries or an implicit provider substitution. Current identity and artifact checks still apply when resuming completed work.
 
-Circuit breakers may protect model provider, Elasticsearch, and external processor calls.
-
-Dependency degradation:
-
-- Elasticsearch down: direct telemetry only
-- Redis down: bypass cache
-- LangSmith down: continue with OTel/structured logs
-- model down: deterministic baseline and escalate
-- Cloud SQL down: no undurable state-changing progress acknowledged
-- GKE MCP down: use alternative approved collectors or mark missing evidence
-
-Per-incident budgets cap tools, model calls, wall time, provider dollars, and remediation attempts.
+The action broker claims execution before effects. Uncertain execution stops another dispatch. Resource identity and version checks prevent an old approval from applying to replaced state.

@@ -1,10 +1,5 @@
 # Optional GCS evidence archive
 
-`payops.evidence.gcs.GcsArtifactArchive` transfers verified evidence between the
-local `ArtifactStore` and an operator-configured private Google Cloud Storage bucket.
-It is an explicit archival operation, not an investigation tool or public-demo API.
-The current release requires no bucket and performs no automatic cloud transfers.
-
 For an existing private bucket, grant the operator identity object create and get
 permissions on the archive prefix. This adapter does not list, replace or delete
 objects. Configure Application Default Credentials outside the repository and
@@ -44,10 +39,5 @@ adapter never asks the SDK to delete an object after a checksum failure. Restore
 publishes only complete verified bytes and refuses to replace corrupt local files.
 Bucket retention and IAM remain operator-managed; content addressing is not a
 claim that administrators cannot modify a bucket.
-
-Verification: 30 archive and existing-evidence tests pass; the new module has
-100% statement and branch coverage. The real Google SDK is exercised through an
-isolated HTTP session to verify multipart upload preconditions, generation-bound
-readback and byte ranges. No hosted bucket transfer was performed.
 
 The request options follow Google's [Blob API documentation](https://docs.cloud.google.com/python/docs/reference/storage/latest/google.cloud.storage.blob.Blob).

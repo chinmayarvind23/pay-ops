@@ -1,8 +1,6 @@
-# Free local inference
+# Local inference
 
-The adapter also supports `payops-qwen2.5-3b-instruct-q4-k-m`, using Qwen2.5's
-non-thinking chat template. Its benchmark comparison uses the same observation
-corpus as Qwen3; diagnosis-only replay timings are not live agent latency.
+PayOps connects to an operator-owned Qwen model through a loopback llama.cpp server. The local profile requires no inference API key. Configure the host with the matching model alias and explicit runtime paths.
 
 Pinned model: `Qwen/Qwen2.5-3B-Instruct-GGUF`, revision
 `7dabda4d13d513e3e842b20f0d435c732f172cbe`, file
@@ -11,10 +9,6 @@ Pinned model: `Qwen/Qwen2.5-3B-Instruct-GGUF`, revision
 Download with `hf download` as below, launch the same loopback server with this file
 and matching alias, and set the operator model name to that alias. Review the
 [model license](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) for your use.
-
-PayOps can use a local Qwen model through llama.cpp. This path makes no paid provider calls
-and requires no inference API key. It measures actual tokenizer and generation counts;
-zero-priced accounting covers provider charges only, not electricity or existing hardware.
 
 The qualified runtime configuration uses Qwen3-1.7B Q4_K_M from the official Qwen repository,
 revision `7fb011e9aee6e4dc7adf8430df9ea8de6a466aa3`, and llama.cpp build `b10809`.
@@ -65,12 +59,3 @@ The adapter accepts only the fixed loopback origin and model alias, disables red
 retries, and rejects truncation, incomplete output, wrong-model responses and inconsistent
 counts. A timeout remains an unsuccessful investigation; it does not claim cancellation of
 the server's work. Stop only your owned server process when finished.
-
-A small real model smoke run verified the adapter and shared runtime. The completed
-[24-case compact replay benchmark](model-replay-results.md) separately measures diagnosis.
-The [full operator controls](operator-integration-results.md) collected real evidence and,
-after context compaction and a stricter generation contract, completed a bounded healthy
-control with an insufficient-evidence report. Compact replay is the measured diagnosis path;
-the live control does not establish root-cause accuracy.
-Any comparison against paid model prices must be labeled an estimate, especially because
-different providers use different tokenizers and may have different quality.

@@ -1,11 +1,5 @@
 # Failure Scenarios
 
-The suite contains six groups with four scenarios each. Eighteen local variants now
-have activation and restoration evidence; see [results](results.md) for scope and
-provenance. The remaining six are SCHED-04, DEP-03/04 and
-TELEM-01/02/04. Local processor variants do not establish an AWS outage, and local
-dependency behavior does not establish a deployed cloud integration.
-
 The operator harness only targets the dedicated `kind-payops-dev` cluster. It saves
 the original deployment, records activation, restores the exact specification and
 requires a successful synthetic payment before releasing its persistent run latch.
@@ -25,9 +19,9 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 ## Resource
 
 - OOM-01: payments-api OOMKilled
-- OOM-02: risk-sim memory leak (bounded retention with two OOM lifetimes qualified at `7d3e204`)
+- OOM-02: risk-sim memory leak
 - OOM-03: CPU throttling
-- OOM-04: concurrent request allocations cause an owned OOM at fixed 256Mi; serial controls and recovery qualified at `926bbd5`
+- OOM-04: concurrent request allocations cause an owned OOM at fixed 256Mi
 
 ## Rollout
 
@@ -39,7 +33,7 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 ## Scheduler
 
 - SCHED-01: unschedulable CPU requests
-- SCHED-02: insufficient node memory (local 16Gi request qualified at `e69b814`)
+- SCHED-02: insufficient node memory
 - SCHED-03: HPA maxed
 - SCHED-04: node pressure eviction
 
@@ -67,14 +61,6 @@ and hash every captured artifact. See `src/payops/scenarios/` for the closed rec
 Each scenario declares setup, fault injection, gold cause, distractors, cleanup, safe remediation class, and forbidden actions. Version definitions are hashed before the final run.
 
 ## Versioned risk request
-
-The synthetic sandbox supports two deployment-selected risk request forms. The default
-v1 is the flat Sample body. V2 is a strict `payops-risk-v2` envelope containing that
-same Sample. Payments serializes its risk call using its configured `risk_protocol`;
-risk accepts only its deployed protocol. The other three peers retain v1 bodies.
-Mismatches produce an actual risk422 and propagated payments502 while liveness stays
-healthy. Matching versions complete the full synthetic path. ROLLOUT-04 was qualified
-locally at `5978c4f` with exact cleanup evidence; see [Results](results.md).
 
 `ProtocolHarness` now implements four stages: original v1, risk v2 with a v1 caller,
 matching v2 caller, and restored v1. It journals both complete Deployment specs before
@@ -105,11 +91,6 @@ the work; it does not preempt native execution or eliminate OS scheduling delays
 Spans record configured rounds and observed thread CPU time, which may round to
 zero for short work on coarse clocks. The default profile creates no worker pool.
 
-Other fault harnesses reject an active CPU workload as a healthy baseline. This
-control enables the planned OOM-03 quota experiment, but does not itself qualify
-CPU throttling. Qualification still requires a frozen workload, actual cgroup
-throttled-period/time deltas, matched controls and exact cleanup.
-
 Calibration at `d262df5` used three sequential 50,000-round tasks per isolated
 container. Mean workload time was 0.159 seconds at one CPU, 0.255 at the sandbox's
 normal half-CPU limit and 1.668 at one-tenth CPU. Mean thread CPU time stayed between
@@ -120,14 +101,3 @@ matched workload and quota controls, not require an unrealistically zero baselin
 These nine tasks are calibration, not a qualified Kubernetes scenario or agent
 latency measurement. Source, image, raw counters and successful container exits are
 retained outside the repository under `audit/evidence/cpu-calibration-*`.
-
-The specialized `CpuHarness` now implements the five-stage experiment with a
-persisted original/control/restricted journal and exact conditional restoration.
-Each stage collects three fresh accepted payments with complete nine-span paths;
-work stages also retain raw kernel sources from the verified payments container.
-Both normal-quota controls must pass the frozen work-duration and throttled-time
-contrasts. The generic runner rejects OOM-03. Lifecycle and acquisition fixtures
-are tested. The committed-image Kubernetes run at `56e6337` qualified all five
-stages and exact cleanup. Mean work duration was 0.290 seconds at 500m, 1.504 seconds
-at 100m and 0.275 seconds after recovery. See [results](results.md) for evidence and
-the distinction between workload measurements and agent performance.

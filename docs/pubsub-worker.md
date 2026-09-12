@@ -12,10 +12,6 @@ The worker gets current responder authority from trusted host configuration befo
 investigating and again before committing the report. A message cannot supply an
 identity, approval, model configuration, namespace, tool or remediation instruction.
 
-Wire it to the same `IncidentStore` as the protected API and an existing configured
-`OperatorHost`. That host retains the read registry, model budgets and checkpoint
-authority described in [operator setup](operator-integration-results.md). For example:
-
 ```python
 from google.cloud.pubsub_v1 import SubscriberClient
 from payops.pubsub_worker import PubSubIncidentWorker

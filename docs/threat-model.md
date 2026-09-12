@@ -1,27 +1,9 @@
-# Threat Model
+# Threat model
 
-Assets include Kubernetes authority, payment availability, operational telemetry, cloud credentials, deployment authority, incident evidence, Slack approvals, and benchmark integrity.
+Protected assets include Kubernetes authority, payment-service availability, operational credentials, incident evidence and action approvals.
 
-Threats:
+The main threats are prompt injection in logs and runbooks, malicious tool output, a confused deputy acting outside incident scope, stale approvals, resource replacement and repeated effects after an uncertain response.
 
-- confused deputy,
-- prompt injection inside logs/runbooks,
-- malicious MCP/tool output,
-- unauthorized remediation,
-- stale approval,
-- benchmark manipulation,
-- public-demo pivot into operational systems.
+Evidence stays untrusted when it enters model context. Fixed tool schemas restrict reads, backend grants establish authority, and the remediation broker rechecks the current identity and resource before execution. SQL claims and conditional resource updates prevent a repeated request from silently becoming another action.
 
-Controls:
-
-```text
-identity
-capability
-typed schema
-policy
-approval
-executor validation
-audit
-```
-
-Fail closed on auth/policy uncertainty, changed resource revision, invalid action schema, or action outside the sandbox.
+The synthetic environment has no real financial connectivity. Separate service, evidence-reader, scenario-controller and executor identities limit the authority available to each process.

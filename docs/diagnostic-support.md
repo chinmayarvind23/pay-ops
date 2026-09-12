@@ -21,15 +21,3 @@ The local run binding is versioned `reasoning-loop-local-contract-v5`. Existing 
 When included evidence satisfies a diagnostic predicate, the local model receives a compact terminal prompt. Generation permits one cause, one support ID, an 80-character summary and no unverified refutation links. Unknown cases retain the bounded read loop. This avoids spending additional reads and long summaries on an already observed mechanism; the candidate remains provisional and remediation still requires independent approval.
 
 HTTP predicates additionally require executed endpoint role: a webhook 409 conflict flag, or processor-specific 429 responses with a matched other-processor 200 control at the same region and method. Raw Prometheus metric dictionaries are not confused with normalized metric-name strings.
-
-## Evaluation
-
-```bash
-uv run python scripts/run_free_replay.py --support-gated --output /new/evidence/directory
-```
-
-This treatment adds checked candidate mechanisms to the source observations, permits at most one diagnosis and validates its evidence link. The constrained model selects from predicate-supported candidates. Report its results as **predicate-assisted development replay**, separate from the original unrestricted compact model. In this corpus the predicates generally leave one candidate, so much of the classification work belongs to Python, not the language model.
-
-The corpus and frozen labels remain unchanged. Missing diagnostic details remain missing: generic processor errors do not prove rate limiting, a generic idempotency counter does not localize a webhook defect, and HTTP 422 alone does not establish a protocol mismatch. The configuration-failure recording lacks a configuration error log and supports only the broader startup-failure candidate.
-
-The existing attribution reference was written after earlier predictions were visible. Matching it measures agreement with a development review, not independent semantic accuracy. Always report citation coverage and all 24 case outcomes alongside that agreement.

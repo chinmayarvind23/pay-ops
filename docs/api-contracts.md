@@ -1,7 +1,7 @@
-# API Contracts
+# API contracts
 
-The executable API contract is defined by the [protected FastAPI factory](../src/payops/protected_api.py) and [remediation router](../src/payops/remediation/api.py). Incident creation, scoped reads and investigation are implemented. Action proposal, audit, approval and execution use authenticated routes and the deterministic broker. The default development API uses fixture investigation data.
+The [protected FastAPI factory](../src/payops/protected_api.py) defines authenticated incident creation, scoped reads and investigation. The [remediation router](../src/payops/remediation/api.py) exposes proposal, audit, approval and execution operations through the deterministic broker.
 
-GraphQL exploration and opt-in Slack reference notifications are implemented; see [contracts, setup and limits](graphql-and-slack.md). A benchmark HTTP endpoint and cancellation routes in the original architecture are not implemented. Use the existing CLI evaluation runners for benchmarks. Interactive OpenAPI documentation reflects the configured FastAPI application rather than the original route sketches.
+GraphQL shares the REST application's authentication and incident scope. Its read schema exposes incidents, reports and paginated evidence. Slack reference notifications are enabled through explicit host configuration. See [GraphQL and Slack setup](graphql-and-slack.md).
 
-Backend actor scope and current action/resource checks remain authoritative; neither a browser payload nor a retrieved document grants approval. See [stack coverage](stack-status.md) and [security](security.md).
+Run the configured application and open `/docs` for its OpenAPI contract. The default development server uses fixture investigations. Backend identity and current resource checks apply to operational requests; client payloads cannot grant approval.

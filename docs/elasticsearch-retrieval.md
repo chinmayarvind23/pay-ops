@@ -22,7 +22,7 @@ RRF:
 
 `RRF(d) = sum(1 / (k + rank_r(d)))`
 
-Configuration is versioned and benchmarked.
+Configuration is versioned with the retrieval contract.
 
 Every retrieved item preserves document ID, version, source, section, timestamp, and retrieval rank/score.
 

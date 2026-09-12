@@ -48,14 +48,14 @@
           <span class="restored">Workload restored</span>
         </div>
         <div class="scope-note">
-          Deterministic development baseline
-          <span aria-hidden="true">/</span> Four known cases
-          <span aria-hidden="true">/</span> Model performance unmeasured
+          Recorded incident evidence
+          <span aria-hidden="true">/</span> Select a case to inspect its
+          diagnosis
         </div>
         <section class="metrics" aria-label="Investigation summary">
           <div>
-            <span>Collection + ranking</span><strong id="duration"></strong
-            ><small>Excludes fault injection and cleanup</small>
+            <span>Investigation mode</span><strong>Read-only</strong
+            ><small>Inspect stored observations and citations</small>
           </div>
           <div>
             <span>Verified observations</span
@@ -96,9 +96,8 @@
           <div>
             <p>
               The source run used fixed Kubernetes and Prometheus reads with
-              deterministic ranking. All four causes matched their development
-              labels at rank 1. This is a four-case development result; the
-              24-case model evaluation remains open.
+              deterministic ranking. Select a cited source to inspect the
+              observations behind the recorded diagnosis.
             </p>
             <p>
               Every retained report observation and referenced cleanup artifact
@@ -111,8 +110,7 @@
             <p>
               Source digests identify the retained private artifacts. This
               projection does not include those original bytes, and does not
-              claim that a digest alone proves source truth. Provider cost,
-              model latency and human investigation time have not been measured.
+              claim that a digest alone proves source truth.
             </p>
             <div class="provenance">
               <span>Source revision</span><code id="source-revision"></code

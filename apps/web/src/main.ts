@@ -164,7 +164,6 @@ function render(selected: ReplayCase): void {
   node("case-label").textContent =
     `${selected.case_id} / RECORDED INVESTIGATION`;
   node("case-title").textContent = selected.title;
-  node("duration").textContent = `${selected.duration_seconds.toFixed(2)} s`;
   node("evidence-count").textContent = String(selected.evidence_count);
   node("projected-count").textContent =
     `${selected.evidence.length} cited sources projected below`;
