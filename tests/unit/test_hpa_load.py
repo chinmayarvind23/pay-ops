@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -107,6 +107,7 @@ def test_complete_batch_fits_bounded_log_capture(
     with (
         patch("payops.scenarios.hpa_load.guard"),
         patch("payops.scenarios.hpa_load.OUTPUT", tmp_path / "batch"),
+        patch("payops.scenarios.hpa_load.asyncio.sleep", new_callable=AsyncMock) as pacing,
         patch("payops.scenarios.hpa_load.httpx.AsyncClient", return_value=client),
     ):
         main()
@@ -116,3 +117,6 @@ def test_complete_batch_fits_bounded_log_capture(
     assert len(payload["plan"]["attempts"]) == len(payload["receipt"]["attempts"]) == 256
     assert all(row["outcome"] == "accepted" for row in payload["receipt"]["attempts"])
     assert client.is_closed
+    assert payload["plan"]["launch_interval_seconds"] == 0.5
+    assert pacing.await_count == 255
+    assert all(call.args == (0.5,) for call in pacing.await_args_list)

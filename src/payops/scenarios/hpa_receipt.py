@@ -34,6 +34,7 @@ def _envelope(raw: bytes) -> tuple[TrafficReceipt, JsonObject]:
         or len(receipt.attempts) != 256
         or plan.get("run_id") != receipt.run_id
         or re.fullmatch(r"[0-9a-f]{32}", receipt.run_id) is None
+        or plan.get("launch_interval_seconds") != 0.5
         or plan.get("probe") is not False
         or plan.get("workload") != load_workload().model_dump(mode="json")
         or plan.get("attempts") != [row.planned.model_dump(mode="json") for row in receipt.attempts]

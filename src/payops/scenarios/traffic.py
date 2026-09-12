@@ -260,7 +260,7 @@ def _classify(
     return result.status, status, result, False
 
 
-async def _attempt(
+async def record_attempt(
     client: httpx.AsyncClient,
     planned: PlannedAttempt,
     workload: Workload,
@@ -373,6 +373,10 @@ class TrafficDriver:
         )
         return await self._execute(workload, run_id, plan, True)
 
+    def plan_metadata(self) -> dict[str, JsonValue]:
+        """Specialized trusted drivers may record fixed scheduling constraints before dispatch."""
+        return {}
+
     async def _dispatch(
         self,
         workload: Workload,
@@ -385,11 +389,13 @@ class TrafficDriver:
         async with self._client(workload) as client:
             if probe:
                 for item in plan:
-                    await _attempt(client, item, workload, semaphore, records)
+                    await record_attempt(client, item, workload, semaphore, records)
             else:
                 async with asyncio.TaskGroup() as tasks:
                     for item in plan:
-                        tasks.create_task(_attempt(client, item, workload, semaphore, records))
+                        tasks.create_task(
+                            record_attempt(client, item, workload, semaphore, records)
+                        )
 
     async def _execute(
         self, workload: Workload, run_id: str, plan: tuple[PlannedAttempt, ...], probe: bool
@@ -401,6 +407,7 @@ class TrafficDriver:
         (root / "plan.json").write_text(
             json.dumps(
                 {
+                    **self.plan_metadata(),
                     "run_id": run_id,
                     "workload": workload.model_dump(mode="json"),
                     "probe": probe,

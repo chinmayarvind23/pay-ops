@@ -9,8 +9,17 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
+from pydantic import JsonValue
 
-from payops.scenarios.traffic import SliceCount, TrafficDriver, Workload, wait_forward_ready
+from payops.scenarios.traffic import (
+    AttemptRecord,
+    PlannedAttempt,
+    SliceCount,
+    TrafficDriver,
+    Workload,
+    record_attempt,
+    wait_forward_ready,
+)
 
 ORIGIN = "http://payments-api.payops-sandbox.svc.cluster.local:8080"
 OUTPUT = Path("/tmp/payops-hpa-load")
@@ -36,6 +45,27 @@ def guard() -> None:
 
 class HpaLoadDriver(TrafficDriver):
     """Keep existing plan/attempt/receipt semantics while changing only trusted transport setup."""
+
+    def plan_metadata(self) -> dict[str, JsonValue]:
+        """Persist pacing before traffic so rejected requests cannot silently shorten the load."""
+        return {"launch_interval_seconds": 0.5}
+
+    async def _dispatch(
+        self,
+        workload: Workload,
+        plan: tuple[PlannedAttempt, ...],
+        records: dict[int, AttemptRecord],
+        probe: bool,
+    ) -> None:
+        """Spread the fixed batch across 127.5 seconds, retaining the existing concurrency bound."""
+        if probe or workload != load_workload():
+            raise ValueError("HPA load requires its fixed paced workload")
+        semaphore = asyncio.Semaphore(workload.concurrency)
+        async with self._client(workload) as client, asyncio.TaskGroup() as tasks:
+            for index, item in enumerate(plan):
+                if index:
+                    await asyncio.sleep(0.5)
+                tasks.create_task(record_attempt(client, item, workload, semaphore, records))
 
     @asynccontextmanager
     async def _client(self, workload: Workload) -> AsyncGenerator[httpx.AsyncClient]:

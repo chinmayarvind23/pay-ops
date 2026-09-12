@@ -37,6 +37,7 @@ def evidence(tmp_path: Path) -> tuple[JsonObject, LoadProcess, datetime]:
     driver = TrafficDriver(tmp_path / "unused", tmp_path, httpx.MockTransport(handler))
     receipt = asyncio.run(driver.run(load_workload()))
     plan = json.loads((tmp_path / receipt.run_id / "plan.json").read_text())
+    plan["launch_interval_seconds"] = 0.5
     simulated = receipt.model_copy(update={"mode": "local_kind"})
     document: JsonObject = {
         "event": "synthetic.hpa_load",
