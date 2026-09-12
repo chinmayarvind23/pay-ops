@@ -85,3 +85,9 @@ worker configuration. This adds rollout time to the operator experiment but keep
 memory attribution independent across serial control, parallel treatment and serial
 recovery. Experiment duration is not agent investigation latency. Live qualification
 still requires raw evidence review and verified final restoration.
+
+
+The autoscaling experiment separates synthetic load ownership from payment-service
+replica health. A load Job is accounted for through its controller and process
+identity before service validation; its mere presence does not prove successful
+traffic or autoscaling. Live qualification remains pending.

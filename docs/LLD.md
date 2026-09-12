@@ -746,3 +746,15 @@ validator intentionally rejects unaccounted pods. The lifecycle must separately
 verify the load Job's ownership before passing the service-only pod set; it cannot
 silently drop extra workload pods. This implements scale-out evidence checking,
 not live HPA qualification. Count remains17/24.
+
+
+SCHED-03 load-pod accounting now requires the fixed Job spec, exact batch/v1
+controller name and UID, namespace, reviewed pod template, pinned image and one
+unrestarted process. It excludes exactly that pod from service replica validation;
+extra pods remain visible. Invalid identifier types and ambiguous or waiting
+container states reject. A terminated process can be attributed without claiming
+that the Job succeeded. Completion, traffic receipts and live scale-out still
+require separate lifecycle evidence. Qualification remains 17/24.
+
+Validation: 32 identity/runtime/gateway tests passed; load-pod module statement
+coverage 100%; Ruff (including C901) and strict Pyright passed.
