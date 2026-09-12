@@ -6,6 +6,10 @@ Payment failures can look alike at the API boundary. A processor timeout, a bad 
 
 The local implementation runs against a five-service synthetic payment system in `kind`. The [public replay demo](https://huggingface.co/spaces/chinmayarvind/payops-incident-replay) is hosted on a free Hugging Face Static Space. The full model benchmark is still in progress. No real payments or ledger writes occur.
 
+![Recorded terminal walkthrough](docs/assets/payops-terminal-demo.gif)
+
+[Watch the 48-second walkthrough](docs/assets/payops-terminal-demo.mp4). Captured cluster reads, retained scenario receipts and current tests are presented with editorial hold times. This is a terminal walkthrough, not a live fault-injection or browser recording.
+
 ## Measured so far
 
 | Measurement | Verified result | Scope |
@@ -77,7 +81,7 @@ The model cannot choose namespaces, endpoints, SQL, Elasticsearch DSL or shell c
 
 The implemented local path uses Python, FastAPI, Pydantic, LangChain, LangGraph, SQLAlchemy, PostgreSQL, Redis, Elasticsearch, Kubernetes, Prometheus and OpenTelemetry. CI runs Ruff, strict Pyright, tests, coverage floors and semantic mutation checks. The GKE MCP adapter has a constrained read contract; a deployed GKE integration still needs validation.
 
-The public replay runs on a free Hugging Face Static Space. An optional [GCP Terraform foundation](infra/terraform/gcp/README.md) defines GKE, networking, private evidence storage and Pub/Sub; it is disabled by default and has not been provisioned. Cloud SQL/Memorystore and cloud worker/storage adapters remain extensions. [LangSmith receipt export](docs/telemetry.md) is implemented and tested without hosted ingestion. AWS has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. See [exact stack coverage](docs/stack-status.md). GraphQL, enterprise SAML configuration and the demo recording remain open.
+The public replay runs on a free Hugging Face Static Space. An optional [GCP Terraform foundation](infra/terraform/gcp/README.md) defines GKE, networking, private evidence storage and Pub/Sub; it is disabled by default and has not been provisioned. Cloud SQL/Memorystore and cloud worker/storage adapters remain extensions. [LangSmith receipt export](docs/telemetry.md) is implemented and tested without hosted ingestion. AWS has [self-service setup instructions](infra/terraform/aws-lightsail/README.md); no AWS resources were provisioned. See [exact stack coverage](docs/stack-status.md). GraphQL and enterprise SAML configuration remain extensions. The terminal demo is recorded.
 
 ## Documentation
 
@@ -90,4 +94,10 @@ Operator journals, failed runs, source hashes, review notes, interview material 
 
 ## Work still required
 
-Run the frozen 24-case model evaluation with free inference, measure investigation timing and actual usage, and finish operational host integration. A paired human timing study is still needed to substantiate the proposed human baseline. The recorded demo and remaining integration validation follow those working paths. The design documents retain the broader architecture; this README reports the implementation and measurements available today.
+Run the frozen 24-case model evaluation with free inference, measure investigation timing and actual usage, and finish operational host integration validation. A paired human timing study is needed to substantiate the proposed human baseline. Unmeasured figures are omitted from résumé claims. The terminal demo is recorded; browser visual verification remains unavailable. The design documents retain the broader architecture; this README reports current implementation and measurements.
+
+## With more time
+
+- Product: evaluate diagnosis usefulness with responders and measure paired investigation time.
+- Architecture: validate the constrained GKE path and cloud worker/storage integrations against deployed resources.
+- Engineering: collect held-out incidents, measure quality under missing and adversarial evidence, and test multi-worker contention before expanding beyond the local host.

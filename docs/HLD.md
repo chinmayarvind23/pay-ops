@@ -17,7 +17,7 @@ flowchart LR
     W --> A[Immutable evidence artifacts]
     W --> L[Bounded reasoning loop]
     L --> B[SQL budget ledger]
-    L --> M[Pinned OpenAI Responses adapter]
+    L --> M[Local Qwen or pinned OpenAI adapter]
     L --> R[Scoped read registry]
     R --> C
     R --> E[Elasticsearch retrieval]
@@ -26,7 +26,7 @@ flowchart LR
     AUTH --> L
     PRO[Separate remediation proposal] --> POL[Deterministic policy and approval broker]
     POL --> SQL[SQL action records and audit]
-    POL --> FX[Fixture executor]
+    POL --> FX[Conditional Kubernetes executor and SQL traffic gate]
 ```
 
 The OpenAI adapter is verified through synthetic transport tests; paid calls and a

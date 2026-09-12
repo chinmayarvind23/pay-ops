@@ -30,7 +30,7 @@ and `--resume INCIDENT_ID`. These commands use deterministic ranking.
 ## Trusted local operator investigation
 
 The operator host connects the native investigation graph, durable reasoning loop,
-OpenAI adapter and all six read tools. It uses local SQLite and the current OS account
+local Qwen or OpenAI adapter and all six read tools. It uses local SQLite and the current OS account
 plus an expiring local grant file. This is a local operator command, not public API
 authentication. The cluster, Prometheus and Elasticsearch must already be available;
 the host does not start infrastructure.
@@ -102,21 +102,11 @@ and TELEM-03 require their specialized lifecycle classes and reject the generic 
 runner. The full 24-case provider benchmark remains open; the operator command above is
 implemented and validated with synthetic transport fixtures.
 
-## Planned commands (not implemented yet)
+## Other setup paths
 
-```bash
-uv sync
-uv run ruff check .
-uv run pyright
-uv run pytest
-
-bun install
-bun test
-bun run build
-
-docker compose up -d
-kind create cluster --name payops
-
-```
-
-Terraform commands are documented once the modules are runnable.
+Use [free local inference](free-inference.md) for the zero-provider-charge operator
+profile. The OpenAI configuration above is optional and may incur charges.
+Use the exact [local Kubernetes setup](../infra/kubernetes/local/README.md) and
+[web app commands](../apps/web/README.md), rather than creating an unconfigured cluster.
+[GCP Terraform](../infra/terraform/gcp/README.md) supports local validation and mock
+plans; [AWS instructions](../infra/terraform/aws-lightsail/README.md) are optional.

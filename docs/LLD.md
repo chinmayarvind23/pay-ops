@@ -16,6 +16,10 @@ contracts and transitions in this section describe the implemented local path.
 | Model transport | `orchestrator/model_runtime.py`, `openai_adapter.py`, `openai_wire.py` | One active model slot, stage authorization, bounded raw response parsing |
 | Read dispatch | `tools/registry.py`, `operational_reads.py` | Fixed tool names and scope, whole-batch reservation, two worker slots |
 | Approval and execution | `policy/engine.py`, `remediation/broker.py`, `store.py` | Deterministic policy, distinct approver, current identity/resource checks, SQL claim |
+| Local model | `orchestrator/local_llama.py` | Fixed loopback Qwen, exact token census, zero provider prices, no paid fallback |
+| Kubernetes effects | `remediation/deployment.py`, `local_executor.py` | UID/version/full-spec conditional patch and bounded rollout postcheck |
+| Traffic pause | `remediation/traffic_control.py`, `managed_traffic.py` | SQL admission/pause ordering for registered synthetic sources |
+| Hosted trace export | `telemetry/export.py` | Verified receipt, fixed scalar projection, explicit opt-in outside investigation |
 
 Paths in the table are relative to `src/payops` unless explicitly prefixed. Detailed
 reasoning limits and provider assumptions are maintained in [reasoning.md](reasoning.md).
