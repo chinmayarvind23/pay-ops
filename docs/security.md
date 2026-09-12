@@ -2,7 +2,7 @@
 
 Security lives outside model reasoning.
 
-Use Google Cloud Identity Platform for OIDC/SAML, backend token verification, and role mapping.
+The Firebase Admin adapter verifies Google Identity Platform tokens and backend grants. Hosted enterprise SAML configuration remains an extension.
 
 Kubernetes uses separate evidence-reader and remediation-executor identities with Workload Identity, RBAC, NetworkPolicy, and resource bounds.
 
@@ -10,8 +10,8 @@ The reasoning model never gets secret-reading capability or raw GKE MCP mutation
 
 Logs/runbooks/MCP output may contain attacker text. They are labeled untrusted evidence and cannot grant capabilities.
 
-Slack approval references an incident/action; backend policy and user authorization are revalidated at execution.
+Backend policy and user authorization are revalidated at execution. The Slack adapter sends incident references only; a scoped responder and explicit host configuration are required. No inbound command can approve or execute an action.
 
-Supabase public-demo tables use RLS and minimum grants. Hugging Face has no operational credentials.
+Hugging Face has no operational credentials. Supabase is excluded from this release; the deployed demo uses static JSON.
 
 Bound incidents, tool calls, log bytes, trace count, model tokens, provider dollars, wall time, and remediation attempts.

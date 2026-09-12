@@ -149,3 +149,8 @@ The final live processor-outage control completed one real local model call and 
 The local contract prioritizes checked mechanisms, uses a compact terminal prompt when support is present, limits local output to one cause and one citation, and reuses exact completed reads. Unknown cases retain bounded investigation reads. The paired human timing collector/scorer is implemented; no human timing measurements are claimed. Free Hugging Face hosting and AWS self-service instructions remain available.
 
 Evidence: resources/pay_ops/evidence/supported-model-v2 and operator-live-diagnosis-v4. Full suite: 2308 passed. Module coverage gaps remain in scenario harnesses; the full-suite coverage snapshot preceded final prompt edits, which receive focused verification.
+
+
+## GraphQL and Slack release integration
+
+The protected FastAPI factory now attaches a read-only GraphQL router sharing REST authentication and incident scope. AST depth, selection count, parser tokens and evidence pages are bounded. An optional Slack notifier sends only fixed incident references to a host-configured incoming webhook. Responder authorization precedes delivery; notification errors are redacted and never automatically retried. Neither integration creates an alternate approval or execution path. See [setup and contracts](graphql-and-slack.md). Supabase and Vercel are excluded by user direction.
