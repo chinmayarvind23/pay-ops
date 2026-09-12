@@ -11,6 +11,7 @@ from payops.contracts import Incident, IncidentCreate, IncidentReport, utc_now
 from payops.memory.store import IdempotencyConflict, IncidentStore
 from payops.policy.contracts import Principal
 from payops.policy.engine import identity_valid
+from payops.remediation.broker import RemediationBroker
 from payops.tools.kubernetes import SERVICES
 
 Mode = Literal["local_kind", "cloud_gke", "fixture_replay"]
@@ -63,13 +64,36 @@ def scoped_incident(store: IncidentStore, incident_id: str, principal: Principal
     return incident
 
 
+def attach_remediation(
+    app: FastAPI,
+    store: IncidentStore,
+    identity: Authenticator,
+    mode: Mode,
+    remediation: RemediationBroker | None,
+) -> None:
+    """Require explicit same-mode broker wiring without enabling actions on the default server."""
+    if remediation is None:
+        return
+    from payops.remediation.api import action_router
+
+    if remediation.mode != mode:
+        raise ValueError("Remediation mode must match operational mode")
+    app.include_router(action_router(store, identity, remediation))
+
+
 def create_protected_app(
-    store: IncidentStore, identity: Authenticator, investigate: Investigator, *, mode: Mode
+    store: IncidentStore,
+    identity: Authenticator,
+    investigate: Investigator,
+    *,
+    mode: Mode,
+    remediation: RemediationBroker | None = None,
 ) -> FastAPI:
     """Host wiring owns all dependency lifetimes; there is no default operational setup."""
     if mode not in {"local_kind", "cloud_gke", "fixture_replay"}:
         raise ValueError("Operational mode must be explicitly configured")
     app = FastAPI(title="PayOps authenticated incidents", version="0.1.0")
+    attach_remediation(app, store, identity, mode, remediation)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

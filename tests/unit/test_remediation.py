@@ -7,15 +7,20 @@ from pathlib import Path
 from threading import Barrier
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import JsonValue
 from sqlalchemy import Engine, update
 from sqlalchemy.orm import Session
 
+from payops.auth.identity import AuthenticationDenied
 from payops.contracts import Incident, IncidentCreate, IncidentReport, utc_now
 from payops.evidence.artifacts import ArtifactStore
 from payops.evidence.normalize import Observation, normalize
+from payops.memory.store import IncidentRow, IncidentStore
 from payops.policy.contracts import Action, Principal, ResourceSnapshot, Role
 from payops.policy.engine import PolicyContext
+from payops.protected_api import create_protected_app
+from payops.remediation.api import dispatch
 from payops.remediation.broker import RemediationBroker
 from payops.remediation.contracts import ActionRecord, ActionState, Approval, EffectReceipt
 from payops.remediation.store import ActionRow, ActionStore, AuditRow, TransitionConflict
@@ -130,6 +135,143 @@ def setup(root: Path) -> tuple[Backend, ActionStore, RemediationBroker]:
     backend = Backend(root)
     store = ActionStore(f"sqlite:///{root / 'actions.db'}")
     return backend, store, RemediationBroker(store, backend, mode="local_kind")
+
+
+class HttpIdentity:
+    """Fixture-only bearer lookup shares revocation state with the broker's trusted backend."""
+
+    def __init__(self, backend: Backend) -> None:
+        """No live identity provider or operational credentials participate in these tests."""
+        self.backend = backend
+
+    def authenticate(self, token: str) -> Principal:
+        """Tokens are fixed fixture subjects; missing identities fail before any effect."""
+        principal = self.backend.principal(token)
+        if principal is None:
+            raise AuthenticationDenied("DENIED")
+        return principal
+
+
+@pytest.fixture
+def http_broker(tmp_path: Path) -> Iterator[tuple[Backend, TestClient, str]]:
+    """Wire the real HTTP router, SQL broker and artifact verifier around a counted effect."""
+    backend, actions, broker = setup(tmp_path)
+    incidents = IncidentStore(actions.engine)
+    with Session(actions.engine) as session:
+        session.add(
+            IncidentRow(
+                incident_id=backend.incident.incident_id, payload=backend.incident.model_dump_json()
+            )
+        )
+        session.commit()
+
+    def investigate(incident: Incident) -> IncidentReport:
+        """Investigation is outside this action test; use the already verified fixture report."""
+        assert incident.report is not None
+        return incident.report
+
+    app = create_protected_app(
+        incidents, HttpIdentity(backend), investigate, mode="local_kind", remediation=broker
+    )
+    with TestClient(app) as http:
+        yield backend, http, f"/api/incidents/{backend.incident.incident_id}/actions"
+    incidents.close()
+
+
+def test_http_approval_execution_and_audit(
+    http_broker: tuple[Backend, TestClient, str],
+) -> None:
+    """HTTP roles remain separate and repeated execution adds no effect or audit transition."""
+    backend, http, path = http_broker
+    proposed = http.post(path, json=backend.proposal, headers={"Authorization": "Bearer alice"})
+    assert proposed.status_code == 201
+    action_path = path + "/" + proposed.json()["action_id"]
+    assert (
+        http.post(action_path + "/execute", headers={"Authorization": "Bearer worker"}).status_code
+        == 403
+    )
+    assert (
+        http.post(action_path + "/approve", headers={"Authorization": "Bearer alice"}).status_code
+        == 403
+    )
+    assert (
+        http.post(action_path + "/approve", headers={"Authorization": "Bearer bob"}).status_code
+        == 200
+    )
+    for _ in range(2):
+        response = http.post(action_path + "/execute", headers={"Authorization": "Bearer worker"})
+        assert response.status_code == 200 and response.json()["state"] == "SUCCEEDED"
+    assert len(backend.effects) == 1
+    history = http.get(action_path + "/audit", headers={"Authorization": "Bearer alice"})
+    assert [item["state"] for item in history.json()] == [
+        "PROPOSED",
+        "APPROVED",
+        "EXECUTING",
+        "SUCCEEDED",
+    ]
+    assert http.get(action_path, headers={"Authorization": "Bearer bob"}).status_code == 200
+
+
+@pytest.mark.parametrize(
+    "change", ["missing", "role", "incident", "namespace", "service", "mode", "extra"]
+)
+def test_http_proposal_denials(http_broker: tuple[Backend, TestClient, str], change: str) -> None:
+    """Neither action JSON nor a readable incident confers authority to propose mutations."""
+    backend, http, path = http_broker
+    value = dict(backend.proposal)
+    credential = "alice"
+    if change in {"missing", "role"}:
+        credential = "unknown" if change == "missing" else "bob"
+    else:
+        value[{"incident": "incident_id", "extra": "subject"}.get(change, change)] = "foreign"
+    response = http.post(path, json=value, headers={"Authorization": "Bearer " + credential})
+    assert response.status_code == (401 if change == "missing" else 403)
+    assert not backend.effects
+
+
+def test_http_action_scope_and_revocation(http_broker: tuple[Backend, TestClient, str]) -> None:
+    """Cross-incident URLs and revoked tokens reveal no action and never dispatch an effect."""
+    backend, http, path = http_broker
+    auth = {"Authorization": "Bearer alice"}
+    result = http.post(path, json=backend.proposal, headers=auth)
+    action_id = result.json()["action_id"]
+    other = http.post("/api/incidents", json={"title": "Other incident"}, headers=auth).json()
+    other_path = f"/api/incidents/{other['incident_id']}/actions/{action_id}"
+    for suffix in ("", "/audit", "/approve", "/execute"):
+        method = http.post if suffix in {"/approve", "/execute"} else http.get
+        assert method(other_path + suffix, headers=auth).status_code == 404
+    assert http.get(path + "/absent", headers=auth).status_code == 404
+    backend.identities.pop("alice")
+    assert http.get(path + "/" + action_id, headers=auth).status_code == 401
+    assert not backend.effects
+
+
+def test_http_conflict_is_stable() -> None:
+    """Concurrent approval conflicts report a stable code without leaking backend text."""
+    from fastapi import HTTPException
+
+    def conflict() -> ActionRecord:
+        """Simulate the SQL compare-and-swap loser before an executor can be called."""
+        raise TransitionConflict("private detail")
+
+    with pytest.raises(HTTPException) as failure:
+        dispatch(conflict)
+    assert failure.value.status_code == 409 and failure.value.detail == "ACTION_CHANGED"
+
+
+def test_http_broker_mode_must_match(tmp_path: Path) -> None:
+    """Host configuration cannot accidentally expose an operational broker under fixture mode."""
+    backend, actions, broker = setup(tmp_path)
+    incidents = IncidentStore(actions.engine)
+
+    def unused(incident: Incident) -> IncidentReport:
+        """Startup rejects the host before any investigation callback is used."""
+        raise AssertionError(incident.incident_id)
+
+    with pytest.raises(ValueError, match="Remediation mode"):
+        create_protected_app(
+            incidents, HttpIdentity(backend), unused, mode="fixture_replay", remediation=broker
+        )
 
 
 def test_approval_persists_and_executes_once(tmp_path: Path) -> None:
