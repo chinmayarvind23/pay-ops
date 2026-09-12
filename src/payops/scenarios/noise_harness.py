@@ -148,7 +148,11 @@ class NoiseHarness(ConcurrencyHarness):
             errors.append(str(error))
         try:
             state = self.access.noise_state(receipt.run_id)
-            self._save(directory, receipt, "cleanup-inventory", state)
+            # A full evidence disk cannot strand owned CPU work; keep its failure in the latch.
+            try:
+                self._save(directory, receipt, "cleanup-inventory", state)
+            except Exception as error:
+                errors.append(str(error))
             for job in object_items(state["jobs"]):
                 noise_metadata(job, receipt.run_id)
                 self.access.remove_noise(job, receipt.run_id)
