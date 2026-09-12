@@ -1,7 +1,7 @@
 """Authenticated incident endpoints bind every read and investigation to backend actor scope."""
 
 from collections.abc import Callable
-from typing import Annotated, Literal, Protocol
+from typing import TYPE_CHECKING, Annotated, Literal, Protocol
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -13,6 +13,9 @@ from payops.policy.contracts import Principal
 from payops.policy.engine import identity_valid
 from payops.remediation.broker import RemediationBroker
 from payops.tools.kubernetes import SERVICES
+
+if TYPE_CHECKING:
+    from payops.slack_notifications import SlackNotifier
 
 Mode = Literal["local_kind", "cloud_gke", "fixture_replay"]
 Bearer = Annotated[HTTPAuthorizationCredentials | None, Depends(HTTPBearer(auto_error=False))]
@@ -81,6 +84,19 @@ def attach_remediation(
     app.include_router(action_router(store, identity, remediation))
 
 
+def attach_exploration(
+    app: FastAPI, store: IncidentStore, identity: Authenticator, slack: "SlackNotifier | None"
+) -> None:
+    """GraphQL shares REST authorization; Slack delivery requires explicit host configuration."""
+    from payops.graphql_api import graphql_router
+
+    app.include_router(graphql_router(store, identity))
+    if slack is not None:
+        from payops.slack_notifications import slack_router
+
+        app.include_router(slack_router(store, identity, slack))
+
+
 def create_protected_app(
     store: IncidentStore,
     identity: Authenticator,
@@ -88,12 +104,14 @@ def create_protected_app(
     *,
     mode: Mode,
     remediation: RemediationBroker | None = None,
+    slack: "SlackNotifier | None" = None,
 ) -> FastAPI:
     """Host wiring owns all dependency lifetimes; there is no default operational setup."""
     if mode not in {"local_kind", "cloud_gke", "fixture_replay"}:
         raise ValueError("Operational mode must be explicitly configured")
     app = FastAPI(title="PayOps authenticated incidents", version="0.1.0")
     attach_remediation(app, store, identity, mode, remediation)
+    attach_exploration(app, store, identity, slack)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
