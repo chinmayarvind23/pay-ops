@@ -55,16 +55,19 @@ Backend code owns identity checks, budgets, approvals and execution. Stored obse
 
 ## Technology
 
-| Area | Technologies |
-| --- | --- |
-| Application | Python, FastAPI, Pydantic, GraphQL |
-| Investigation | LangChain, LangGraph, local Qwen, OpenAI adapter |
-| Runtime | Kubernetes, Docker, GKE MCP |
-| State and retrieval | PostgreSQL, SQLAlchemy, Redis, Elasticsearch |
-| Observability | Prometheus, OpenTelemetry, LangSmith, Cloud Logging, Cloud Monitoring |
-| Integrations | Pub/Sub, GCS, Google Identity Platform, Slack |
-| Interface | TypeScript, Bun |
-| Infrastructure | Terraform and operator-configured GCP resources |
+**Python · FastAPI · LangGraph · Kubernetes · PostgreSQL · OpenTelemetry**
+
+Python and FastAPI expose the service, LangGraph coordinates investigations, and Kubernetes supplies operational evidence and the remediation target. PostgreSQL supports persistent application state; OpenTelemetry traces service and model operations. The local operational host uses SQLite checkpoints and filesystem locks.
+
+### Integrations
+
+Configure the integrations your deployment needs:
+
+- **Evidence sources:** Prometheus, Elasticsearch and GKE MCP for metrics, logs, context and scoped cluster reads.
+- **Cloud and delivery:** Pub/Sub for incident delivery, GCS for evidence archival and Slack for notifications.
+- **Supporting infrastructure:** Redis for derived caches, Google Identity Platform for authentication and Terraform for operator-managed GCP infrastructure.
+
+See the [full technology inventory](docs/architecture.md#technology-inventory) for supporting libraries, model adapters and interface tooling, and [infrastructure setup](docs/deployment.md) for configuration.
 
 ## Development
 

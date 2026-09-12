@@ -22,6 +22,23 @@ REST and GraphQL share backend authorization. Slack sends incident references th
 
 OpenTelemetry traces service and model operations. LangSmith export includes selected receipt metadata. Credentials belong to the configured operator environment and stay outside the source repository.
 
+## Technology inventory
+
+The core service uses Python, FastAPI and LangGraph, with Kubernetes as its operational environment, PostgreSQL for persistent application state and OpenTelemetry for tracing. The local operational host uses SQLite checkpoints and filesystem locks. External adapters are configured for the deployment that needs them; this inventory does not imply that every service is required locally or deployed to the cloud.
+
+| Area | Technologies and purpose |
+| --- | --- |
+| Application | Python, FastAPI and Pydantic for the service and validated contracts; GraphQL for structured incident queries |
+| Investigation | LangGraph for durable workflows; LangChain for the reasoning loop; local Qwen and an OpenAI adapter for inference |
+| Runtime | Kubernetes for operational reads and remediation; Docker for containers; GKE MCP for constrained cluster reads |
+| State and retrieval | PostgreSQL and SQLAlchemy for application persistence; SQLite for local host checkpoints; Redis for derived caches; Elasticsearch for logs and scoped context retrieval |
+| Observability | Prometheus for service metrics; OpenTelemetry for traces; LangSmith for selected receipt metadata; Cloud Logging and Cloud Monitoring for Google telemetry reads |
+| Integrations | Pub/Sub for incident delivery; GCS for evidence archival; Google Identity Platform for authentication; Slack for incident notifications |
+| Interface | TypeScript for the web interface; Bun for its tooling |
+| Infrastructure | Terraform for operator-configured GCP resources |
+
+See [infrastructure setup](deployment.md) for deployment configuration and the [documentation index](README.md) for individual adapter guides.
+
 ## Source entry points
 
 - [Operational host](../src/payops/operator_host.py)
