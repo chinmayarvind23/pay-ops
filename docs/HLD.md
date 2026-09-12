@@ -130,3 +130,8 @@ The operator-only dependency harness reuses the existing payments lifecycle, pro
 ### CPU distractor control
 
 TELEM-01 runs one independent, credential-free CPU Job through healthy payments, processor replicas zero and restored payments. The same noise process must consume at least 0.2 CPU cores across every full HTTP window while its CPU request is 0.05 cores. The processor outage has three actual 503 outcomes; both noise-on controls have three accepted outcomes. CPU work is local hashing, with no network activity or writes. This separates the measured CPU distraction from the service outage. Live qualification is recorded separately.
+
+
+### Isolated node-pressure reproduction
+
+SCHED-04 uses a separate one-node kind cluster because kubelet pressure is node-wide. A synthetic webhook proves healthy operation before a calibrated memory reserve is raised 256Mi above the observed available-memory signal. This triggers the real kubelet eviction manager while host memory remains available. The local variant is reserve-induced eviction, not host-wide memory exhaustion. Node cgroup resizing is disabled during treatment to prevent the reserve change from becoming a kernel OOM. The exact original kubelet bytes, healthy node and a new accepted webhook request must return before namespace cleanup.

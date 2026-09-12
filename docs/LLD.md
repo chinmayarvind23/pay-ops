@@ -818,3 +818,8 @@ separate from primary-cause labels. Live qualification and cleanup remain requir
 ### CPU noise lifecycle
 
 `NoiseHarness` uses the shared cluster latch, immutable receipt writer and finally-recovery path. `noise_contract.py` freezes a 120-second hashing script inside a hardened one-shot Job with a 150-second deadline, 500m/256Mi limits and no service-account token. `NoiseGateway` validates the Job template, pod owner, actual imported image and zero restarts before reading per-second CPU counters. Every traffic window must be bracketed by advancing CPU/time samples. Four sandbox peer processes remain unchanged. Processor restoration and Job deletion are attempted independently; cleanup failure retains the latch. There are no model-selected scripts or command parameters.
+
+
+### Eviction implementation
+
+`EvictionGateway` pins kind-payops-eviction, its sole Docker node and payops-eviction namespace. It reads only the fixed kubelet config path; no certificate contents are read. `EvictionHarness` journals original config/container identity before creating a token-free webhook Pod. Treatment changes evictionHard.memory.available, uses a one-second pressure transition period and enforceNodeAllocatable=[none]. Acceptance joins the owned Pod Failed/Evicted memory status, its Evicted event, node MemoryPressure=True, effective configz threshold and availableBytes below that threshold. OOMKilled, missing events and foreign Pod UIDs are rejected. Configuration and namespace cleanup are independently attempted under the shared latch. Raw failed acquisition observations survive kubelet restarts.

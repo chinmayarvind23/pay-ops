@@ -6,6 +6,7 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 CaseId = Literal[
+    "SCHED-04",
     "TELEM-01",
     "DEP-03",
     "DEP-04",
