@@ -54,8 +54,7 @@ class EvictionGateway(ConcurrencyGateway):
             raise ValueError("kubelet configuration exceeds bound")
         subprocess.run(
             ("docker", "exec", "-i", NODE, "tee", CONFIG_PATH),
-            input=new,
-            text=True,
+            input=new.encode("utf-8"),
             capture_output=True,
             check=True,
             timeout=10,

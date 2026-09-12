@@ -1,6 +1,7 @@
 """A simulated OOM or foreign object cannot qualify an isolated kubelet eviction."""
 
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 import yaml
@@ -120,3 +121,23 @@ def test_clean_exit_requires_explicit_memory_disruption_and_termination() -> Non
     assert not evicted(pod, original)
     status["conditions"] = []
     assert not evicted(pod, original)
+
+
+def test_config_write_preserves_exact_bytes(tmp_path: Path) -> None:
+    """Binary stdin prevents Windows newline translation from invalidating exact recovery."""
+    from unittest.mock import patch
+
+    from payops.scenarios.eviction_gateway import EvictionGateway
+
+    config = tmp_path / "config"
+    config.write_text("fixture")
+    with patch("payops.scenarios.kubectl.shutil.which", return_value="kubectl"):
+        gateway = EvictionGateway(config)
+    with (
+        patch.object(gateway, "verify_scope", return_value={"container_id": "owned"}),
+        patch.object(gateway, "config_text", return_value="original\n"),
+        patch("payops.scenarios.eviction_gateway.subprocess.run") as run,
+    ):
+        gateway.replace_config("original\n", "changed\n", "owned")
+    assert run.call_args_list[0].kwargs["input"] == b"changed\n"
+    assert "text" not in run.call_args_list[0].kwargs
