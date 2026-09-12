@@ -10,7 +10,7 @@ The historical scenario notes below concern fault reproduction, not model diagno
 The frozen four-case development run matched all four causes at rank 1 and restored
 each workload. All 24 local fault reproductions now have verified activation and
 cleanup, including a real kernel OOM termination and scheduler rejection of oversized CPU and memory requests. These are separate results:
-only the original four cases have been scored for diagnosis.
+the original four-case deterministic score and completed 24-case model replay scores use different ranking methods.
 
 The committed capability evaluation at `dca7806` denied all 120 manifest attempts
 with zero executor callbacks. It repeats five forbidden capability types across
@@ -252,8 +252,8 @@ because Windows text-mode stdin converted LF to CRLF; binary stdin corrected tha
 transport issue before the fresh accepted run.
 
 **All 24 local scenarios have now qualified.** These are documented synthetic
-variants, not production incidents. The complete model benchmark, evidence-attribution
-measurement and paired human timing study remain unfinished. The operational
+variants, not production incidents. The compact 24-case model replay benchmark is complete;
+semantic evidence-attribution measurement and paired human timing remain unfinished. The operational
 executor is implemented; real scale 1→2→1 and stale-write rejection were verified
 in `chunk-17-executor-live-v1`. Persistent managed-traffic pause was exercised in
 `chunk-17-traffic-pause-live-v1`.

@@ -66,7 +66,9 @@ retries, and rejects truncation, incomplete output, wrong-model responses and in
 counts. A timeout remains an unsuccessful investigation; it does not claim cancellation of
 the server's work. Stop only your owned server process when finished.
 
-A small real model smoke run verified the adapter and shared runtime. The 24-case model
-benchmark remains separate; the smoke run is not a diagnosis accuracy or latency claim.
+A small real model smoke run verified the adapter and shared runtime. The completed
+[24-case compact replay benchmark](model-replay-results.md) separately measures diagnosis.
+The [full operator control](operator-integration-results.md) collected real evidence but
+stopped at its token ceiling before generation; compact replay is the currently measured path.
 Any comparison against paid model prices must be labeled an estimate, especially because
 different providers use different tokenizers and may have different quality.

@@ -6,6 +6,6 @@
 
 The label contract rejects missing cases, duplicate alternatives, substituted conditions and duplicate JSON keys. Primary Recall always retains 24 cases; observation-condition Recall retains four. Missing predictions are misses. All 24 local scenarios now have qualified reproduction evidence; four have a frozen deterministic diagnosis score. Reproduction does not establish model accuracy.
 
-Scoring loads retained labels after predictions are frozen. Scenario IDs, accepted answers, traffic receipts and qualification flags must not enter model context. Freeze the label-file digest with each evaluation; changed labels require a new declared evaluation version. No 24-case or observation-condition model score has been measured yet.
+Scoring loads retained labels after predictions are frozen. Scenario IDs, accepted answers, traffic receipts and qualification flags must not enter model context. Freeze the label-file digest with each evaluation; changed labels require a new declared evaluation version. The [24-case compact model replay](../../docs/model-replay-results.md) is measured and published. Observation-condition model Recall remains unmeasured.
 
 Host model configuration uses `FrozenLabels.cause_vocabulary()` from the entire release catalog. Constructing a vocabulary from the current case's accepted answer would leak gold even if its scenario ID were hidden.

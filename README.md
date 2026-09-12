@@ -28,7 +28,7 @@ The local implementation runs against a five-service synthetic payment system in
 - Immutable evidence artifacts with SHA-256 verification, payment-window arithmetic and nested trace/retrieval source checks.
 - Durable investigations that reserve model/read budgets before dispatch and recover completed work without dispatching it again. Uncertain completion stops the run.
 - A closed model decision schema for read requests, cited hypotheses and refusal. The OpenAI Responses adapter pins its model, tier and prices. A [free local Qwen adapter](docs/free-inference.md) uses measured token counts with zero provider charges and no paid fallback.
-- A local operator CLI connects either model adapter and all six read tools with an expiring OS-account grant. Completed restart verifies the journal without issuing new requests; full model evaluation remains pending.
+- A local operator CLI connects either model adapter and all six read tools with an expiring OS-account grant. A live healthy control collected 25 observations with no collection failures and recovered its completed journal unchanged. Its full prompt exceeded the free model's token ceiling; see [integration limits](docs/operator-integration-results.md).
 - Deterministic approval policy, authenticated action routes and an idempotent SQL broker, with current identity and resource revalidation. A closed local executor supports conditional restart, scale and immutable-image rollback with rollout postchecks. Managed synthetic traffic uses a durable SQL pause gate.
 - Firebase identity verification and a protected API factory, tested through intercepted provider responses. The default development server uses mock investigation data.
 - PostgreSQL state, Redis derived caching and Elasticsearch retrieval adapters, verified locally with TLS and scoped application identities.
@@ -90,11 +90,11 @@ The public replay runs on a free Hugging Face Static Space. An optional [GCP Ter
 - [Scenario catalog](docs/scenarios.md), [frozen release labels](evals/golden/README.md) and [benchmark methodology](docs/benchmark-methodology.md)
 - [Results](docs/results.md), [commands](docs/commands.md) and [deployment plan](docs/deployment.md)
 
-Operator journals, failed runs, source hashes, review notes, interview material and the blog draft live outside the code repository in `../resources/pay_ops`. They preserve private runtime evidence separately from source and the future sanitized public demo.
+Operator journals, failed runs, source hashes, review notes, interview material and the blog draft live outside the code repository in `../resources/pay_ops`. They preserve private runtime evidence separately from source and the published sanitized public demo.
 
 ## Work still required
 
-Improve model diagnosis on held-out evidence and finish live operational host integration validation. The completed recorded-evidence study measures diagnosis, replay-call timing and usage; it does not establish full-agent latency or human speedup. A paired human study is needed for the proposed human baseline. Unsupported figures are omitted from résumé claims. The terminal demo is recorded; browser visual verification remains unavailable.
+Fit the full investigation context within the local model's token ceiling and improve diagnosis on held-out evidence. The live host has verified collection and recovery, but its healthy control stopped before generation. The completed recorded-evidence study measures diagnosis, replay-call timing and usage; it does not establish full-agent latency or human speedup. Semantic attribution and paired human investigation time remain unmeasured. The terminal demo is recorded; browser visual verification remains unavailable.
 
 ## With more time
 
